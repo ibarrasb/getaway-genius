@@ -16,29 +16,37 @@ app.use('/user', require('./routes/userRoutes'));
 // const connectDB = async () => {
 
 //   try{
-//     await mongoose.connect(process.env.MONGODB_URL, {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true,
-//     });
+//     await mongoose.connect(process.env.MONGODB_URL);
 //   } catch(error){
 //     console.log(error);
 //     process.exit(1);
 //   }
 // }
 
-// Connect to MongoDB using promises
-const URI = process.env.MONGODB_URL;
-mongoose.connect(URI, {
+// // Connect to MongoDB using promises
+// const URI = process.env.MONGODB_URL;
+// mongoose.connect(URI, {
    
-  })
-  .then(() => {
-    console.log('Connected to MongoDB ');
-  })
-  .catch((err) => {
-    console.error('Error connecting to MongoDB:', err);
-  });
+//   })
+//   .then(() => {
+//     console.log('Connected to MongoDB ');
+//   })
+//   .catch((err) => {
+//     console.error('Error connecting to MongoDB:', err);
+//   });
 
-// connectDB();
+// // connectDB();
+
+const URI = process.env.MONGODB_URL
+mongoose.connect(URI, {
+    useCreateIndex: true,
+    useFindAndModify: false,
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}, err =>{
+    if(err) throw err;
+    console.log('Connected to MongoDB')
+})
 
 
 // Build for Heroku
