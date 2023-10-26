@@ -26,13 +26,13 @@ app.use('/user', require('./routes/userRoutes'));
 //   }
 // }
 
-// Connect to MongoDB 
+// Connect to MongoDB using promises
 const URI = process.env.MONGODB_URL;
 mongoose.connect(URI, {
    
   })
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log('Connected to MongoDB ');
   })
   .catch((err) => {
     console.error('Error connecting to MongoDB:', err);
