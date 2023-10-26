@@ -26,7 +26,7 @@ app.use('/user', require('./routes/userRoutes'));
 //   }
 // }
 
-// Connect to MongoDB
+// Connect to MongoDB 
 const URI = process.env.MONGODB_URL;
 mongoose.connect(URI, {
    
