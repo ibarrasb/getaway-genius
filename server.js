@@ -17,9 +17,7 @@ app.use('/user', require('./routes/userRoutes'));
 // Connect to MongoDB using promises
 const URI = process.env.MONGODB_URL;
 mongoose.connect(URI, {
-    
-    useNewUrlParser: true,
-    useUnifiedTopology: true
+   
   })
   .then(() => {
     console.log('Connected to MongoDB');
