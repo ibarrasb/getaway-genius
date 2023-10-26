@@ -16,8 +16,10 @@ app.use('/user', require('./routes/userRoutes'));
 const connectDB = async () => {
 
   try{
-    await mongoose.connect(process.env.MONGODB_URL)
-    console.log('Connected to MongoDB');
+    await mongoose.connect(process.env.MONGODB_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
   } catch(error){
     console.log(error);
     process.exit(1);
