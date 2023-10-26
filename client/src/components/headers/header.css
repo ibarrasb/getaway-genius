@@ -1,0 +1,23 @@
+.container {
+    position:relative;
+    text-align:center;
+    
+  }
+  .dv1, .dv2 {
+    display:inline-block;
+    width:30%;
+    margin:0 4px;
+    padding-top: 10px;
+    color: antiquewhite;
+    font-size: 20px;
+    font-family: 'Crimson Text', serif;
+    font-family: 'Pixelify Sans', sans-serif;
+  }
+  .dv1{
+      padding-right: 35%;
+  }
+
+
+  a:visited {
+    color: whitesmoke; /* Change this to the desired color for visited links */
+  }
