@@ -24,6 +24,8 @@ app.use('/user', require('./routes/userRoutes'));
 //   .catch((err) => {
 //     console.error('Error connecting to MongoDB:', err);
 //   });
+
+// Connect to MongoDB using promises
 const URI = process.env.MONGODB_URL;
 
 async function connectToMongo() {
