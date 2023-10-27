@@ -13,6 +13,35 @@ app.use(cors());
 // Routes
 app.use('/user', require('./routes/userRoutes'));
 
+// Connect to MongoDB using promises
+// const URI = process.env.MONGODB_URL;
+// mongoose.connect(URI, {
+   
+//   })
+//   .then(() => {
+//     console.log('Connected to MongoDB ');
+//   })
+//   .catch((err) => {
+//     console.error('Error connecting to MongoDB:', err);
+//   });
+const URI = process.env.MONGODB_URL;
+
+async function connectToMongo() {
+  try {
+    await mongoose.connect(URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('Connected to MongoDB');
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error);
+  }
+}
+
+
+
+
+
 // Build for Heroku
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static('client/build'));
@@ -21,17 +50,9 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// // Connect to MongoDB using promises
-const URI = process.env.MONGODB_URL;
-mongoose.connect(URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => {
-    app.listen(5000, () => {
-      console.log("Connected to MongoDB and listening on port 5000");
-    });
-  })
-  .catch((err) => {
-    console.error('Error connecting to MongoDB:', err);
-  });
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log('Server is running on port..', PORT);
+});
+
+connectToMongo();
