@@ -23,8 +23,15 @@ if (process.env.NODE_ENV === 'production') {
 
 // // Connect to MongoDB using promises
 const URI = process.env.MONGODB_URL;
-mongoose.connect(URI)
-  .then(() => app.listen(5000))
+mongoose.connect(URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => {
+    app.listen(5000, () => {
+      console.log("Connected to MongoDB and listening on port 5000");
+    });
+  })
   .catch((err) => {
     console.error('Error connecting to MongoDB:', err);
   });
