@@ -11,7 +11,9 @@ app.use(cookieParser());
 app.use(cors());
 
 // Routes
-app.use('/user', require('./routes/userRoutes'));
+// app.use('/user', require('./routes/userRoutes'));
+const usersRouter = require('./routes/userRoutes');
+app.use('/api/user', usersRouter);
 
 // Connect to MongoDB using promises
 // const URI = process.env.MONGODB_URL;

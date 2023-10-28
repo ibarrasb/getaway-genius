@@ -10,7 +10,7 @@ export const DataProvider = ({children}) => {
 
     const refreshToken = async () => {
         try {
-            const res = await axios.get('/user/refresh_token');
+            const res = await axios.get('/api/user/refresh_token');
             setToken(res.data.accesstoken);
         } catch (error) {
             console.log(error)

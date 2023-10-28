@@ -9,7 +9,7 @@ function Header() {
     const [isLogged] = state.UserAPI.isLogged
 
     const logoutUser = async () => {
-        await axios.get('/user/logout')
+        await axios.get('/api/user/logout')
         localStorage.clear()
         window.location.href = "/"
     }
