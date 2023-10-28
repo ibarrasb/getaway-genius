@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './styles.css';
 
 const Search = () => {
   const [games, setGames] = useState([]);
@@ -32,29 +33,33 @@ const Search = () => {
   };
 
   return (
-    <div>
-      <h1>Popular Games</h1>
+    <div className="container-search">
+    <h1>Popular Games</h1>
+    <div className="search-bar-container">
       <input
         type="text"
         placeholder="Search for games"
         value={searchQ}
         onChange={handleSearchChange}
+        className="search-bar"
       />
       <button onClick={handleSearch}>Submit</button>
-      <ul>
-        {games.map((game) => (
-          <li key={game.id}>
-            <strong>{game.name}</strong>
-            {game.background_image && (
-              <img
-                src={game.background_image}
-                alt={game.name}
-                style={{ width: "150px", height: "100px" }}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
+    </div>
+      <ul className="game-list">
+      {games.map((game) => (
+        <li key={game.id} className="game-item">
+          <strong className="game-title">{game.name}</strong>
+          {game.background_image && (
+            <img
+              src={game.background_image}
+              alt={game.name}
+              className="game-image"
+            />
+          )}
+        </li>
+      ))}
+    </ul>
+    
     </div>
   );
 };

@@ -1,0 +1,53 @@
+/* styles.css */
+/* styles.css */
+
+.container-search {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+  }
+  
+  .search-bar {
+   /* Adjust the width as needed */
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 1em;
+  }
+  
+
+.game-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center; /* Center horizontally within the div */
+  }
+  
+  .game-item {
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 300px;
+  }
+  
+  .game-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+  
+  .game-image {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
