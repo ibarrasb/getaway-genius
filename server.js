@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const axios = require('axios')
 const path = require('path'); // Import the 'path' module
 
 const app = express();
@@ -10,22 +11,24 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
 
+// External API routing
+app.get('/api/external-data', async (req, res) => {
+  try {
+    const apiKey = process.env.RAWGAPIKEY;
+    const searchQ = req.query.searchQ;
+    const response = await axios.get(`https://api.rawg.io/api/games?key=${apiKey}&search=${searchQ}&ordering=-released&metacritic=80`);
+
+    const data = response.data;
+    res.json(data);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to fetch data' });
+  }
+});
+
 // Routes
-// app.use('/user', require('./routes/userRoutes'));
 const usersRouter = require('./routes/userRoutes');
 app.use('/api/user', usersRouter);
-
-// Connect to MongoDB using promises
-// const URI = process.env.MONGODB_URL;
-// mongoose.connect(URI, {
-   
-//   })
-//   .then(() => {
-//     console.log('Connected to MongoDB ');
-//   })
-//   .catch((err) => {
-//     console.error('Error connecting to MongoDB:', err);
-//   });
 
 // Connect to MongoDB using promises
 const URI = process.env.MONGODB_URL;
@@ -41,10 +44,6 @@ async function connectToMongo() {
     console.error('Error connecting to MongoDB:', error);
   }
 }
-
-
-
-
 
 // Build for Heroku
 if (process.env.NODE_ENV === 'production') {
