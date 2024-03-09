@@ -1,15 +1,18 @@
 .welcome{
-    color: whitesmoke;
+    color: black;
     font-family: 'Crimson Text', serif;
 /* font-family: 'Pixelify Sans', sans-serif; */
 text-align: center;
 
 }
 .welcome-name{
-    color: whitesmoke;
+    color: black;
     font-family: 'Crimson Text', serif;
-/* font-family: 'Pixelify Sans', sans-serif; */
+
 text-align: center;
+}
+.open-transactions-container h1{
+  font-family: 'Crimson Text', serif;
 }
 
 .container-welcome{

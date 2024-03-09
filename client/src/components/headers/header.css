@@ -8,7 +8,7 @@
     width:30%;
     margin:0 4px;
     padding-top: 10px;
-    color: antiquewhite;
+    color: black;
     font-size: 20px;
     font-family: 'Crimson Text', serif;
     /* font-family: 'Pixelify Sans', sans-serif; */
@@ -19,5 +19,5 @@
 
 
   a:visited {
-    color: whitesmoke; /* Change this to the desired color for visited links */
+    color: black; /* Change this to the desired color for visited links */
   }

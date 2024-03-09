@@ -8,9 +8,8 @@
 .login-page h2{
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: whitesmoke;
-    /* font-family: 'Crimson Text', serif;
-font-family: 'Pixelify Sans', sans-serif; */
+    color: black;
+    font-family: 'Crimson Text', serif;
 }
 .login-page form input,
 .login-page form button{
@@ -28,25 +27,24 @@ font-family: 'Pixelify Sans', sans-serif; */
 }
 .login-page form button{
     width: 150px;
-    background: grey;
+    background: #63D2FF;
     color: white;
     text-transform: uppercase;
     letter-spacing: 2px;
     border-radius: 10px;
 }
 .login-page form a{
-    color: yellow;
+    color: orange;
     letter-spacing: 1.3px;
     text-transform: uppercase;
 }
 
 .main-title {
-    color: whitesmoke;
+    color: black;
     text-align: center;
     padding-bottom: 50px;
     padding: -10px;
-    /* font-family: 'Crimson Text', serif;
-font-family: 'Pixelify Sans', sans-serif; */
+    font-family: 'Crimson Text', serif;
 }
 
 .check-box{

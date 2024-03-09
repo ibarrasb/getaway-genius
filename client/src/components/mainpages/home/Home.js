@@ -3,11 +3,11 @@ import { GlobalState } from '../../../GlobalState';
 import './styles.css';
 
 // Import the updated JSON data
-import testData from './testData.json'; // Replace with the actual path to your JSON file
+// import testData from './testData.json'; // Replace with the actual path to your JSON file
 
 function Home() {
   const state = useContext(GlobalState);
-  const [isLogged] = state.UserAPI.isLogged;
+  // const [isLogged] = state.UserAPI.isLogged;
   const [name] = state.UserAPI.name;
 
 
@@ -15,17 +15,17 @@ function Home() {
 
   useEffect(() => {
     // Load the updated JSON data into the state
-    setTransactions(testData.transactions);
+    // setTransactions(testData.transactions);
   }, []);
 
-  const loggedRouter = () => {
-    return (
-      <div className="container-welcome">
-        <div className="welcome">Welcome</div>
-        <div className="welcome-name">{name}</div>
-      </div>
-    );
-  };
+  // const loggedRouter = () => {
+  //   return (
+  //     <div className="container-welcome">
+  //       <div className="welcome">Welcome</div>
+  //       <div className="welcome-name">{name}</div>
+  //     </div>
+  //   );
+  // };
 
   // Function to render a single transaction box
   const renderTransaction = (transaction, index) => (
@@ -33,10 +33,6 @@ function Home() {
       <div>
         <div>Game: {transaction.user1.game_name}</div>
         <div>User: {transaction.user1.username}</div>
-      </div>
-      <div>
-        <div>Game: {transaction.user2.game_name}</div>
-        <div>User: {transaction.user2.username}</div>
       </div>
     </div>
   );
@@ -50,6 +46,11 @@ function Home() {
 
   return (
     <div>
+
+    <div className="container-welcome">
+    <div className="welcome">Welcome</div>
+    <div className="welcome-name">{name}</div>
+  </div>
       
     <div className="library-container">
         <button className="add-button">Add</button>
