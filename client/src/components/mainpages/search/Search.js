@@ -38,7 +38,7 @@ const Search = () => {
     <div className="search-bar-container">
       <input
         type="text"
-        placeholder="Search for games"
+        placeholder="Search for destinations"
         value={searchQ}
         onChange={handleSearchChange}
         className="search-bar"

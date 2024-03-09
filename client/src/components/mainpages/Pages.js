@@ -10,7 +10,7 @@ import { GlobalState } from '../../GlobalState'; // Make sure the import path is
 
 function Pages() {
     const { UserAPI } = useContext(GlobalState);
-    const { isLogged } = UserAPI;
+    // const { isLogged } = UserAPI;
 
     return (
        

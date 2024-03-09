@@ -29,7 +29,7 @@ function Login() {
     return (
         <div className="login-page">
             <form onSubmit={loginSubmit}>
-                <h1 className='main-title'>Gameshare</h1>
+                <h1 className='main-title'>Getaway Genius</h1>
                 <h2>Login</h2>
                 <input type="email" name="email" required
                 placeholder="Email" value={user.email} onChange={onChangeInput} />

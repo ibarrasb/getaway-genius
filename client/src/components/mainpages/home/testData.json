@@ -1,0 +1,76 @@
+{
+    "transactions": [
+      {
+        "transaction_tracker": "1",
+        "user1": {
+          "id": 1,
+          "game_name": "Game A",
+          "background_image": "image_a.jpg",
+          "username": "userA",
+          "transaction_date": "2023-10-01T14:30:00Z"
+        },
+        "user2": {
+          "id": 2,
+          "game_name": "Game B",
+          "background_image": "image_b.jpg",
+          "username": "userB",
+          "transaction_date": "2023-10-01T14:35:00Z"
+        }
+      },
+      {
+        "transaction_tracker": "2",
+        "user1": {
+          "id": 3,
+          "game_name": "Game X",
+          "background_image": "image_x.jpg",
+          "username": "userX",
+          "transaction_date": "2023-10-20T10:15:00Z"
+        },
+        "user2": {
+          "id": 4,
+          "game_name": "Game Y",
+          "background_image": "image_y.jpg",
+          "username": "userY",
+          "transaction_date": "2023-10-20T10:20:00Z"
+        }
+        
+      },
+      {
+        "transaction_tracker": "3",
+        "user1": {
+          "id": 3,
+          "game_name": "Game X",
+          "background_image": "image_x.jpg",
+          "username": "userX",
+          "transaction_date": "2023-10-20T10:15:00Z"
+        },
+        "user2": {
+          "id": 4,
+          "game_name": "Game Y",
+          "background_image": "image_y.jpg",
+          "username": "userY",
+          "transaction_date": "2023-10-20T10:20:00Z"
+        }
+        
+      },
+      {
+        "transaction_tracker": "4",
+        "user1": {
+          "id": 3,
+          "game_name": "Game X",
+          "background_image": "image_x.jpg",
+          "username": "userX",
+          "transaction_date": "2023-10-20T10:15:00Z"
+        },
+        "user2": {
+          "id": 4,
+          "game_name": "Game Y",
+          "background_image": "image_y.jpg",
+          "username": "userY",
+          "transaction_date": "2023-10-20T10:20:00Z"
+        }
+        
+      }
+    ]
+  }
+  

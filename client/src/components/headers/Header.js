@@ -17,7 +17,7 @@ function Header() {
     const loggedRouter = () => {
         return(
             <div className="container">
-            <div className="dv1">Gameshare</div>
+            <div className="dv1">Getaway Genius</div>
             <div className="dv2"><Link to="/" onClick={logoutUser}>Logout</Link></div>
             </div>
         )

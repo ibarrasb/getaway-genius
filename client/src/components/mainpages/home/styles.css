@@ -1,0 +1,66 @@
+.welcome{
+    color: whitesmoke;
+    font-family: 'Crimson Text', serif;
+/* font-family: 'Pixelify Sans', sans-serif; */
+text-align: center;
+
+}
+.welcome-name{
+    color: whitesmoke;
+    font-family: 'Crimson Text', serif;
+/* font-family: 'Pixelify Sans', sans-serif; */
+text-align: center;
+}
+
+.container-welcome{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  padding-top: 20px;
+    text-align: center;
+    font-size: 30px;
+}
+
+/* styles.css */
+/* Style the transaction boxes */
+.transaction-box {
+    border: 2px solid #555;
+    padding: 10px;
+    margin: 10px;
+    display: inline-block;
+    background-color: #f0f0f0;
+    width: 300px;
+  }
+  
+  /* Style the "More" button */
+  .more-button {
+    margin-top: 10px;
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .library-heading {
+    display: inline-block;
+  }
+  
+  /* Style the "add" button and position it */
+  .add-button {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 10px; /* Adjust the margin as needed for spacing */
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    margin-left: 175px;
+    margin-bottom: 20px;
+  }
+  
+  .add-button:hover {
+    background-color: #0056b3;
+  }

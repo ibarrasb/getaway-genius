@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const axios = require('axios')
-const path = require('path'); // Import the 'path' module
+const path = require('path');
 
 const app = express();
 app.use(express.json());

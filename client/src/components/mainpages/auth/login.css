@@ -9,8 +9,8 @@
     text-transform: uppercase;
     letter-spacing: 2px;
     color: whitesmoke;
-    font-family: 'Crimson Text', serif;
-font-family: 'Pixelify Sans', sans-serif;
+    /* font-family: 'Crimson Text', serif;
+font-family: 'Pixelify Sans', sans-serif; */
 }
 .login-page form input,
 .login-page form button{
@@ -45,8 +45,8 @@ font-family: 'Pixelify Sans', sans-serif;
     text-align: center;
     padding-bottom: 50px;
     padding: -10px;
-    font-family: 'Crimson Text', serif;
-font-family: 'Pixelify Sans', sans-serif;
+    /* font-family: 'Crimson Text', serif;
+font-family: 'Pixelify Sans', sans-serif; */
 }
 
 .check-box{
