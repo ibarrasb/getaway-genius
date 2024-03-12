@@ -1,75 +1,67 @@
 {
-    "transactions": [
+    "trips": [
       {
-        "transaction_tracker": "1",
-        "user1": {
-          "id": 1,
-          "game_name": "Game A",
-          "background_image": "image_a.jpg",
-          "username": "userA",
-          "transaction_date": "2023-10-01T14:30:00Z"
-        },
-        "user2": {
-          "id": 2,
-          "game_name": "Game B",
-          "background_image": "image_b.jpg",
-          "username": "userB",
-          "transaction_date": "2023-10-01T14:35:00Z"
-        }
-      },
-      {
-        "transaction_tracker": "2",
-        "user1": {
-          "id": 3,
-          "game_name": "Game X",
-          "background_image": "image_x.jpg",
-          "username": "userX",
-          "transaction_date": "2023-10-20T10:15:00Z"
-        },
-        "user2": {
-          "id": 4,
-          "game_name": "Game Y",
-          "background_image": "image_y.jpg",
-          "username": "userY",
-          "transaction_date": "2023-10-20T10:20:00Z"
-        }
+        "tripid": 1,
+        "trip_location": "San Juan, Puerto Rico",
+        "trip_start": "2025-07-25",
+        "trip_end": "2025-07-30",
+        "location_img": "https://www.discoverpuertorico.com/sites/default/files/styles/horizontal_wide_1280x600/public/2021-04/1_3.jpg?h=8878c3e2&itok=-9VX5_o6"
         
       },
       {
-        "transaction_tracker": "3",
-        "user1": {
-          "id": 3,
-          "game_name": "Game X",
-          "background_image": "image_x.jpg",
-          "username": "userX",
-          "transaction_date": "2023-10-20T10:15:00Z"
-        },
-        "user2": {
-          "id": 4,
-          "game_name": "Game Y",
-          "background_image": "image_y.jpg",
-          "username": "userY",
-          "transaction_date": "2023-10-20T10:20:00Z"
-        }
+        "tripid": 1,
+        "trip_location": "San Juan, Puerto Rico",
+        "trip_start": "2025-07-25",
+        "trip_end": "2025-07-30",
+        "location_img": "https://www.discoverpuertorico.com/sites/default/files/styles/horizontal_wide_1280x600/public/2021-04/1_3.jpg?h=8878c3e2&itok=-9VX5_o6"
         
       },
       {
-        "transaction_tracker": "4",
-        "user1": {
-          "id": 3,
-          "game_name": "Game X",
-          "background_image": "image_x.jpg",
-          "username": "userX",
-          "transaction_date": "2023-10-20T10:15:00Z"
-        },
-        "user2": {
-          "id": 4,
-          "game_name": "Game Y",
-          "background_image": "image_y.jpg",
-          "username": "userY",
-          "transaction_date": "2023-10-20T10:20:00Z"
-        }
+        "tripid": 1,
+        "trip_location": "San Juan, Puerto Rico",
+        "trip_start": "2025-07-25",
+        "trip_end": "2025-07-30",
+        "location_img": "https://www.discoverpuertorico.com/sites/default/files/styles/horizontal_wide_1280x600/public/2021-04/1_3.jpg?h=8878c3e2&itok=-9VX5_o6"
         
+      },
+      {
+        "tripid": 1,
+        "trip_location": "San Juan, Puerto Rico",
+        "trip_start": "2025-07-25",
+        "trip_end": "2025-07-30",
+        "location_img": "https://www.discoverpuertorico.com/sites/default/files/styles/horizontal_wide_1280x600/public/2021-04/1_3.jpg?h=8878c3e2&itok=-9VX5_o6"
+        
+      },
+      {
+        "tripid": 1,
+        "trip_location": "San Juan, Puerto Rico",
+        "trip_start": "2025-07-25",
+        "trip_end": "2025-07-30",
+        "location_img": "https://www.discoverpuertorico.com/sites/default/files/styles/horizontal_wide_1280x600/public/2021-04/1_3.jpg?h=8878c3e2&itok=-9VX5_o6"
+        
+      },
+      {
+        "tripid": 1,
+        "trip_location": "New York, New York",
+        "trip_start": "2024-07-25",
+        "trip_end": "2024-07-30",
+        "location_img": "https://www.discoverpuertorico.com/sites/default/files/styles/horizontal_wide_1280x600/public/2021-04/1_3.jpg?h=8878c3e2&itok=-9VX5_o6"
+    
+      },
+      {
+        "tripid": 1,
+        "trip_location": "Dallas, Texas",
+        "trip_start": "2024-07-25",
+        "trip_end": "2024-07-30",
+        "location_img": "https://www.discoverpuertorico.com/sites/default/files/styles/horizontal_wide_1280x600/public/2021-04/1_3.jpg?h=8878c3e2&itok=-9VX5_o6"
+      },
+      {
+        "tripid": 1,
+        "trip_location": "Orlando, Florida",
+        "trip_start": "2024-07-25",
+        "trip_end": "2024-07-30",
+        "location_img": "https://www.discoverpuertorico.com/sites/default/files/styles/horizontal_wide_1280x600/public/2021-04/1_3.jpg?h=8878c3e2&itok=-9VX5_o6"
+    
       }
     ]
   }

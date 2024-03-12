@@ -3,73 +3,72 @@ import { GlobalState } from '../../../GlobalState';
 import './styles.css';
 
 // Import the updated JSON data
-// import testData from './testData.json'; // Replace with the actual path to your JSON file
+import testData from './testData.json'; // Replace with the actual path to your JSON file
 
 function Home() {
   const state = useContext(GlobalState);
-  // const [isLogged] = state.UserAPI.isLogged;
   const [name] = state.UserAPI.name;
 
-
-  const [transactions, setTransactions] = useState([]);
+  const [trips, setTrips] = useState([]);
 
   useEffect(() => {
     // Load the updated JSON data into the state
-    // setTransactions(testData.transactions);
+    setTrips(testData.trips);
   }, []);
 
-  // const loggedRouter = () => {
-  //   return (
-  //     <div className="container-welcome">
-  //       <div className="welcome">Welcome</div>
-  //       <div className="welcome-name">{name}</div>
-  //     </div>
-  //   );
-  // };
+  // Function to render a single trip box
+  const renderTrip = (trip, index) => {
+    const startDate = new Date(trip.trip_start);
+    const endDate = new Date(trip.trip_end);
+    
+    const startMonthDay = `${startDate.toLocaleString('default', { month: 'short' })} ${startDate.getDate()}`;
+    const endMonthDay = `${endDate.toLocaleString('default', { month: 'short' })} ${endDate.getDate()}`;
 
-  // Function to render a single transaction box
-  const renderTransaction = (transaction, index) => (
-    <div className="transaction-box" key={index}>
-      <div>
-        <div>Game: {transaction.user1.game_name}</div>
-        <div>User: {transaction.user1.username}</div>
+    return (
+      <div className="trip-box" key={index}>
+        <img className="trip-image" src={trip.location_img} alt={trip.trip_location} />
+        <div>
+          <div className="trip-duration">
+            {startMonthDay} - {endMonthDay}
+          </div>
+          <div className="trip-location">{trip.trip_location}</div>
+          <button className="view-button">View</button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  const handleMoreClick = () => {
-
-  }
-
-  // Limit the displayed transactions to the first three
-  const displayedTransactions = transactions.slice(0, 3);
+  // Group trips by year
+  const tripsByYear = trips.reduce((acc, trip) => {
+    const startDate = new Date(trip.trip_start);
+    const year = startDate.getFullYear();
+    if (!acc[year]) {
+      acc[year] = [];
+    }
+    acc[year].push(trip);
+    return acc;
+  }, {});
 
   return (
     <div>
-
-    <div className="container-welcome">
-    <div className="welcome">Welcome</div>
-    <div className="welcome-name">{name}</div>
-  </div>
-      
-    <div className="library-container">
+      <div className="container-welcome">
+        <div className="welcome">Welcome</div>
+        <div className="welcome-name">{name}</div>
+      </div>
+      <div>
         <button className="add-button">Add</button>
       </div>
 
-      <div className="open-transactions-container">
-        <h1>Your open vacations:</h1>
-        {/* Render the first three transactions in colored boxes in-line */}
-        {displayedTransactions.map((transaction, index) => renderTransaction(transaction, index))}
-      </div>
-
-      {/* Add a "More" button to redirect to another page */}
-      {transactions.length > 3 && (
-        <button className="more-button" onClick={() => handleMoreClick()}>
-          More
-        </button>
-      )}
-
-    
+      {Object.entries(tripsByYear).map(([year, yearTrips]) => (
+        <div key={year}>
+        <div  className="year-trip">
+          <h2>{year}</h2>
+          <div className="open-trips-container">
+            {yearTrips.map((trip, index) => renderTrip(trip, index))}
+          </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
