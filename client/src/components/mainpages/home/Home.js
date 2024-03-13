@@ -53,10 +53,7 @@ function Home() {
 
   return (
     <div className="home-container">
-      <div className="container-welcome">
-        <div className="welcome">Welcome</div>
-        <div className="welcome-name">{name}</div>
-      </div>
+  
       <div className="search-container">
         <div className="search-input-container">
           <input

@@ -1,16 +1,16 @@
 /* styles.css */
 
 /* General styles */
-.welcome {
+/* .welcome {
   color: black;
   font-family: 'Crimson Text', serif;
-  text-align: center;
+ 
 }
 
 .welcome-name {
   color: black;
   font-family: 'Crimson Text', serif;
-  text-align: center;
+  
 }
 
 .container-welcome {
@@ -19,9 +19,9 @@
   align-items: center;
   justify-content: center;
   padding-top: 20px;
-  text-align: center;
+ 
   font-size: 30px;
-}
+} */
 
 .open-trips-container h1 {
   font-family: 'Crimson Text', serif;
@@ -30,7 +30,7 @@
 .open-trips-container {
   flex-wrap: wrap;
   justify-content: flex-start;
-  align-items: center;
+ 
   padding-left: 10%;
 }
 

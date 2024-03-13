@@ -7,6 +7,7 @@ import './header.css'
 function Header() {
     const state = useContext(GlobalState)
     const [isLogged] = state.UserAPI.isLogged
+    const [name] = state.UserAPI.name;
 
     const logoutUser = async () => {
         await axios.get('/api/user/logout')
@@ -18,6 +19,10 @@ function Header() {
         return(
             <div className="container">
             <div className="dv1">Getaway Genius</div>
+           
+        <div className="welcome">Welcome back, {name}</div>
+
+      
             <div className="dv2"><Link to="/" onClick={logoutUser}>Logout</Link></div>
             </div>
         )
