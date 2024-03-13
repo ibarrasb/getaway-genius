@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { GlobalState } from '../../../GlobalState';
+import { Link } from 'react-router-dom'; 
 import './styles.css';
 
 // Import the updated JSON data
@@ -56,7 +57,7 @@ function Home() {
         <div className="welcome-name">{name}</div>
       </div>
       <div>
-        <button className="add-button">Add</button>
+      <Link to="/add" className="add-button">Add</Link>
       </div>
 
       {Object.entries(tripsByYear).map(([year, yearTrips]) => (
