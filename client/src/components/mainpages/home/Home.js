@@ -11,6 +11,7 @@ function Home() {
   const [name] = state.UserAPI.name;
 
   const [trips, setTrips] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     // Load the updated JSON data into the state
@@ -51,22 +52,31 @@ function Home() {
   }, {});
 
   return (
-    <div>
+    <div className="home-container">
       <div className="container-welcome">
         <div className="welcome">Welcome</div>
         <div className="welcome-name">{name}</div>
       </div>
-      <div>
-      <Link to="/add" className="add-button">Add</Link>
+      <div className="search-container">
+        <div className="search-input-container">
+          <input
+            type="text"
+            placeholder="Where are you going?"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+          <Link to="/add" className="add-button">Add</Link>
+        </div>
       </div>
 
       {Object.entries(tripsByYear).map(([year, yearTrips]) => (
         <div key={year}>
-        <div  className="year-trip">
-          <h2>{year}</h2>
-          <div className="open-trips-container">
-            {yearTrips.map((trip, index) => renderTrip(trip, index))}
-          </div>
+          <div  className="year-trip">
+            <h2>{year}</h2>
+            <div className="open-trips-container">
+              {yearTrips.map((trip, index) => renderTrip(trip, index))}
+            </div>
           </div>
         </div>
       ))}

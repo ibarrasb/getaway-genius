@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom'; // Import Navigate
 import Login from './auth/Login';
 import Register from './auth/Register';
 import Home from './home/Home.js';
@@ -8,23 +8,21 @@ import Search from './search/Search'
 import NotFound from './utils/not_found/NotFound';
 import { GlobalState } from '../../GlobalState'; // Make sure the import path is correct
 
-
 function Pages() {
     const { UserAPI } = useContext(GlobalState);
-    // const { isLogged } = UserAPI;
+    const { isLogged } = UserAPI;
 
     return (
-       
         <Routes>
+            {/* Redirect to Home if the user is logged in */}
+            <Route path="/" element={isLogged ? <Navigate to="/home" /> : <Login />} />
+            
             <Route path='/home' element={<Home/>} />
             <Route path='/add' element={<Add/>} />
             <Route path='/search' element={<Search/>} />
-            <Route path='/' element={<Login/>} />
             <Route path="/register" element={<Register />} />
-
             <Route path='*' element={<NotFound/>} />
         </Routes>
-       
     );
 }
 
