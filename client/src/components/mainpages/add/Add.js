@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Add.css'; // Import styles for the form
 
-function Add({ selectedPlace }) {
+function Add({ selectedPlace, photoURL }) {
   const currentDate = new Date().toISOString().split('T')[0]; // Get current date in 'YYYY-MM-DD' format
   const [location, setLocation] = useState('');
   const [tripStart, setTripStart] = useState('');
@@ -10,6 +10,7 @@ function Add({ selectedPlace }) {
   const [travelExpense, setTravelExpense] = useState('');
   const [carRentalExpense, setCarRentalExpense] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [picURL, setPicURL] = useState('');
 
   // Update the location state when the selectedPlace prop changes
   useEffect(() => {
@@ -17,6 +18,13 @@ function Add({ selectedPlace }) {
       setLocation(selectedPlace.formatted_address);
     }
   }, [selectedPlace]);
+
+  useEffect(() => {
+    if (photoURL) {
+      setPicURL(photoURL);
+      console.log("TESTING" + photoURL)
+    }
+  }, [photoURL]);
 
   const formatExpense = (value) => {
     // Ensure the value has exactly two decimal places
@@ -53,9 +61,28 @@ function Add({ selectedPlace }) {
     }
   };
 
+  function checkImage(){
+    if(picURL){
+      return (
+        <img 
+        src={picURL}
+        alt=""
+        />
+      )
+    }
+    else {
+      return (
+        <div></div>
+      )
+    }
+  }
+
   return (
     <div className="add-form-container">
       <h2>Add Trip</h2>
+   {
+    checkImage()
+   }
       <h2>{location}</h2>
       <form onSubmit={handleSubmit} className="add-form">
        

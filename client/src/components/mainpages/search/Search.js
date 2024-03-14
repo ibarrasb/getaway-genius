@@ -7,25 +7,9 @@ const Search = () => {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [placePhotos, setPlacePhotos] = useState([]);
   const [photoURL, setPhotoURL] = useState([]);
+  const [searchValue, setSearchValue] = useState('');
+  const apiKey = process.env.GOOGLEAPIKEY
 
-
-  // const fetchData = async (placeid) => {
-  //   try {
-  //     const response = await fetch(`/api/places-details?placeid=${placeid}`);
-  //     if (!response.ok) {
-  //       throw new Error('Network response was not ok');
-  //     }
-  //     const data = await response.json();
-
-  //     console.log(data.results);
-  //   } catch (error) {
-  //     console.error('Error:', error);
-  //   }
-  // };
-
- 
-
-  
 // Function to retrieve photos for a given place ID 
 const getPlacePhotos = (placeId, apiKey) => {
   const url = `https://places.googleapis.com/v1/places/${placeId}?fields=id,displayName,photos&key=${apiKey}`;
@@ -87,18 +71,21 @@ const getPlacePhotos = (placeId, apiKey) => {
   // Handle place selection
   const handlePlaceSelected = (place) => {
     setSelectedPlace(place);
+    setSearchValue('');
   };
 
   return (
     <div className="container-search">
       <h1>Where are you going?</h1>
       <div className="search-bar-container">
-        <Autocomplete
-          className="custom-autocomplete"
-          onPlaceSelected={handlePlaceSelected}
-        />
+      <Autocomplete
+      className="custom-autocomplete"
+        onPlaceSelected={handlePlaceSelected}
+        value={searchValue} // Bind the value of the input field to the searchValue state
+        onChange={(e) => setSearchValue(e.target.value)} // Update the searchValue state when the input changes
+      />
       </div>
-      <Add selectedPlace={selectedPlace} placePhotos={placePhotos} />
+      <Add selectedPlace={selectedPlace} photoURL={photoURL} />
     </div>
   );
 };
