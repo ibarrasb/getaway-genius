@@ -13,6 +13,18 @@ const tripSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    stay_expense: {
+        type: String,
+        required: true,
+    },
+    travel_expense: {
+        type: String,
+        required: true,
+    },
+    car_expense: {
+        type: String,
+        required: true,
+    },
     images:{
         type: Object,
         required: true

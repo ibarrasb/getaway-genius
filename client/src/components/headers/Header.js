@@ -20,7 +20,7 @@ function Header() {
             <div className="container">
             <div className="dv1">Getaway Genius</div>
            
-        <div className="welcome">Welcome back, {name}</div>
+        <div className="welcome">Hi, {name}</div>
 
       
             <div className="dv2"><Link to="/" onClick={logoutUser}>Logout</Link></div>

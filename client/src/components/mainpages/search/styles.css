@@ -8,6 +8,12 @@
     align-items: center;
 
   }
+  /* styles.css */
+.custom-autocomplete {
+  width: 250px; /* Make the Autocomplete component 100% wide */
+  height: 20%; /* Adjust the height as needed */
+}
+
   
   .search-bar {
    /* Adjust the width as needed */

@@ -8,11 +8,10 @@ import testData from './testData.json'; // Replace with the actual path to your 
 
 function Home() {
   const state = useContext(GlobalState);
-  const [name] = state.UserAPI.name;
+  // const [name] = state.UserAPI.name;
 
   const [trips, setTrips] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-
+  
   useEffect(() => {
     // Load the updated JSON data into the state
     setTrips(testData.trips);
@@ -56,14 +55,8 @@ function Home() {
   
       <div className="search-container">
         <div className="search-input-container">
-          <input
-            type="text"
-            placeholder="Where are you going?"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
-          />
-          <Link to="/add" className="add-button">Add</Link>
+        
+          <Link to="/search" className="search-button">Create</Link>
         </div>
       </div>
 

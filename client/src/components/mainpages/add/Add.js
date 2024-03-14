@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Add.css'; // Import styles for the form
 
-function Add() {
+function Add({ selectedPlace }) {
   const currentDate = new Date().toISOString().split('T')[0]; // Get current date in 'YYYY-MM-DD' format
   const [location, setLocation] = useState('');
   const [tripStart, setTripStart] = useState('');
   const [tripEnd, setTripEnd] = useState('');
   const [stayExpense, setStayExpense] = useState('');
-  const [activityExpense, setActivityExpense] = useState('');
+  const [travelExpense, setTravelExpense] = useState('');
   const [carRentalExpense, setCarRentalExpense] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Update the location state when the selectedPlace prop changes
+  useEffect(() => {
+    if (selectedPlace) {
+      setLocation(selectedPlace.formatted_address);
+    }
+  }, [selectedPlace]);
 
   const formatExpense = (value) => {
     // Ensure the value has exactly two decimal places
@@ -38,7 +45,7 @@ function Add() {
         tripStart,
         tripEnd,
         stayExpense,
-        activityExpense,
+        travelExpense,
         carRentalExpense
       });
       // After submitting the form, you can redirect the user to another page if needed
@@ -49,16 +56,9 @@ function Add() {
   return (
     <div className="add-form-container">
       <h2>Add Trip</h2>
+      <h2>{location}</h2>
       <form onSubmit={handleSubmit} className="add-form">
-        <label>
-          Location:
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            required
-          />
-        </label>
+       
         <label>
           Trip Start:
           <input
@@ -90,12 +90,12 @@ function Add() {
           />
         </label>
         <label>
-          Activity Expense:
+          Travel Expense:
           <input
             type="text"
-            value={activityExpense}
-            onChange={handleExpenseChange(setActivityExpense)}
-            onBlur={handleExpenseBlur(setActivityExpense)}
+            value={travelExpense}
+            onChange={handleExpenseChange(setTravelExpense)}
+            onBlur={handleExpenseBlur(setTravelExpense)}
             required
           />
         </label>
