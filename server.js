@@ -11,12 +11,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
 
-// External API routing
-app.get('/api/external-data', async (req, res) => {
+app.get('/api/places', async (req, res) => {
   try {
-    const apiKey = process.env.RAWGAPIKEY;
-    const searchQ = req.query.searchQ;
-    const response = await axios.get(`https://api.rawg.io/api/games?key=${apiKey}&search=${searchQ}&ordering=-released&metacritic=80`);
+    const apiKey = process.env.GOOGLEAPIKEY;
+    const response = await axios.get(`https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&libraries=places&callback=initMap`);
 
     const data = response.data;
     res.json(data);

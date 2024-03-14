@@ -1,65 +1,37 @@
 import React, { useState } from 'react';
 import './styles.css';
+import Add from '../add/Add';
+import Autocomplete from "react-google-autocomplete";
 
 const Search = () => {
-  const [games, setGames] = useState([]);
-  const [searchQ, setSearchQ] = useState('');
+  // Define state to manage the selected place
+  const [selectedPlace, setSelectedPlace] = useState(null);
 
-  const handleSearch = () => {
-    if (searchQ === '') {
-      return; // No need to make an empty search
-    }
-
-    // Fetch Data from external API
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`/api/external-data?searchQ=${searchQ}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        setGames(data.results);
-        console.log(data.results);
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    };
-
-    fetchData();
+  // Define the callback function to handle the selected place
+  const handlePlaceSelected = (place) => {
+    console.log("Selected place:", place);
+    setSelectedPlace(place); // Update the selectedPlace state with the selected place
+    // Call any other function or perform actions with the selected place here
+  
   };
 
-  const handleSearchChange = (event) => {
-    setSearchQ(event.target.value);
-  };
 
   return (
     <div className="container-search">
-    <h1>Popular Games</h1>
-    <div className="search-bar-container">
-      <input
-        type="text"
-        placeholder="Search for destinations"
-        value={searchQ}
-        onChange={handleSearchChange}
-        className="search-bar"
-      />
-      <button onClick={handleSearch}>Submit</button>
-    </div>
-      <ul className="game-list">
-      {games.map((game) => (
-        <li key={game.id} className="game-item">
-          <strong className="game-title">{game.name}</strong>
-          {game.background_image && (
-            <img
-              src={game.background_image}
-              alt={game.name}
-              className="game-image"
-            />
-          )}
-        </li>
-      ))}
-    </ul>
-    
+      <h1>Search</h1>
+      <div className="search-bar-container">
+        {/* Pass the handlePlaceSelected function to the onPlaceSelected prop */}
+        <Autocomplete
+          onPlaceSelected={handlePlaceSelected}
+        />
+       
+      </div>
+      {/* Display the selected place */}
+      {selectedPlace && (
+        <div>
+          Selected place: {selectedPlace.formatted_address}
+        </div>
+      )}
     </div>
   );
 };

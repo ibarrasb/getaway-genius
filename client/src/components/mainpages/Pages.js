@@ -17,7 +17,7 @@ function Pages() {
             {/* Redirect to Home if the user is logged in */}
             
             <Route path='/' element={<Login/>} />
-            <Route path="/home" element={isLogged ? <Navigate to="/" /> : <Home />} />
+            <Route path="/home" element={<Home />} />
             <Route path='/add' element={<Add/>} />
             <Route path='/search' element={<Search/>} />
             <Route path="/register" element={<Register />} />
