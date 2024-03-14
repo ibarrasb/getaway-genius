@@ -11,18 +11,38 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
 
-app.get('/api/places', async (req, res) => {
-  try {
-    const apiKey = process.env.GOOGLEAPIKEY;
-    const response = await axios.get(`https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&libraries=places&callback=initMap`);
+//Place Details
+// app.get('/api/places-details', async (req, res) => {
+//   try {
+//     const apiKey = process.env.GOOGLEAPIKEY;
+//     const placeid = req.query.placeid;
+//     const response = await axios.get(`hhttps://places.googleapis.com/v1/places/${placeid}?fields=id,displayName,photos&key=${apiKey}`);
 
-    const data = response.data;
-    res.json(data);
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Failed to fetch data' });
-  }
-});
+//     const data = response.data;
+//     res.json(data);
+//   } catch (error) {
+//     console.error('Error:', error);
+//     res.status(500).json({ error: 'Failed to fetch data' });
+//   }
+// });
+
+//Photos API
+// app.get('/api/place-photos', async (req, res) => {
+//   try {
+//     const apiKey = process.env.GOOGLEAPIKEY;
+//     const photoReference = req.query.photo_reference;
+//     let params = 'maxHeightPx=400&maxWidthPx=400';
+//     const response = await axios.get(`https://places.googleapis.com/v1/${photoReference}/media?key=${apiKey}&${params}`);
+
+//     const data = response.data;
+//     res.json(data);
+//   } catch (error) {
+//     console.error('Error:', error);
+//     res.status(500).json({ error: 'Failed to fetch data' });
+//   }
+// });
+
+
 
 // Routes
 const usersRouter = require('./routes/userRoutes');
