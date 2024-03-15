@@ -90,6 +90,7 @@ function Add({ selectedPlace, photoURL }) {
         await Axios.post('/api/trips/getaway-trip', sentObj, { headers: { Authorization: token } });
         setCallback(!callback);
         window.location.reload();
+        window.location.href = "/home";
       } catch (err) {
         alert(err.response.data.msg);
       }

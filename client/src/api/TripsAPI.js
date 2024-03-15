@@ -10,6 +10,7 @@ function TripsAPI() {
         // Get all the posts made 
         const getTrips = async () => {
             const res = await axios.get('/api/trips/getaway-trip')
+            console.log(res.data)
             setTrips(res.data)
             console.log(res.data)
         }

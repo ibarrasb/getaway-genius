@@ -8,19 +8,13 @@ const tripCtrl = {
 
 getTrips: async(req,res) => {
     try {
-        const features = Trips.find()
-        console.log("features"+features)
-        const trips = await features.query
-        console.log("trips"+trips)
-        res.json({
-            status: 'success',
-            result: trips.length,
-            trips: trips
-        })
-        
-    } catch (err) {
-        return res.status(500).json({msg: err.message})
-    }
+        // Use await to wait for the result of the find() query
+        const trips = await Trips.find();
+        console.log("trips", trips);
+        res.json(trips);
+      } catch (err) {
+        return res.status(500).json({ msg: err.message });
+      }
 
 }, 
 createTrips: async (req, res) => {

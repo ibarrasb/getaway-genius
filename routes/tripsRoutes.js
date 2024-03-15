@@ -4,7 +4,7 @@ const auth = require('../middleware/auth')
 
 //gets and posts trips made from users
 router.route('/getaway-trip')
-    .get(auth, tripCtrl.getTrips)
+    .get(tripCtrl.getTrips)
     .post(auth, tripCtrl.createTrips)
 
 //deletes and updates specific posts
