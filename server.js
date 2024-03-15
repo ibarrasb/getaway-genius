@@ -17,11 +17,37 @@ app.get('/api/places-details', async (req, res) => {
   try {
     const apiKey = process.env.GOOGLEAPIKEY;
     const placeid = req.query.placeid;
-    
-    const response = await axios.get(`https://places.googleapis.com/v1/places/${placeid}?fields=id,displayName,photos&key=${apiKey}`);
 
-    const data = response.data;
-    res.json(data);
+    const options = {
+      hostname: 'places.googleapis.com',
+      path: `/v1/places/${placeid}?fields=id,displayName,photos&key=${apiKey}`,
+      method: 'GET'
+    };
+
+    const request = https.request(options, response => {
+      let data = '';
+
+      response.on('data', chunk => {
+        data += chunk;
+      });
+
+      response.on('end', () => {
+        try {
+          const parsedData = JSON.parse(data);
+          res.json(parsedData);
+        } catch (error) {
+          console.error('Error parsing JSON:', error);
+          res.status(500).json({ error: 'Failed to parse response data' });
+        }
+      });
+    });
+
+    request.on('error', error => {
+      console.error('Error:', error);
+      res.status(500).json({ error: 'Failed to fetch data' });
+    });
+
+    request.end();
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Failed to fetch data' });
