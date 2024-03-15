@@ -5,6 +5,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const axios = require('axios')
 const path = require('path');
+const https = require('https');
 
 const app = express();
 app.use(express.json());
@@ -12,37 +13,87 @@ app.use(cookieParser());
 app.use(cors());
 
 //Place Details
-// app.get('/api/places-details', async (req, res) => {
-//   try {
-//     const apiKey = process.env.GOOGLEAPIKEY;
-//     const placeid = req.query.placeid;
-//     const response = await axios.get(`hhttps://places.googleapis.com/v1/places/${placeid}?fields=id,displayName,photos&key=${apiKey}`);
+app.get('/api/places-details', async (req, res) => {
+  try {
+    const apiKey = process.env.GOOGLEAPIKEY;
+    const placeid = req.query.placeid;
 
-//     const data = response.data;
-//     res.json(data);
-//   } catch (error) {
-//     console.error('Error:', error);
-//     res.status(500).json({ error: 'Failed to fetch data' });
-//   }
-// });
+    const options = {
+      hostname: 'places.googleapis.com',
+      path: `/v1/places/${placeid}?fields=id,displayName,photos&key=${apiKey}`,
+      method: 'GET'
+    };
+
+    const request = https.request(options, response => {
+      let data = '';
+
+      response.on('data', chunk => {
+        data += chunk;
+      });
+
+      response.on('end', () => {
+        try {
+          const parsedData = JSON.parse(data);
+          res.json(parsedData);
+        } catch (error) {
+          console.error('Error parsing JSON:', error);
+          res.status(500).json({ error: 'Failed to parse response data' });
+        }
+      });
+    });
+
+    request.on('error', error => {
+      console.error('Error:', error);
+      res.status(500).json({ error: 'Failed to fetch data' });
+    });
+
+    request.end();
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to fetch data' });
+  }
+});
 
 //Photos API
-// app.get('/api/place-photos', async (req, res) => {
-//   try {
-//     const apiKey = process.env.GOOGLEAPIKEY;
-//     const photoReference = req.query.photo_reference;
-//     let params = 'maxHeightPx=400&maxWidthPx=400';
-//     const response = await axios.get(`https://places.googleapis.com/v1/${photoReference}/media?key=${apiKey}&${params}`);
+app.get('/api/places-pics', async (req, res) => {
+  try {
+    const apiKey = process.env.GOOGLEAPIKEY;
+    const photoreference = req.query.photoreference;
+    
+    const options = {
+      hostname: 'places.googleapis.com',
+      path: `/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`,
+      method: 'GET'
+    };
 
-//     const data = response.data;
-//     res.json(data);
-//   } catch (error) {
-//     console.error('Error:', error);
-//     res.status(500).json({ error: 'Failed to fetch data' });
-//   }
-// });
+    const request = https.request(options, response => {
+      let data = '';
+      response.on('data', chunk => {
+        data += chunk;
+      });
 
+      response.on('end', () => {
+        // Check if the response contains 'content-encoding' header and set it to the client
+        if (response.headers['content-encoding']) {
+          res.set('Content-Encoding', response.headers['content-encoding']);
+        }
 
+        // Send the binary image data
+        res.send(Buffer.from(data, 'binary'));
+      });
+    });
+
+    request.on('error', error => {
+      console.error('Error:', error);
+      res.status(500).json({ error: 'Failed to fetch data' });
+    });
+
+    request.end();
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to fetch data' });
+  }
+});
 
 // Routes
 const usersRouter = require('./routes/userRoutes');

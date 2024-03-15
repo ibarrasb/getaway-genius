@@ -8,63 +8,65 @@ const Search = () => {
   const [placePhotos, setPlacePhotos] = useState([]);
   const [photoURL, setPhotoURL] = useState([]);
   const [searchValue, setSearchValue] = useState('');
-  const apiKey = process.env.GOOGLEAPIKEY
 
-// Function to retrieve photos for a given place ID 
-const getPlacePhotos = (placeId, apiKey) => {
-  const url = `https://places.googleapis.com/v1/places/${placeId}?fields=id,displayName,photos&key=${apiKey}`;
-  fetch(url)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(data => {
-      const photos = data.photos || [];
-      const photoPromises = photos.map(photo => {
-        const photoReference = photo.name;
-        console.log("Data Reference: "+photoReference)
-        return getPhoto(photoReference, apiKey);
-      });
-      return Promise.all(photoPromises);
-
-    })
-    .then(photos => {
-      setPlacePhotos(photos);
-    })
-    .catch(error => console.error('Error:', error));
-};
-
-
- // Function to retrieve photo using photo reference
-  const getPhoto = (photoReference, apiKey) => {
-    let params = 'maxHeightPx=400&maxWidthPx=400'
-    const url = `https://places.googleapis.com/v1/${photoReference}/media?key=${apiKey}&${params}`;
-    return fetch(url)
-      .then(response => {
+  
+  const getPlacePhotos = async (placeid) => {
+    try {
+        const response = await fetch(`/api/places-details?placeid=${placeid}`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-        console.log("Photos URL: "+response.url)
-        return response.url;
-       
-      })
-      .then(blob => {
-      
-        setPhotoURL(blob)
+        const data = await response.json();
+        console.log(data);
         
-      });
+        // Extract photos data from the response
+        const photos = data.photos || [];
+        if (photos.length === 0) {
+          // No photos found
+          console.log('No photos found for this place.');
+          return null;
+        }
+        
+        const firstPhotoReference = photos[0].name;
+        console.log("First Photo Reference: " + firstPhotoReference);
+        
+        
+        // Fetch the photo for the first reference
+        return getPhoto(firstPhotoReference); // Assuming apiKey is defined somewhere
+        
+        
+        // Return the fetched data
+    } catch (error) {
+      console.error('Error:', error);
+      throw error; // Re-throw the error to handle it outside
+    }
   };
+  
 
-  console.log("HERE IT IS" + photoURL)
+  const getPhoto = async (photoreference) => {
+    try{
+      const response = await fetch(`/api/places-pics?photoreference=${photoreference}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      console.log(data);
+      setPhotoURL(data.photoUri)
+    }
+    catch (error) {
+      console.error('Error:', error);
+      throw error; // Re-throw the error to handle it outside
+    }
+
+  };
 
   // Call getPlacePhotos when selectedPlace changes
   useEffect(() => {
     if (selectedPlace) {
       const placeId = selectedPlace.place_id;
-      const apiKey = 'AIzaSyCCOkokPBi1Gv9C1CXTBFH1p-cKfSzJ0-I';
-      getPlacePhotos(placeId, apiKey);
+      
+  
+      getPlacePhotos(placeId);
     }
   }, [selectedPlace]);
 
