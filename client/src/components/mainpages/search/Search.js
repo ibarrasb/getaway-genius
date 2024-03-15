@@ -57,43 +57,8 @@ const Search = () => {
       console.error('Error:', error);
       throw error; // Re-throw the error to handle it outside
     }
-    
-    // return fetch(`/api/place-photos?photoreference=${photoreference}`)
-    //   .then(response => {
-    //     if (!response.ok) {
-    //       throw new Error('Network response was not ok');
-    //     }
-    //     return response.json();
-    //   })
-    //   .then(data => {
-    //     console.log("WE DID IT", data);
-    //     return data;
-    //   })
-     
+
   };
-  
-
- // Function to retrieve photo using photo reference
-  // const getPhoto = (photoReference, apiKey) => {
-  //   let params = 'maxHeightPx=400&maxWidthPx=400'
-  //   const url = `https://places.googleapis.com/v1/${photoReference}/media?key=${apiKey}&${params}`;
-  //   return fetch(url)
-  //     .then(response => {
-  //       if (!response.ok) {
-  //         throw new Error('Network response was not ok');
-  //       }
-  //       console.log("Photos URL: "+response.url)
-  //       return response.url;
-       
-  //     })
-  //     .then(blob => {
-      
-  //       setPhotoURL(blob)
-        
-  //     });
-  // };
-
-  console.log("HERE IT IS" + photoURL)
 
   // Call getPlacePhotos when selectedPlace changes
   useEffect(() => {
@@ -110,16 +75,6 @@ const Search = () => {
     setSelectedPlace(place);
     setSearchValue('');
   };
-
-
-
-
-
-
-
-  
-
-
 
   return (
     <div className="container-search">
