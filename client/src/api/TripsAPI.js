@@ -2,21 +2,22 @@ import {useState, useEffect} from 'react'
 import axios from 'axios'
 
 function TripsAPI() {
-    const [posts, setPosts] = useState([])
+    const [trips, setTrips] = useState([])
     const [callback, setCallback] = useState(false)
    
     useEffect(() =>{
         
         // Get all the posts made 
         const getTrips = async () => {
-            const res = await axios.get('/api/getaway-trip')
-            setPosts(res.data)
+            const res = await axios.get('/api/trips/getaway-trip')
+            setTrips(res.data)
+            console.log(res.data)
         }
         getTrips()
     },[callback])
     
     return {
-        posts: [posts, setPosts],
+        trip: [trips, setTrips],
         callback: [callback, setCallback]
     }
 }

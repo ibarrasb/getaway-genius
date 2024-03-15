@@ -61,19 +61,6 @@ function Add({ selectedPlace, photoURL }) {
     setter(formatExpense(e.target.value));
   };
 
-  function setObject() {
-    const sentObj = {
-      location_address: location,
-      trip_start: tripStart,
-      trip_end: tripEnd,
-      stay_expense: stayExpense,
-      travel_expense: travelExpense,
-      car_expense: carRentalExpense,
-      image_url: picURL
-    }
-    setTripObject(sentObj)
-
-  }
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (new Date(tripStart) > new Date(tripEnd)) {

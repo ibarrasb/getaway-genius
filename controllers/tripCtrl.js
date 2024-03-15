@@ -9,9 +9,9 @@ const tripCtrl = {
 getTrips: async(req,res) => {
     try {
         const features = Trips.find()
-        
+        console.log("features"+features)
         const trips = await features.query
-
+        console.log("trips"+trips)
         res.json({
             status: 'success',
             result: trips.length,

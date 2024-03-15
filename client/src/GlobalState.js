@@ -1,6 +1,7 @@
 import axios from 'axios'
 import React, {createContext, useEffect, useState} from 'react'
 import UserAPI from './api/UserAPI'
+// import TripsAPI from './api/TripsAPI'
 
 
 export const GlobalState = createContext()
@@ -30,6 +31,7 @@ export const DataProvider = ({children}) => {
 const state = {
     token: [token, setToken],
     UserAPI: UserAPI(token)
+    // TripsAPI: TripsAPI()
 
 }
     return (
