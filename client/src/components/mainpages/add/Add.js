@@ -1,7 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
+import {GlobalState} from '../../../GlobalState'
+import Axios from 'axios';
 import './Add.css'; // Import styles for the form
 
+const initialState = {
+  "location_address": '',
+  "trip_start": '',
+  "trip_end": '',
+  "stay_expense": 0,
+  "travel_expense": 0,
+  "car_expense": 0,
+  "image_url": ''
+}
+
+
 function Add({ selectedPlace, photoURL }) {
+  const state = useContext(GlobalState)
+  const [isLogged] = state.UserAPI.isLogged
+  const [token] = state.token
   const currentDate = new Date().toISOString().split('T')[0]; // Get current date in 'YYYY-MM-DD' format
   const [location, setLocation] = useState('');
   const [tripStart, setTripStart] = useState('');
@@ -11,7 +27,11 @@ function Add({ selectedPlace, photoURL }) {
   const [carRentalExpense, setCarRentalExpense] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [picURL, setPicURL] = useState('');
+  const addTrip = state.UserAPI.addTrip
+  const [callback ,setCallback] = state.UserAPI.callback
+  const [tripObject, setTripObject] = useState(initialState)
 
+ 
   // Update the location state when the selectedPlace prop changes
   useEffect(() => {
     if (selectedPlace) {
@@ -41,25 +61,54 @@ function Add({ selectedPlace, photoURL }) {
     setter(formatExpense(e.target.value));
   };
 
-  const handleSubmit = (e) => {
+  function setObject() {
+    const sentObj = {
+      location_address: location,
+      trip_start: tripStart,
+      trip_end: tripEnd,
+      stay_expense: stayExpense,
+      travel_expense: travelExpense,
+      car_expense: carRentalExpense,
+      image_url: picURL
+    }
+    setTripObject(sentObj)
+
+  }
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (new Date(tripStart) > new Date(tripEnd)) {
       setErrorMessage('Trip end date must be after trip start date.');
     } else {
       setErrorMessage('');
-      // You can handle form submission here, for example, sending data to an API
-      console.log({
-        location,
-        tripStart,
-        tripEnd,
-        stayExpense,
-        travelExpense,
-        carRentalExpense
+      const sentObj = {
+        location_address: location,
+        trip_start: tripStart,
+        trip_end: tripEnd,
+        stay_expense: stayExpense,
+        travel_expense: travelExpense,
+        car_expense: carRentalExpense,
+        image_url: picURL
+      };
+  
+      // Create a Promise to wait for the state update to finish
+      const stateUpdatePromise = new Promise(resolve => {
+        setTripObject(sentObj);
+        resolve(); // Resolve the Promise after the state is updated
       });
-      // After submitting the form, you can redirect the user to another page if needed
-      // For example, using React Router: history.push('/some-other-page')
+  
+      // Wait for the state update to finish before continuing
+      await stateUpdatePromise;
+  
+      try {
+        await Axios.post('/api/trips/getaway-trip', sentObj, { headers: { Authorization: token } });
+        setCallback(!callback);
+        window.location.reload();
+      } catch (err) {
+        alert(err.response.data.msg);
+      }
     }
   };
+  
 
   function checkImage(){
     if(picURL){
@@ -79,7 +128,6 @@ function Add({ selectedPlace, photoURL }) {
 
   return (
     <div className="add-form-container">
-      <h2>Add Trip</h2>
    {
     checkImage()
    }

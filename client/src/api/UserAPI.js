@@ -29,6 +29,16 @@ function UserAPI(token) {
 
     },[token])
 
+    // const addTrip = async (posts) => {
+    //     if(!isLogged) return alert("Please login")
+
+    //         setTrip([...vacation, {...trip}])
+
+    //         await axios.patch('/user/addpost', {trip: [...vacation, {...trip}]}, {
+    //             headers: {Authorization: token}
+    //         })
+    // }
+
 
 
     return {

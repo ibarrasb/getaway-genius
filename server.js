@@ -3,7 +3,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const axios = require('axios')
 const path = require('path');
 const https = require('https');
 
@@ -96,6 +95,9 @@ app.get('/api/places-pics', async (req, res) => {
 });
 
 // Routes
+const tripsRouter = require('./routes/tripsRoutes');
+app.use('/api/trips', tripsRouter);
+
 const usersRouter = require('./routes/userRoutes');
 app.use('/api/user', usersRouter);
 

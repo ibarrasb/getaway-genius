@@ -8,6 +8,10 @@
     align-items: center;
 
   }
+
+  .wyg-text{
+    font-family: 'Crimson Text', serif;
+  }
   /* styles.css */
 .custom-autocomplete {
   width: 250px; /* Make the Autocomplete component 100% wide */

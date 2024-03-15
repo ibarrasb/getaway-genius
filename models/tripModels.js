@@ -25,13 +25,9 @@ const tripSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    images:{
-        type: Object,
-        required: true
-    },
-    place_id: {
+    image_url:{
         type: String,
-        required: true,
+        required: true
     },
 }, {
     timestamps: true

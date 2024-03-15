@@ -76,9 +76,22 @@ const Search = () => {
     setSearchValue('');
   };
 
+  function checkSelectedPlace(){
+    if(selectedPlace){
+      return (
+        <Add selectedPlace={selectedPlace} photoURL={photoURL} /> 
+      )
+    }
+    else {
+      return (
+        <div></div>
+      )
+    }
+  }
+
   return (
     <div className="container-search">
-      <h1>Where are you going?</h1>
+      <h1 className='wyg-text'>Where are you going?</h1>
       <div className="search-bar-container">
       <Autocomplete
       className="custom-autocomplete"
@@ -87,7 +100,9 @@ const Search = () => {
         onChange={(e) => setSearchValue(e.target.value)} // Update the searchValue state when the input changes
       />
       </div>
-      <Add selectedPlace={selectedPlace} photoURL={photoURL} />
+      {
+        checkSelectedPlace()
+      }
     </div>
   );
 };
