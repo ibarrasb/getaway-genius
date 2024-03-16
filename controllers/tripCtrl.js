@@ -10,7 +10,6 @@ getTrips: async(req,res) => {
     try {
         // Use await to wait for the result of the find() query
         const trips = await Trips.find();
-        console.log("trips", trips);
         res.json(trips);
       } catch (err) {
         return res.status(500).json({ msg: err.message });
@@ -60,6 +59,15 @@ updateTrip: async (req, res) => {
         return res.status(500).json({msg: err.message})
     }
 
+},
+getSpecificTrip: async (req, res) => {
+    try {
+        const detailedTrip = await Trips.findById(req.params.id)
+        res.json(detailedTrip)
+        
+    } catch (err) {
+        return res.status(500).json({msg: err.message})
+    }
 }
 }
 module.exports = tripCtrl

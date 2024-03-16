@@ -9,6 +9,7 @@ router.route('/getaway-trip')
 
 //deletes and updates specific posts
 router.route('/getaway/:id')
+    .get(tripCtrl.getSpecificTrip)
     .delete(auth, tripCtrl.deleteTrip)
     .put(auth, tripCtrl.updateTrip)
 

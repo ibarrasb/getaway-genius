@@ -5,6 +5,7 @@ import Register from './auth/Register';
 import Home from './home/Home.js';
 import Add from './add/Add.js';
 import Search from './search/Search'
+import DetailedTrip from './tripDetails/DetailedTrip.js'
 import NotFound from './utils/not_found/NotFound';
 import { GlobalState } from '../../GlobalState'; // Make sure the import path is correct
 
@@ -19,6 +20,7 @@ function Pages() {
             <Route path='/' element={<Login/>} />
             <Route path="/home" element={<Home />} />
             <Route path='/add' element={<Add/>} />
+            <Route path='/trips/:id' element={<DetailedTrip/>}/>
             <Route path='/search' element={<Search/>} />
             <Route path="/register" element={<Register />} />
             <Route path='*' element={<NotFound/>} />

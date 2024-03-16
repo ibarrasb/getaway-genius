@@ -49,7 +49,8 @@ function Home() {
             {startMonthDay} - {endMonthDay}
           </div>
           <div className="trip-location">{vacation.location_address}</div>
-          <button className="view-button">View</button>
+          {/* Pass vacation object as state to detailed trip page */}
+          <Link to={{ pathname: `/trips/${vacation._id}`, state: { vacation } }} className="view-button">View</Link>
           <button onClick={() => doublePlay(vacation._id)} className="delete">Delete</button>
         </div>
       </div>
