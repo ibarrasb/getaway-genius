@@ -4,6 +4,7 @@ import Axios from 'axios';
 import './Add.css'; // Import styles for the form
 
 const initialState = {
+  "user_email":'',
   "location_address": '',
   "trip_start": '',
   "trip_end": '',
@@ -17,6 +18,7 @@ const initialState = {
 function Add({ selectedPlace, photoURL }) {
   const state = useContext(GlobalState)
   const [isLogged] = state.UserAPI.isLogged
+  const [email] = state.UserAPI.email;
   const [token] = state.token
   const currentDate = new Date().toISOString().split('T')[0]; // Get current date in 'YYYY-MM-DD' format
   const [location, setLocation] = useState('');
@@ -68,6 +70,7 @@ function Add({ selectedPlace, photoURL }) {
     } else {
       setErrorMessage('');
       const sentObj = {
+        user_email: email,
         location_address: location,
         trip_start: tripStart,
         trip_end: tripEnd,

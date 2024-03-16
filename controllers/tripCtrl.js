@@ -19,15 +19,15 @@ getTrips: async(req,res) => {
 }, 
 createTrips: async (req, res) => {
     try {
-        const {location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url} = req.body;
+        const {user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url} = req.body;
         if(!image_url) return res.status(400).json({msg: "No image upload"})
 
-        const product = await Trips.findOne({location_address})
-        if(product)
-            return res.status(400).json({msg: "This trip location already exists."})
+        const tripstart = await Trips.findOne({trip_start})
+        if(tripstart)
+            return res.status(400).json({msg: "You have an existing vacation on this day"})
 
         const newVacation = new Trips({
-            location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url
+            user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url
         })
 
         await newVacation.save()

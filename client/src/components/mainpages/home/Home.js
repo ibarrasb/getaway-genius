@@ -8,19 +8,19 @@ import testData from './testData.json'; // Replace with the actual path to your 
 
 function Home() {
   const state = useContext(GlobalState);
-  // const [name] = state.UserAPI.name;
+  const [email] = state.UserAPI.email;
    const [local] = state.TripsAPI.trip
-   console.log("HERE" +local)
 
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true); // Add loading state
 
   useEffect(() => {
-    // Load the updated JSON data into the state
-    setTrips(local);
-    setLoading(false); // Update loading state after data is loaded
-  }, [local]);
-
+    if (local && email) {
+      const filteredTrips = local.filter(trip => trip.user_email === email);
+      setTrips(filteredTrips);
+      setLoading(false);
+    }
+  }, [local, email]);
   // Function to render a single trip box
   const renderTrip = (vacation, index) => {
     const startDate = new Date(vacation.trip_start);

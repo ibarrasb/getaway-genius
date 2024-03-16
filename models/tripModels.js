@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const tripSchema = new mongoose.Schema({
+    user_email: {
+        type: String,
+        required: true,
+    },
     location_address: {
         type: String,
         required: true,
