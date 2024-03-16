@@ -10,9 +10,7 @@ import NotFound from './utils/not_found/NotFound';
 import { GlobalState } from '../../GlobalState'; // Make sure the import path is correct
 
 function Pages() {
-    const { UserAPI } = useContext(GlobalState);
-    const { isLogged } = UserAPI;
-
+   
     return (
         <Routes>
             {/* Redirect to Home if the user is logged in */}

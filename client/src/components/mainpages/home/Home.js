@@ -37,16 +37,20 @@ function Home() {
   // Function to render a single trip box
   const renderTrip = (vacation, index) => {
     const startDate = new Date(vacation.trip_start);
+    startDate.setDate(startDate.getDate() + 1); // Add a day to start date
     const endDate = new Date(vacation.trip_end);
-    const startMonthDay = `${startDate.toLocaleString('default', { month: 'short' })} ${startDate.getDate()}`;
-    const endMonthDay = `${endDate.toLocaleString('default', { month: 'short' })} ${endDate.getDate()}`;
+    endDate.setDate(endDate.getDate() + 1); // Add a day to end date
+    const startMonth = startDate.toLocaleString('default', { month: 'short' });
+    const startDay = startDate.getDate();
+    const endMonth = endDate.toLocaleString('default', { month: 'short' });
+    const endDay = endDate.getDate();
 
     return (
       <div className="trip-box" key={index}>
         <img className="trip-image" src={vacation.image_url} alt={vacation.trip_location} />
         <div>
           <div className="trip-duration">
-            {startMonthDay} - {endMonthDay}
+            {startMonth} {startDay} - {endMonth} {endDay}
           </div>
           <div className="trip-location">{vacation.location_address}</div>
           {/* Pass vacation object as state to detailed trip page */}
@@ -55,7 +59,10 @@ function Home() {
         </div>
       </div>
     );
-  };
+};
+
+
+
 
   // Display loading message while data is being fetched
   if (loading) {

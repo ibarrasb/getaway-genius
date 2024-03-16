@@ -47,11 +47,11 @@ deleteTrip: async (req, res) => {
 },
 updateTrip: async (req, res) => {
     try {
-        const {location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url} = req.body;
-        if(!image_url) return res.status(400).json({msg: "No image upload"})
+        const {user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url} = req.body;
+        // if(!image_url) return res.status(400).json({msg: "No image upload"})
 
         await Trips.findOneAndUpdate({_id: req.params.id}, {
-            location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url
+            user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url
         })
 
         res.json({msg: "Updated a Product"})

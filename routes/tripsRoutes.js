@@ -11,6 +11,6 @@ router.route('/getaway-trip')
 router.route('/getaway/:id')
     .get(tripCtrl.getSpecificTrip)
     .delete(auth, tripCtrl.deleteTrip)
-    .put(auth, tripCtrl.updateTrip)
+    .put(tripCtrl.updateTrip)
 
 module.exports = router
