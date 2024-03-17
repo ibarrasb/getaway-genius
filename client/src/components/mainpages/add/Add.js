@@ -17,7 +17,7 @@ const initialState = {
 
 function Add({ selectedPlace, photoURL }) {
   const state = useContext(GlobalState)
-  const [isLogged] = state.UserAPI.isLogged
+  // const [isLogged] = state.UserAPI.isLogged
   const [email] = state.UserAPI.email;
   const [token] = state.token
   const currentDate = new Date().toISOString().split('T')[0]; // Get current date in 'YYYY-MM-DD' format
@@ -29,7 +29,6 @@ function Add({ selectedPlace, photoURL }) {
   const [carRentalExpense, setCarRentalExpense] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [picURL, setPicURL] = useState('');
-  const addTrip = state.UserAPI.addTrip
   const [callback ,setCallback] = state.UserAPI.callback
   const [tripObject, setTripObject] = useState(initialState)
 

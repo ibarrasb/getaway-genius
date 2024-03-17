@@ -6,11 +6,14 @@ import './header.css'
 
 function Header() {
     const state = useContext(GlobalState)
-    const [isLogged] = state.UserAPI.isLogged
+    const [isLogged, setIsLogged] = state.UserAPI.isLogged
     const [name] = state.UserAPI.name;
+   
 
     const logoutUser = async () => {
+        setIsLogged(false)
         await axios.get('/api/user/logout')
+        
         localStorage.clear()
         window.location.href = "/"
     }

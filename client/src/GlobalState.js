@@ -1,8 +1,6 @@
 import axios from 'axios'
 import React, {createContext, useEffect, useState} from 'react'
 import UserAPI from './api/UserAPI'
-import TripsAPI from './api/TripsAPI'
-
 
 export const GlobalState = createContext()
 
@@ -22,17 +20,14 @@ export const DataProvider = ({children}) => {
         }
     };
     
-         
-    useEffect(() =>{
+useEffect(() =>{
         const firstLogin = localStorage.getItem('firstLogin')
         if(firstLogin) refreshToken()
-    }, [])
+}, [])
 
 const state = {
     token: [token, setToken],
-    UserAPI: UserAPI(token),
-    TripsAPI: TripsAPI()
-
+    UserAPI: UserAPI(token)
 }
     return (
         <GlobalState.Provider value={state}>

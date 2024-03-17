@@ -7,18 +7,33 @@ import './styles.css';
 function Home() {
   const state = useContext(GlobalState);
   const [email] = state.UserAPI.email;
-  const [local] = state.TripsAPI.trip;
   const [token] = state.token;
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true); // Add loading state
 
-  useEffect(() => {
-    if (local && email) {
-      const filteredTrips = local.filter(trip => trip.user_email === email);
-      setTrips(filteredTrips);
-      setLoading(false);
+  const getTrips = async (email) => {
+    try {
+        const res = await Axios.get('/api/trips/getaway-trip', {
+            params: { email: email } // Pass email as a query parameter
+        });
+        if (res.status !== 200) {
+            throw new Error('Network response was not ok');
+        }
+        const data = res.data; // Access res.data to get the response data
+        setTrips(data)
+        setLoading(false)
+    
+    } catch (error) {
+        console.error('Error:', error);
+        throw error; // Re-throw the error to handle it outside
     }
-  }, [local, email]);
+};
+
+useEffect(() => {
+    getTrips(email)
+   
+}, [ email]);
+
 
   const removePost = async (id) => {
     if (window.confirm("Do you want to delete this post?")) {
