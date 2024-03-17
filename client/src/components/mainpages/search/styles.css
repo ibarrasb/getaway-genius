@@ -6,6 +6,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    padding-top: 5%;
 
   }
 
@@ -27,37 +28,51 @@
     padding: 10px;
     font-size: 1em;
   }
+  .back-button {
+    position: absolute;
+    left: 5%;
+    top: 2%;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+  }
+  
+  .back-button:hover {
+    background-color: #0056b3; /* Change to your desired hover color */
+  }
   
 
-.game-list {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center; /* Center horizontally within the div */
+  @media (max-width: 950px){
+
+    .container-search{
+      padding-top: 15%;
+    }
   }
   
-  .game-item {
-    background-color: #f4f4f4;
-    border: 1px solid #ddd;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 300px;
+  @media (max-width: 820px){
+    .container-search{
+      padding-top: 15%;
+    }
+  
+  }
+  @media (max-width: 720px){
+    .container-search{
+      padding-top: 15%;
+    }
   }
   
-  .game-title {
-    font-size: 1.2em;
-    font-weight: bold;
-    margin: 10px 0;
+  @media (max-width: 570px){
+    .container-search{
+      padding-top: 15%;
+    }
   }
   
-  .game-image {
-    max-width: 100%;
-    height: auto;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
+  @media (max-width: 500px){
+    .container-search{
+      padding-top: 15%;
+    }
   
+  }

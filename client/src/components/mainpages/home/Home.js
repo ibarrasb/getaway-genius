@@ -63,14 +63,16 @@ useEffect(() => {
     return (
       <div className="trip-box" key={index}>
         <img className="trip-image" src={vacation.image_url} alt={vacation.trip_location} />
-        <div>
+        <div className='trip-details-box'>
           <div className="trip-duration">
             {startMonth} {startDay} - {endMonth} {endDay}
           </div>
           <div className="trip-location">{vacation.location_address}</div>
           {/* Pass vacation object as state to detailed trip page */}
+          <div className='button-container'>
           <Link to={{ pathname: `/trips/${vacation._id}`, state: { vacation } }} className="view-button">View</Link>
-          <button onClick={() => doublePlay(vacation._id)} className="delete">Delete</button>
+          <button onClick={() => doublePlay(vacation._id)} className="view-button">Delete</button>
+          </div>
         </div>
       </div>
     );
@@ -88,11 +90,9 @@ useEffect(() => {
   if (trips.length === 0) {
     return (
       <div className="home-container">
-        <div className="search-container">
-          <div className="search-input-container">
-            <Link to="/search" className="search-button">Create</Link>
-          </div>
-        </div>
+      <div className="search-input-container">
+      <button to="/search" className="view-button">Create</button>
+    </div>
         <h2>Start Planning trips</h2>
       </div>
     );
@@ -112,15 +112,15 @@ useEffect(() => {
   return (
     <div className="home-container">
       <div className="search-container">
-        <div className="search-input-container">
-          <Link to="/search" className="search-button">Create</Link>
-        </div>
+
+      <Link to="/search" className="create-button">+</Link>
+       
       </div>
 
       {Object.entries(tripsByYear).map(([year, yearTrips]) => (
         <div key={year}>
           <div className="year-trip">
-            <h2>{year}</h2>
+            <h2 className='year-text'>{year}</h2>
             <div className="open-trips-container">
               {yearTrips.map((trip, index) => renderTrip(trip, index))}
             </div>

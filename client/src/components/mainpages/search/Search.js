@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import './styles.css';
 import Add from '../add/Add';
 import Autocomplete from "react-google-autocomplete";
+import { Link } from 'react-router-dom';
 
 const Search = () => {
   const [selectedPlace, setSelectedPlace] = useState(null);
-  const [placePhotos, setPlacePhotos] = useState([]);
+  // const [placePhotos, setPlacePhotos] = useState([]);
   const [photoURL, setPhotoURL] = useState([]);
   const [searchValue, setSearchValue] = useState('');
 
-  
   const getPlacePhotos = async (placeid) => {
     try {
         const response = await fetch(`/api/places-details?placeid=${placeid}`);
@@ -27,13 +27,14 @@ const Search = () => {
           return null;
         }
         
-        const firstPhotoReference = photos[0].name;
-        console.log("First Photo Reference: " + firstPhotoReference);
+        // Generate a random index within the range of the array length
+        const randomIndex = Math.floor(Math.random() * photos.length);
         
+        const randomPhotoReference = photos[randomIndex].name;
+        console.log("Random Photo Reference: " + randomPhotoReference);
         
         // Fetch the photo for the first reference
-        return getPhoto(firstPhotoReference); // Assuming apiKey is defined somewhere
-        
+        return getPhoto(randomPhotoReference); // Assuming apiKey is defined somewhere
         
         // Return the fetched data
     } catch (error) {
@@ -42,7 +43,6 @@ const Search = () => {
     }
   };
   
-
   const getPhoto = async (photoreference) => {
     try{
       const response = await fetch(`/api/places-pics?photoreference=${photoreference}`);
@@ -88,9 +88,11 @@ const Search = () => {
       )
     }
   }
+  
 
   return (
     <div className="container-search">
+    <Link to="/home" className="back-button">Back</Link>
       <h1 className='wyg-text'>Where are you going?</h1>
       <div className="search-bar-container">
       <Autocomplete

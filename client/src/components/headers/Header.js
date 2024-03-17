@@ -1,46 +1,42 @@
-import React, {useContext} from 'react';
-import {GlobalState} from '../../GlobalState'
-import {Link} from 'react-router-dom'
+import React, { useContext } from 'react';
+import { GlobalState } from '../../GlobalState';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import './header.css'
+import './header.css';
 
 function Header() {
-    const state = useContext(GlobalState)
-    const [isLogged, setIsLogged] = state.UserAPI.isLogged
-    const [name] = state.UserAPI.name;
-   
+  const state = useContext(GlobalState);
+  const [isLogged, setIsLogged] = state.UserAPI.isLogged;
+  const [name] = state.UserAPI.name;
 
-    const logoutUser = async () => {
-        setIsLogged(false)
-        await axios.get('/api/user/logout')
-        
-        localStorage.clear()
-        window.location.href = "/"
-    }
+  const location = useLocation();
 
-    const loggedRouter = () => {
-        return(
-            <div className="container">
-            <div className="dv1">Getaway Genius</div>
-           
-        <div className="welcome">Hi, {name}</div>
+  const logoutUser = async () => {
+    setIsLogged(false);
+    await axios.get('/api/user/logout');
+    localStorage.clear();
+    window.location.href = '/';
+  };
 
-      
-            <div className="dv2"><Link to="/" onClick={logoutUser}>Logout</Link></div>
-            </div>
-        )
-    }
-
+  const loggedRouter = () => {
     return (
-    <div>
-             
-            {
-                isLogged ? loggedRouter() : ''
-            } 
-
-       
-    </div>
+      <div className="container">
+        <div className="dv1">Getaway Genius</div>
+        <div className="welcome">Hi, {name}</div>
+        <div className="dv2">
+          <Link to="/" onClick={logoutUser}>
+            Logout
+          </Link>
+        </div>
+      </div>
     );
+  };
+
+  return (
+    <div>
+      {location.pathname !== '/search' && isLogged ? loggedRouter() : ''}
+    </div>
+  );
 }
 
 export default Header;
