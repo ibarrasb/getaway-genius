@@ -112,9 +112,7 @@ useEffect(() => {
   return (
     <div className="home-container">
       <div className="search-container">
-
-      <Link to="/search" className="create-button">+</Link>
-       
+<h2 className='home-message'>Start planning new trips</h2> 
       </div>
 
       {Object.entries(tripsByYear).map(([year, yearTrips]) => (

@@ -73,13 +73,15 @@
   text-align: center;
   padding: 10px;
   margin: 10px;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
   display: inline-block;
-  background-color: #f0f0f0;
+  background-color: #edede9;
+  font-family: 'Crimson Text', serif;
   width: 300px;
 }
 
 .view-button {
-  background-color: #378CE7;
+  background-color: #cce3de;
   border: none;
   color: white;
   padding: 10px 20px;
@@ -89,6 +91,7 @@
   margin-top: 10px;
   cursor: pointer;
   border-radius: 5px;
+  font-family: 'Crimson Text', serif;
   transition: background-color 0.3s ease;
 }
 .year-text{
@@ -96,11 +99,15 @@
   font-family: 'Crimson Text', serif;
 }
 
+.home-message{
+  font-family: 'Crimson Text', serif;
+}
+
 .view-button:hover {
-  background-color: #67C6E3;
+  background-color: #a8dadc;
 }
 .create-button {
-  background-color: #378CE7;
+  background-color: #cce3de;
   border: none;
   color: white;
   padding: 10px 20px;
@@ -114,7 +121,7 @@
 }
 
 .create-button:hover {
-  background-color: #67C6E3;
+  background-color: #a8dadc;
 }
 
 .search-container {
@@ -140,7 +147,7 @@
 
 .add-button {
   padding: 10px 20px;
-  background-color: #007bff;
+  background-color: #cce3de;
   color: #fff;
   border: none;
   border-top-right-radius: 5px;
@@ -149,28 +156,55 @@
 }
 
 .add-button:hover {
-  background-color: #0056b3;
+  background-color: #a8dadc;
 }
 
 
-@media (max-width: 950px){
+/* @media (max-width: 950px){
+  .open-trips-container {
+    padding-left: 8%;
+}
 
 }
 
 @media (max-width: 820px){
-
+  .open-trips-container {
+    padding-left: 8%;
+  }
 }
 @media (max-width: 720px){
- 
+  .open-trips-container {
+    padding-left: 8%;
+  }
 }
+*/
 
 @media (max-width: 570px){
+  .open-trips-container {
+    padding-left: 8%;
+  }
+} 
+
+@media (max-width: 414px){
  
+  .open-trips-container {
+    padding-left: 6%;
+  }
+
 }
 
-@media (max-width: 500px){
-  .App{
-    padding: 0 10px;
+@media (max-width: 390px){
+ 
+  .open-trips-container {
+    padding-left: 4%;
+  }
+
+}
+
+@media (max-width: 375px){
+ 
+  .open-trips-container {
+    padding-left: 2%;
   }
 
 }

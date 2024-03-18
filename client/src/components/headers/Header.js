@@ -24,7 +24,8 @@ function Header() {
         <div className="dv1">Getaway Genius</div>
         <div className="welcome">Hi, {name}</div>
         <div className="dv2">
-          <Link to="/" onClick={logoutUser}>
+        <Link to="/search" className="create-button">+</Link>
+          <Link to="/" className="log-out"onClick={logoutUser}>
             Logout
           </Link>
         </div>
@@ -34,7 +35,10 @@ function Header() {
 
   return (
     <div>
-      {location.pathname !== '/search' && isLogged ? loggedRouter() : ''}
+    <div>
+    {!(location.pathname.startsWith('/search') || location.pathname.startsWith('/trips')) && isLogged ? loggedRouter() : ''}
+  </div>
+  
     </div>
   );
 }
