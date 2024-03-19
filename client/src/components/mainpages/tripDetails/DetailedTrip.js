@@ -49,7 +49,7 @@ function DetailedTrip() {
         try {
             await Axios.put(`/api/trips/getaway/${id}`, formData);
             setEditMode(false);
-            window.location.href = "/home";
+            window.location.reload();
         } catch (error) {
             console.error('Error updating trip details:', error);
         }
