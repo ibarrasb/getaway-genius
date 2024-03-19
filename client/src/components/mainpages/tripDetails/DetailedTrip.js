@@ -1,93 +1,102 @@
 import React, { useEffect, useState } from 'react';
 import Axios from 'axios';
-import { useParams } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import './detailed.css';
 
 function DetailedTrip() {
     const { id } = useParams();
     const [tripDetails, setTripDetails] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [editMode, setEditMode] = useState(false);
     const [formData, setFormData] = useState({
-        trip_start: new Date().toISOString().slice(0, 10), // Set default to today's date
+        trip_start: new Date().toISOString().slice(0, 10),
         trip_end: '',
         stay_expense: '',
         travel_expense: '',
         car_expense: '',
     });
-
-    const formatExpense = (value) => {
-        // Ensure the value has exactly two decimal places
-        const formattedValue = parseFloat(value).toFixed(2);
-        // Ensure the formatted value is a valid number, if not return an empty string
-        return isNaN(formattedValue) ? '' : formattedValue;
-    };
-
-    const handleExpenseChange = (setter) => (e) => {
-        setter(e.target.value);
-    };
-
-    const handleExpenseBlur = (setter) => (e) => {
-        setter(formatExpense(e.target.value));
-    };
+    const [numberOfPeople, setNumberOfPeople] = useState(1);
 
     useEffect(() => {
-      const fetchTripDetails = async () => {
-          try {
-              const res = await Axios.get(`/api/trips/getaway/${id}`);
-              setTripDetails(res.data);
-              setFormData(prevState => ({
-                  ...prevState,
-                  trip_start: new Date().toISOString().slice(0, 10), // Set default to today's date
-                  stay_expense: res.data.stay_expense || '',
-                  travel_expense: res.data.travel_expense || '',
-                  car_expense: res.data.car_expense || '',
-              }));
-              setLoading(false);
-          } catch (error) {
-              console.error('Error fetching trip details:', error);
-              setLoading(false);
-          }
-      };
-  
-      fetchTripDetails();
-  }, [id]);
-  
+        const fetchTripDetails = async () => {
+            try {
+                const res = await Axios.get(`/api/trips/getaway/${id}`);
+                setTripDetails(res.data);
+                setFormData(prevState => ({
+                    ...prevState,
+                    trip_start: res.data.trip_start || new Date().toISOString().slice(0, 10),
+                    trip_end: res.data.trip_end || '',
+                    stay_expense: formatExpense(res.data.stay_expense),
+                    travel_expense: formatExpense(res.data.travel_expense),
+                    car_expense: formatExpense(res.data.car_expense),
+                }));
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching trip details:', error);
+                setLoading(false);
+            }
+        };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        
-        if (name === 'trip_start') {
-            // Validate trip start date to be today or later
-            const today = new Date();
-            const selectedDate = new Date(value);
-            if (selectedDate < today) {
-                alert("Trip start date cannot be in the past");
-                return;
-            }
-            setFormData({ ...formData, [name]: value });
-        } else if (name === 'trip_end') {
-            // Validate trip end date to be after trip start date
-            const startDate = new Date(formData.trip_start);
-            const endDate = new Date(value);
-            if (endDate < startDate) {
-                alert("Trip end date cannot be before trip start date");
-                return;
-            }
-            setFormData({ ...formData, [name]: value });
-        } else {
-            setFormData({ ...formData, [name]: value });
-        }
+        fetchTripDetails();
+    }, [id]);
+
+    const handleEditToggle = () => {
+        setEditMode(!editMode);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             await Axios.put(`/api/trips/getaway/${id}`, formData);
+            setEditMode(false);
             window.location.href = "/home";
         } catch (error) {
             console.error('Error updating trip details:', error);
         }
+    };
+
+    const formatExpense = (value) => {
+        if (value === null || value === undefined || isNaN(value)) {
+            return '';
+        }
+        const formattedValue = Math.abs(parseFloat(value)).toFixed(2);
+        return formattedValue.indexOf('.') === -1 ? `${formattedValue}.00` : formattedValue;
+    };
+
+    const handleExpenseChange = (key, value) => {
+        if (!isNaN(value) || value === '') {
+            setFormData(prevState => ({
+                ...prevState,
+                [key]: value,
+            }));
+        }
+    };
+
+    const handleDateChange = (key, value) => {
+        setFormData(prevState => ({
+            ...prevState,
+            [key]: value,
+        }));
+    };
+
+    const calculateTotalExpenses = () => {
+        const { stay_expense, travel_expense, car_expense } = formData;
+        return parseFloat(stay_expense) + parseFloat(travel_expense) + parseFloat(car_expense);
+    };
+
+    const handlePeopleChange = (e) => {
+        const { value } = e.target;
+        setNumberOfPeople(value);
+    };
+
+    const calculateCostPerPerson = () => {
+        const totalExpenses = calculateTotalExpenses();
+        const costPerPerson = totalExpenses / numberOfPeople;
+        return isNaN(costPerPerson) ? 0 : costPerPerson.toFixed(2);
+    };
+
+    const isValidDate = (date) => {
+        return !isNaN(Date.parse(date));
     };
 
     if (loading) {
@@ -99,71 +108,130 @@ function DetailedTrip() {
     }
 
     return (
-        <div className="container">
-        <Link to="/home" className="back-button">Back</Link>
-            <h2>Trip Details</h2>
-            <p>Trip ID: {tripDetails._id}</p>
-            
-            <img src={tripDetails.image_url} alt="Trip Image" className="trip-image" />
-            <p className="location">Location: {tripDetails.location_address}</p>
-            <form className="detailed-form" onSubmit={handleSubmit}>
-                <label>
-                    Trip Start:
-                    <input
-                        type="date"
-                        name="trip_start"
-                        value={formData.trip_start}
-                        onChange={handleChange}
-                        required
-                    />
-                </label>
-                <label>
-                    Trip End:
-                    <input
-                        type="date"
-                        name="trip_end"
-                        value={formData.trip_end}
-                        onChange={handleChange}
-                        required
-                    />
-                </label>
-                <label>
-                    Stay Expense:
-                    <input
-                        type="number"
-                        name="stay_expense"
-                        value={formData.stay_expense}
-                        onChange={handleExpenseChange((value) => setFormData({ ...formData, stay_expense: value }))}
-                        onBlur={handleExpenseBlur((value) => setFormData({ ...formData, stay_expense: value }))}
-                        required
-                    />
-                </label>
-                <label>
-                    Travel Expense:
-                    <input
-                        type="number"
-                        name="travel_expense"
-                        value={formData.travel_expense}
-                        onChange={handleExpenseChange((value) => setFormData({ ...formData, travel_expense: value }))}
-                        onBlur={handleExpenseBlur((value) => setFormData({ ...formData, travel_expense: value }))}
-                        required
-                    />
-                </label>
-                <label>
-                    Car Expense:
-                    <input
-                        type="number"
-                        name="car_expense"
-                        value={formData.car_expense}
-                        onChange={handleExpenseChange((value) => setFormData({ ...formData, car_expense: value }))}
-                        onBlur={handleExpenseBlur((value) => setFormData({ ...formData, car_expense: value }))}
-                        required
-                    />
-                </label>
-                <button type="submit">Update Trip</button>
-            </form>
+        <div className="detailed-container">
+            <div className="back-button-container">
+                <Link to="/home" className="back-button">Back</Link>
+            </div>
+            <div className="edit-button-container">
+                <button onClick={handleEditToggle}>{editMode ? 'Cancel' : 'Edit'}</button>
+            </div>
+            <div className="trip-details-container">
+                <div className="details-left">
+                    <div className="trip-image-container">
+                        <img src={tripDetails.image_url} alt="Trip Image" className="trip-image" />
+                        <div className="destination-overlay">
+                            <p className="location">{tripDetails.location_address}</p>
+                            <p className="dates">Trip Start: {formatDateWithExtraDay(formData.trip_start)}</p>
+                            <p className="dates">Trip End: {formatDateWithExtraDay(formData.trip_end)}</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="details-right">
+                    <form className="detailed-form" onSubmit={handleSubmit}>
+                        <label>
+                            <h2>Stay Expense:</h2>
+                            {editMode ? (
+                                <input
+                                    type="text"
+                                    name="stay_expense"
+                                    value={formData.stay_expense}
+                                    onChange={(e) => handleExpenseChange('stay_expense', e.target.value)}
+                                    required
+                                />
+                            ) : (
+                                <p>{formData.stay_expense}</p>
+                            )}
+                        </label>
+                        <label>
+                            <h2>Travel Expense:</h2>
+                            {editMode ? (
+                                <input
+                                    type="text"
+                                    name="travel_expense"
+                                    value={formData.travel_expense}
+                                    onChange={(e) => handleExpenseChange('travel_expense', e.target.value)}
+                                    required
+                                />
+                            ) :(
+                                <p>{formData.travel_expense}</p>
+                            )}
+                        </label>
+                        <label>
+                            <h2>Car Expense:</h2>
+                            {editMode ? (
+                                <input
+                                    type="text"
+                                    name="car_expense"
+                                    value={formData.car_expense}
+                                    onChange={(e) => handleExpenseChange('car_expense', e.target.value)}
+                                    required
+                                />
+                            ) : (
+                                <p>{formData.car_expense}</p>
+                            )}
+                        </label>
+                        {editMode && (
+                            <div>
+                                <label>
+                                    <h2>Trip Start:</h2>
+                                    <input
+                                        type="date"
+                                        name="trip_start"
+                                        value={editMode ? new Date(formData.trip_start).toISOString().slice(0, 10) : formData.trip_start}
+                                        onChange={(e) => handleDateChange('trip_start', e.target.value)}
+                                        required
+                                    />
+                                </label>
+                                <label>
+                                    <h2>Trip End:</h2>
+                                    <input
+                                        type="date"
+                                        name="trip_end"
+                                        value={editMode ? new Date(formData.trip_end).toISOString().slice(0, 10) : formData.trip_end}
+                                        onChange={(e) => handleDateChange('trip_end', e.target.value)}
+                                        min={formData.trip_start}
+                                        required
+                                    />
+                                </label>
+                            </div>
+                        )}
+                        {!editMode && (
+                            <div>
+                                <h2>Total Expenses: ${calculateTotalExpenses().toFixed(2)}</h2>
+                                <label>
+                                    Number of People:
+                                    <input
+                                        type="number"
+                                        value={numberOfPeople}
+                                        onChange={handlePeopleChange}
+                                        min="1"
+                                    />
+                                </label>
+                                <h2>Cost per Person: ${calculateCostPerPerson()}</h2>
+                            </div>
+                        )}
+                        {editMode && <button type="submit">Update Trip</button>}
+                    </form>
+                </div>
+            </div>
         </div>
     );
 }
 
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+}
+
+function formatDateWithExtraDay(dateString) {
+    const date = new Date(dateString);
+    date.setDate(date.getDate());
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+}
+
 export default DetailedTrip;
+
+
+
+
+    
