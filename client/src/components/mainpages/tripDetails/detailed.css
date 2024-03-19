@@ -1,78 +1,125 @@
-/* detailedTrip.css */
-.container {
-    max-width: 600px;
+/* Main container */
+.detailed-container {
+    max-width: 800px;
     margin: 0 auto;
     padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
-h2 {
-    font-size: 24px;
+/* Image container */
+.trip-image-container {
+    position: relative;
     margin-bottom: 20px;
 }
 
-.form-group {
-    margin-bottom: 20px;
+/* Trip image */
+.trip-image {
+    width: 100%;
+    border-radius: 5px;
 }
 
-label {
-    display: block;
+/* Overlay for destination and dates */
+.destination-overlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Destination text */
+.location {
+    font-size: 18px;
     margin-bottom: 5px;
 }
 
-input[type="date"],
-input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+/* Dates text */
+.dates {
     font-size: 16px;
+    margin-bottom: 5px;
 }
 
-button[type="submit"] {
+/* Back button container */
+.back-button-container {
+    margin-bottom: 20px;
+}
+
+/* Edit button container */
+.edit-button-container {
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+/* Trip details container */
+.trip-details-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Left side of trip details */
+.details-left {
+    width: 45%;
+}
+
+/* Right side of trip details */
+.details-right {
+    width: 45%;
+}
+
+/* Form for editing trip details */
+.detailed-form {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Labels in the form */
+.detailed-form label {
+    margin-bottom: 15px;
+}
+
+/* Headings in the form */
+.detailed-form h2 {
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+/* Paragraphs in the form */
+.detailed-form p {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+/* Input fields in the form */
+.detailed-form input[type="number"],
+.detailed-form input[type="date"] {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+/* Disabled input fields in the form */
+.detailed-form input[type="number"]:disabled {
+    background-color: #f2f2f2;
+}
+
+/* Submit button in the form */
+.detailed-form button {
+    padding: 10px 20px;
     background-color: #007bff;
     color: #fff;
     border: none;
     border-radius: 5px;
-    padding: 10px 20px;
     cursor: pointer;
     font-size: 16px;
+    margin-top: 20px;
 }
 
-button[type="submit"]:hover {
+/* Hover effect for submit button */
+.detailed-form button:hover {
     background-color: #0056b3;
-}
-/* detailed.css */
-
-/* Style for the trip image */
-/* detailed.css */
-
-/* Style for the trip image */
-.trip-image {
-    max-width: 300px; /* Maximum width */
-    max-height: 200px; /* Maximum height */
-   /* Maintain aspect ratio */
-    border-radius: 10px; /* Rounded corners */
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
-}
-
-
-/* Style for the location paragraph */
-.location {
-    font-size: 18px; /* Larger font size */
-    font-weight: bold; /* Bold text */
-    margin-top: 20px; /* Spacing above the location */
-}
-
-
-.loading {
-    text-align: center;
-    font-size: 18px;
-    margin-top: 50px;
-}
-
-.not-found {
-    text-align: center;
-    font-size: 18px;
-    margin-top: 50px;
-    color: #ff0000;
 }
