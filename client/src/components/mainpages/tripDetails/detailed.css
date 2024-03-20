@@ -1,125 +1,147 @@
-/* Main container */
+/* detailed.css */
+
 .detailed-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    position: relative;
-}
-
-/* Image container */
-.trip-image-container {
-    position: relative;
-    margin-bottom: 20px;
-}
-
-/* Trip image */
-.trip-image {
-    width: 100%;
-    border-radius: 5px;
-}
-
-/* Overlay for destination and dates */
-.destination-overlay {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-}
-
-/* Destination text */
-.location {
-    font-size: 18px;
-    margin-bottom: 5px;
-}
-
-/* Dates text */
-.dates {
-    font-size: 16px;
-    margin-bottom: 5px;
-}
-
-/* Back button container */
-.back-button-container {
-    margin-bottom: 20px;
-}
-
-/* Edit button container */
-.edit-button-container {
-    text-align: right;
-    margin-bottom: 20px;
-}
-
-/* Trip details container */
-.trip-details-container {
-    display: flex;
-    justify-content: space-between;
-}
-
-/* Left side of trip details */
-.details-left {
-    width: 45%;
-}
-
-/* Right side of trip details */
-.details-right {
-    width: 45%;
-}
-
-/* Form for editing trip details */
-.detailed-form {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
 }
 
-/* Labels in the form */
-.detailed-form label {
-    margin-bottom: 15px;
+.detailed-button-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 20px;
 }
 
-/* Headings in the form */
-.detailed-form h2 {
-    font-size: 18px;
-    margin-bottom: 5px;
+.back-button-container,
+.edit-button-container {
+    margin: 10px;
 }
 
-/* Paragraphs in the form */
-.detailed-form p {
-    font-size: 16px;
-    margin-bottom: 5px;
-}
-
-/* Input fields in the form */
-.detailed-form input[type="number"],
-.detailed-form input[type="date"] {
-    padding: 8px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-
-/* Disabled input fields in the form */
-.detailed-form input[type="number"]:disabled {
-    background-color: #f2f2f2;
-}
-
-/* Submit button in the form */
-.detailed-form button {
+.back-button,
+button {
     padding: 10px 20px;
     background-color: #007bff;
     color: #fff;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.back-button:hover,
+button:hover {
+    background-color: #0056b3;
+}
+
+.tripinfo-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-left: 5%;
+}
+
+.trip-details-container {
+    width: 60%;
+    padding: 20px;
+    display: contents;
+  
+
+}
+
+.details-left {
+    width: 50%;
+}
+
+.trip-image-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+.trip-image-detailed {
+    width: 100%;
+    height: auto;
+}
+
+.destination-overlay {
+
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    padding: 10px;
+}
+
+.location {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.dates {
+    margin: 5px 0 0;
+}
+
+.detailed-form {
+    width: 40%;
+    padding: 20px;
+    margin-right: 5%;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+h2 {
+    margin: 0 0 5px;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="number"] {
+    width: calc(100% - 10px);
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+p {
+    margin: 5px 0;
+}
+
+button[type="submit"] {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    background-color: #218838;
+}
+
+.loading,
+.not-found {
+    font-size: 24px;
+    text-align: center;
     margin-top: 20px;
 }
 
-/* Hover effect for submit button */
-.detailed-form button:hover {
-    background-color: #0056b3;
+.loading {
+    color: #007bff;
+}
+
+.not-found {
+    color: #dc3545;
 }
