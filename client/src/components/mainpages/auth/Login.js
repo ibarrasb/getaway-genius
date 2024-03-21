@@ -44,7 +44,9 @@ function Login() {
             return (
                 <div className="login-page">
                     <form onSubmit={loginSubmit}>
-                        <h1 className='main-title'>Getaway Genius</h1>
+                        <div className='main-title'>
+                        <span className="getaway">Getaway</span> <span className="genius">Genius</span>
+                        </div>
                         <h2>Login</h2>
                         <input type="email" name="email" required placeholder="Email" value={user.email} onChange={onChangeInput} />
                         <input type="password" name="password" required autoComplete="on" placeholder="Password" value={user.password} onChange={onChangeInput} />

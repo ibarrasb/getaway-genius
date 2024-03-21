@@ -9,6 +9,14 @@
 .log-out{
   padding-left: 20%;
 }
+.getaway {
+  color: #84A98C; /* Change the color of "Getaway" to your desired color */
+}
+
+.genius {
+  color: black; /* Change the color of "Genius" to your desired color */
+}
+
 
 .dv1, .dv2, .welcome{
   color: black;

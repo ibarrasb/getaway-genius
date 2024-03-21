@@ -46,7 +46,9 @@ function Register() {
             return (
                 <div className="login-page">
                 <form onSubmit={registerSubmit}>
-                <h1 className='main-title'>Getaway Genius</h1>
+                <div className='main-title'>
+                        <span className="getaway">Getaway</span> <span className="genius">Genius</span>
+                </div>
                     <h2>Register</h2>
                     <input
                         type="text"

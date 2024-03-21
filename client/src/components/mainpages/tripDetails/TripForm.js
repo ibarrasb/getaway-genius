@@ -85,7 +85,7 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
                     <h2>Cost per Person: ${calculateCostPerPerson()}</h2>
                 </div>
             )}
-            {editMode && <button type="submit">Update Trip</button>}
+            {editMode && <button className='updatetrip-button' type="submit">Update Trip</button>}
         </form>
     );
 }

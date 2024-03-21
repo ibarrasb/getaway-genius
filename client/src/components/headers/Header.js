@@ -21,7 +21,10 @@ function Header() {
   const loggedRouter = () => {
     return (
       <div className="container">
-        <div className="dv1">Getaway Genius</div>
+      <div className="dv1">
+      <span className="getaway">Getaway</span> <span className="genius">Genius</span>
+  </div>
+  
         <div className="welcome">Hi, {name}</div>
         <div className="dv2">
         <Link to="/search" className="create-button">+</Link>

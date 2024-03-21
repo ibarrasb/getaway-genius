@@ -98,6 +98,9 @@
   text-align: center;
   font-family: 'Crimson Text', serif;
 }
+#delete-button{
+  display: block;
+}
 
 .home-message{
   font-family: 'Crimson Text', serif;

@@ -6,10 +6,14 @@
     align-items: center;
     margin-top: 20px;
 }
+.updatetrip-button{
+    display: block;
+}
 
 .detailed-button-container {
     display: flex;
     justify-content: space-between;
+    align-items: center; /* Align items vertically */
     width: 100%;
     margin-bottom: 20px;
 }
@@ -22,6 +26,7 @@
 .back-button,
 button {
     padding: 10px 20px;
+    min-width: 100px; /* Set a minimum width for buttons */
     background-color: #007bff;
     color: #fff;
     border: none;
@@ -29,6 +34,7 @@ button {
     cursor: pointer;
     text-decoration: none;
     transition: background-color 0.3s ease;
+    display: contents; /* Ensure button behaves like a block element */
 }
 
 .back-button:hover,
@@ -47,8 +53,6 @@ button:hover {
     width: 60%;
     padding: 20px;
     display: contents;
-  
-
 }
 
 .details-left {
@@ -60,6 +64,16 @@ button:hover {
     overflow: hidden;
     border-radius: 10px;
 }
+.back-button-container {
+    margin-left: 4%;
+    font-weight: bold;
+}
+.edit-button-container {
+    margin-right: 5%;
+}
+.editbutton-txt{
+    font-size: 16px;
+}
 
 .trip-image-detailed {
     width: 100%;
@@ -67,7 +81,6 @@ button:hover {
 }
 
 .destination-overlay {
-
     bottom: 0;
     left: 0;
     width: 100%;
@@ -119,7 +132,7 @@ p {
 
 button[type="submit"] {
     padding: 10px 20px;
-    background-color: #28a745;
+    background-color: #007bff;
     color: #fff;
     border: none;
     border-radius: 5px;
@@ -144,4 +157,25 @@ button[type="submit"]:hover {
 
 .not-found {
     color: #dc3545;
+}
+
+@media (max-width: 430px) {
+    .tripinfo-container {
+        display: contents;
+    }
+    .details-left {
+        width: auto;
+    }
+    .detailed-form{
+        width: auto;
+        margin-right: 0;
+        margin-top: 5%;
+    }
+    .updatetrip-button{
+        margin-left: 21%;
+    }
+
+    .detailed-container{
+        margin: 5%;
+    }
 }

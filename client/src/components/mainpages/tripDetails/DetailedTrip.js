@@ -112,13 +112,15 @@ function DetailedTrip() {
     return (
         <div className="detailed-container">
         <div className = "detailed-button-container">
+            
             <div className="back-button-container">
                 <Link to="/home" className="back-button">Back</Link>
             </div>
             <div className="edit-button-container">
-                <button onClick={handleEditToggle}>{editMode ? 'Cancel' : 'Edit'}</button>
+                <button className="editbutton-txt"onClick={handleEditToggle}>{editMode ? 'Cancel' : 'Edit'}</button>
             </div>
             </div>
+            
             <div className='tripinfo-container'>
             <TripDetails tripDetails={tripDetails} formData={formData} formatDateWithExtraDay={formatDateWithExtraDay} />
             <TripForm

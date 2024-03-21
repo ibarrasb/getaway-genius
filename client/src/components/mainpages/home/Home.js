@@ -71,7 +71,7 @@ useEffect(() => {
           {/* Pass vacation object as state to detailed trip page */}
           <div className='button-container'>
           <Link to={{ pathname: `/trips/${vacation._id}`, state: { vacation } }} className="view-button">View</Link>
-          <button onClick={() => doublePlay(vacation._id)} className="view-button">Delete</button>
+          <button onClick={() => doublePlay(vacation._id)} className="view-button" id='delete-button'>Delete</button>
           </div>
         </div>
       </div>
