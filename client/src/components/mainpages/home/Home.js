@@ -112,7 +112,7 @@ useEffect(() => {
   return (
     <div className="home-container">
       <div className="search-container">
-<h2 className='home-message'>Start planning new trips</h2> 
+<h2 className='home-message'>Destination for smart planning</h2> 
       </div>
 
       {Object.entries(tripsByYear).map(([year, yearTrips]) => (
