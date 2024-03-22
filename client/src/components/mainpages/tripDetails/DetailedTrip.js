@@ -42,6 +42,13 @@ function DetailedTrip() {
         fetchTripDetails();
     }, [id]);
 
+    useEffect(() => {
+        const currentDate = new Date();
+        if (tripDetails && new Date(tripDetails.trip_end) < currentDate) {
+            setEditMode(false); // Disable edit mode if trip_end is before the current date
+        }
+    }, [tripDetails]);
+
     const handleEditToggle = () => {
         setEditMode(!editMode);
     };
@@ -101,6 +108,17 @@ function DetailedTrip() {
         return !isNaN(Date.parse(date));
     };
 
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    };
+
+    const formatDateWithExtraDay = (dateString) => {
+        const date = new Date(dateString);
+        date.setDate(date.getDate());
+        return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    };
+
     if (loading) {
         return <div className="loading">Loading...</div>;
     }
@@ -111,47 +129,33 @@ function DetailedTrip() {
 
     return (
         <div className="detailed-container">
-        <div className = "detailed-button-container">
-            
-            <div className="back-button-container">
-                <Link to="/home" className="back-button">Back</Link>
+            <div className="detailed-button-container">
+                <div className="back-button-container">
+                    <Link to="/home" className="back-button">Back</Link>
+                </div>
+                {tripDetails.trip_end && new Date(tripDetails.trip_end) >= new Date() && ( // Check if trip_end is not in the past
+                    <div className="edit-button-container">
+                        <button className="editbutton-txt" onClick={handleEditToggle}>{editMode ? 'Cancel' : 'Edit'}</button>
+                    </div>
+                )}
             </div>
-            <div className="edit-button-container">
-                <button className="editbutton-txt"onClick={handleEditToggle}>{editMode ? 'Cancel' : 'Edit'}</button>
-            </div>
-            </div>
-            
+
             <div className='tripinfo-container'>
-            <TripDetails tripDetails={tripDetails} formData={formData} formatDateWithExtraDay={formatDateWithExtraDay} />
-            <TripForm
-                formData={formData}
-                editMode={editMode}
-                handleExpenseChange={handleExpenseChange}
-                handleDateChange={handleDateChange}
-                handleSubmit={handleSubmit}
-                calculateTotalExpenses={calculateTotalExpenses}
-                numberOfPeople={numberOfPeople}
-                handlePeopleChange={handlePeopleChange}
-                calculateCostPerPerson={calculateCostPerPerson}
-            />
-        </div>
+                <TripDetails tripDetails={tripDetails} formData={formData} formatDateWithExtraDay={formatDateWithExtraDay} />
+                <TripForm
+                    formData={formData}
+                    editMode={editMode}
+                    handleExpenseChange={handleExpenseChange}
+                    handleDateChange={handleDateChange}
+                    handleSubmit={handleSubmit}
+                    calculateTotalExpenses={calculateTotalExpenses}
+                    numberOfPeople={numberOfPeople}
+                    handlePeopleChange={handlePeopleChange}
+                    calculateCostPerPerson={calculateCostPerPerson}
+                />
+            </div>
         </div>
     );
 }
 
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-}
-
-function formatDateWithExtraDay(dateString) {
-    const date = new Date(dateString);
-    date.setDate(date.getDate());
-    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-}
-
 export default DetailedTrip;
-
-
-
-    

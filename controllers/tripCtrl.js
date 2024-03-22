@@ -22,8 +22,8 @@ createTrips: async (req, res) => {
         if(!image_url) return res.status(400).json({msg: "No image upload"})
 
         const tripstart = await Trips.findOne({user_email, trip_start})
-        if(tripstart)
-            return res.status(400).json({msg: "You have an existing vacation on this day"})
+        // if(tripstart)
+        //     return res.status(400).json({msg: "You have an existing vacation on this day"})
 
         const newVacation = new Trips({
             user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url
