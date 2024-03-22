@@ -128,14 +128,18 @@ function Home() {
         <h2 className='home-message'>Destination for smart planning</h2> 
       </div>
 
-      {/* Centered button container */}
-      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+      {/* Previous trip button */}
+      {
+        previousTrips.length !== 0 ?  
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         {/* Button to toggle visibility of previous trips */}
         <button onClick={() => setShowPreviousTrips(!showPreviousTrips)}>
           {showPreviousTrips ? 'Hide Previous Trips' : 'Show Previous Trips'}
         </button>
-      </div>
+      </div> : <div></div>
 
+      }
+     
       {/* Render previous trips if showPreviousTrips is true */}
       {showPreviousTrips && previousTrips.length > 0 && (
         <div className="year-trips">

@@ -58,11 +58,10 @@ margin: 15px;
 }
 
 @media (max-width: 500px){
-  .App{
-    padding: 0 10px;
-  }
+ 
   .container {
     padding-inline: 10px;
+    margin-left: -13px;
 }
 
 }
