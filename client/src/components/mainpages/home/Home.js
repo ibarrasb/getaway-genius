@@ -11,7 +11,7 @@ function Home() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
-//fetches new and current trips associated to the user with the email 
+  // Fetches new and current trips associated with the user's email 
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -33,7 +33,7 @@ function Home() {
     fetchData();
   }, [email]);
 
-//delete trip 
+  // Delete trip 
   const removePost = async (id) => {
     if (window.confirm("Do you want to delete this post?")) {
       try {
@@ -49,7 +49,7 @@ function Home() {
     }
   };
 
-//current trip component
+  // Current trip component
   const renderTrip = (trip, index) => {
     const startDate = new Date(trip.trip_start);
     const endDate = new Date(trip.trip_end);
@@ -63,7 +63,7 @@ function Home() {
         <img className="trip-image" src={trip.image_url} alt={trip.trip_location} />
         <div className='trip-details-box'>
           <div className="trip-duration">
-            {startMonth} {startDay} - {endMonth} {endDay}
+            {startMonth} {startDay + 1} - {endMonth} {endDay + 1}
           </div>
           <div className="trip-location">{trip.location_address}</div>
           <div className='button-container'>
@@ -79,11 +79,21 @@ function Home() {
     return <div>Loading...</div>;
   }
 
-  //categorizes data by upcoming or past trip
+  // Categorize data by upcoming or past trip
   const currentDate = new Date();
-  const currentTrips = trips.filter(trip => new Date(trip.trip_end) >= currentDate);
+  // Current trip logic to include trips that end on the current day
+  const currentTrips = trips.filter(trip => {
+    const tripEndDate = new Date(trip.trip_end);
+    
+    // Add one day to the trip's end date
+    const tripEndDatePlusOneDay = new Date(tripEndDate);
+    tripEndDatePlusOneDay.setDate(tripEndDate.getDate() + 1);
+ 
+    // Check if the adjusted end date is less than the current date
+    return tripEndDatePlusOneDay >= currentDate;
+  });
 
-  // Group current trips by year
+  // Group current trips by year and sort them by start date
   const groupedCurrentTrips = currentTrips.reduce((acc, trip) => {
     const tripYear = new Date(trip.trip_end).getFullYear();
     if (!acc[tripYear]) {
@@ -93,6 +103,11 @@ function Home() {
     return acc;
   }, {});
 
+  // Sort trips within each year by start date
+  for (const year in groupedCurrentTrips) {
+    groupedCurrentTrips[year].sort((a, b) => new Date(a.trip_start) - new Date(b.trip_start));
+  }
+
   return (
     <div className="home-container">
       <div className="search-container">
@@ -101,11 +116,10 @@ function Home() {
 
       {/* Previous trip button */}
       <div className="center-button">
-      <Link to="/previous-trips" className="linkbutton">Previous</Link>
-    </div>
+        <Link to="/previous-trips" className="linkbutton">Previous</Link>
+      </div>
     
-     
-      {/* Render current trips and organizes by year when trip is */}
+      {/* Render current trips and organize by year when trip is */}
       {Object.keys(groupedCurrentTrips).map(year => (
         <div key={year} className="year-trips">
           <h2 className='year-text'>{year}</h2>

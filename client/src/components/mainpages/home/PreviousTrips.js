@@ -63,7 +63,7 @@ function PreviousTrips() {
         <img className="trip-image" src={trip.image_url} alt={trip.trip_location} />
         <div className='trip-details-box'>
           <div className="trip-duration">
-            {startMonth} {startDay} - {endMonth} {endDay}
+            {startMonth} {startDay + 1} - {endMonth} {endDay + 1}
           </div>
           <div className="trip-location">{trip.location_address}</div>
           <div className='button-container'>
@@ -79,10 +79,22 @@ function PreviousTrips() {
     return <div>Loading...</div>;
   }
 
-  //categorizes data by upcoming or past trip
   const currentDate = new Date();
-  const previousTrips = trips.filter(trip => new Date(trip.trip_end) < currentDate);
-  console.log(previousTrips)
+
+  //previous trip logic to not include trips that end on current day
+  const previousTrips = trips.filter(trip => {
+    const tripEndDate = new Date(trip.trip_end);
+    
+    // Add one day to the trip's end date
+    const tripEndDatePlusOneDay = new Date(tripEndDate);
+    tripEndDatePlusOneDay.setDate(tripEndDate.getDate() + 1);
+  
+    // Check if the adjusted end date is less than the current date
+    return tripEndDatePlusOneDay < currentDate;
+  });
+  
+  
+  console.log(currentDate)
 
   // Group current trips by year
   const groupedPreviousTrips = previousTrips.reduce((acc, trip) => {
