@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import Axios from 'axios';
 import './styles.css';
 
-function Home() {
+function PreviousTrips() {
   const state = useContext(GlobalState);
   const [email] = state.UserAPI.email;
   const [token] = state.token;
@@ -49,8 +49,8 @@ function Home() {
     }
   };
 
-//current trip component
-  const renderTrip = (trip, index) => {
+// Previous trip component
+  const renderPreviousTrip = (trip, index) => {
     const startDate = new Date(trip.trip_start);
     const endDate = new Date(trip.trip_end);
     const startMonth = startDate.toLocaleString('default', { month: 'short' });
@@ -59,7 +59,7 @@ function Home() {
     const endDay = endDate.getDate();
 
     return (
-      <div className="trip-box" key={index}>
+      <div className="trip-box-previous" key={index}>
         <img className="trip-image" src={trip.image_url} alt={trip.trip_location} />
         <div className='trip-details-box'>
           <div className="trip-duration">
@@ -67,8 +67,8 @@ function Home() {
           </div>
           <div className="trip-location">{trip.location_address}</div>
           <div className='button-container'>
-            <Link to={{ pathname: `/trips/${trip._id}`, state: { trip } }} className="view-button">View</Link>
-            <button onClick={() => removePost(trip._id)} className="view-button" id='delete-button'>Delete</button>
+            <Link to={{ pathname: `/trips/${trip._id}`, state: { trip } }} className="view-button-previous">View</Link>
+            <button onClick={() => removePost(trip._id)} className="view-button-previous" id='delete-button'>Delete</button>
           </div>
         </div>
       </div>
@@ -81,10 +81,11 @@ function Home() {
 
   //categorizes data by upcoming or past trip
   const currentDate = new Date();
-  const currentTrips = trips.filter(trip => new Date(trip.trip_end) >= currentDate);
+  const previousTrips = trips.filter(trip => new Date(trip.trip_end) < currentDate);
+  console.log(previousTrips)
 
   // Group current trips by year
-  const groupedCurrentTrips = currentTrips.reduce((acc, trip) => {
+  const groupedPreviousTrips = previousTrips.reduce((acc, trip) => {
     const tripYear = new Date(trip.trip_end).getFullYear();
     if (!acc[tripYear]) {
       acc[tripYear] = [];
@@ -95,22 +96,15 @@ function Home() {
 
   return (
     <div className="home-container">
-      <div className="search-container">
-        <h2 className='home-message'>Destination for smart planning</h2> 
-      </div>
-
-      {/* Previous trip button */}
-      <div className="center-button">
-      <Link to="/previous-trips" className="linkbutton">Previous</Link>
-    </div>
-    
-     
+    <div className="back-button-container">
+                    <Link to="/home" className="back-button">Back</Link>
+                </div>
       {/* Render current trips and organizes by year when trip is */}
-      {Object.keys(groupedCurrentTrips).map(year => (
+      {Object.keys(groupedPreviousTrips).map(year => (
         <div key={year} className="year-trips">
           <h2 className='year-text'>{year}</h2>
           <div className="open-trips-container">
-            {groupedCurrentTrips[year].map((trip, index) => renderTrip(trip, index))}
+            {groupedPreviousTrips[year].map((trip, index) => renderPreviousTrip(trip, index))}
           </div>
         </div>
       ))}
@@ -118,4 +112,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default PreviousTrips;

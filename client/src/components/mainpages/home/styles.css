@@ -114,6 +114,29 @@
 .view-button:hover {
   background-color: #a8dadc;
 }
+.linkbutton {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #cce3de;
+  color: #fff;
+  text-decoration: none;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+}
+
+.linkbutton:hover {
+  background-color: #a8dadc;
+}
+
+.center-button {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 5%;
+}
+
 .create-button {
   background-color: #cce3de;
   border: none;

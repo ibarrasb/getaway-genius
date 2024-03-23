@@ -104,14 +104,14 @@ function DetailedTrip() {
         return isNaN(costPerPerson) ? 0 : costPerPerson.toFixed(2);
     };
 
-    const isValidDate = (date) => {
-        return !isNaN(Date.parse(date));
-    };
+    // const isValidDate = (date) => {
+    //     return !isNaN(Date.parse(date));
+    // };
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-    };
+    // const formatDate = (dateString) => {
+    //     const date = new Date(dateString);
+    //     return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    // };
 
     const formatDateWithExtraDay = (dateString) => {
         const date = new Date(dateString);
