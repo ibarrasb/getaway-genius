@@ -3,6 +3,7 @@ import { GlobalState } from '../../../GlobalState';
 import { Link } from 'react-router-dom'; 
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Axios from 'axios';
 import './styles.css';
 
@@ -14,6 +15,24 @@ function Home() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name] = state.UserAPI.name;
+
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      light: '#84A98C',
+      main: '#84A98C',
+      dark: '#84A98C',
+      contrastText: '#84A98C',
+    },
+    secondary: {
+      light: '#84A98C',
+      main: '#84A98C',
+      dark: '#84A98C',
+      contrastText: '#84A98C',
+    },
+  },
+});
 
   // Fetches new and current trips associated with the user's email 
   useEffect(() => {
@@ -132,9 +151,15 @@ function Home() {
       {/* Previous trip button */}
       <div className="center-button">
       <Stack spacing={2} direction="row">
-      <Link to="/about"> <Button variant="outlined" className="linkbutton">About</Button></Link>
-        <Link to="/previous-trips"> <Button variant="outlined" className="linkbutton">Previous</Button></Link>
-        </Stack>
+      <ThemeProvider theme={theme}>
+        <Link to="/about">
+          <Button variant="outlined" color="primary" className="linkbutton">About</Button>
+        </Link>
+        <Link to="/previous-trips">
+          <Button variant="outlined" color="primary" className="linkbutton">Previous</Button>
+        </Link>
+      </ThemeProvider>
+    </Stack>
       </div>
     
       {/* Render current trips and organize by year when trip is */}
