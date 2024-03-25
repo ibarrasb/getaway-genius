@@ -14,10 +14,28 @@
     font-family: 'Crimson Text', serif;
   }
   /* styles.css */
-.custom-autocomplete {
-  width: 250px; /* Make the Autocomplete component 100% wide */
-  height: 20%; /* Adjust the height as needed */
-}
+  input.custom-autocomplete.pac-target-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f8f8f8;
+    color: #333;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+    outline: none;
+    border-color: #84A98C;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+  .custom-autocomplete.pac-item-query {
+    background-color: red;
+  }
+  .search-bar-container input[type="text"]:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+  
 
   
   .search-bar {

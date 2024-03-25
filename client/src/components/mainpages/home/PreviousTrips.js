@@ -1,6 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { GlobalState } from '../../../GlobalState';
 import { Link } from 'react-router-dom'; 
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import Button from '@mui/material/Button';
 import Axios from 'axios';
 import './styles.css';
 
@@ -10,6 +12,7 @@ function PreviousTrips() {
   const [token] = state.token;
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+
 
 //fetches new and current trips associated to the user with the email 
   useEffect(() => {
@@ -93,8 +96,17 @@ function PreviousTrips() {
     return tripEndDatePlusOneDay < currentDate;
   });
   
-  
-  console.log(currentDate)
+  //if no previous trips, message will display
+if (trips.length === 0) {
+    return (
+      <div>
+       <div className="back-button-container">
+    <Link to="/home"> <Button variant="text" className="back-button"startIcon={<ArrowBackIcon />}>Back</Button></Link>
+        </div>
+          <p>you dont have previous Trips.</p>
+      </div>
+    );
+  }
 
   // Group current trips by year
   const groupedPreviousTrips = previousTrips.reduce((acc, trip) => {
@@ -108,9 +120,9 @@ function PreviousTrips() {
 
   return (
     <div className="home-container">
-    <div className="back-button-container">
-                    <Link to="/home" className="back-button">Back</Link>
-                </div>
+      <div className="back-button-container">
+        <Link to="/home"> <Button variant="text" className="back-button"startIcon={<ArrowBackIcon />}>Back</Button></Link>
+      </div>
       {/* Render current trips and organizes by year when trip is */}
       {Object.keys(groupedPreviousTrips).map(year => (
         <div key={year} className="year-trips">

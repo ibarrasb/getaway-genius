@@ -3,6 +3,8 @@ import Axios from 'axios';
 import { useParams, Link } from 'react-router-dom';
 import TripDetails from './TripDetails';
 import TripForm from './TripForm';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import Button from '@mui/material/Button';
 import './detailed.css';
 
 function DetailedTrip() {
@@ -131,7 +133,8 @@ function DetailedTrip() {
         <div className="detailed-container">
             <div className="detailed-button-container">
                 <div className="back-button-container">
-                    <Link to="/home" className="back-button">Back</Link>
+                <Link to="/home"> <Button variant="text" className="back-button"startIcon={<ArrowBackIcon />}>Back</Button></Link>
+                   
                 </div>
                 {tripDetails.trip_end && new Date(tripDetails.trip_end) >= new Date() && ( // Check if trip_end is not in the past
                     <div className="edit-button-container">

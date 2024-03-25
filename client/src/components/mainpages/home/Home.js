@@ -1,6 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { GlobalState } from '../../../GlobalState';
 import { Link } from 'react-router-dom'; 
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
 import Axios from 'axios';
 import './styles.css';
 
@@ -8,8 +10,10 @@ function Home() {
   const state = useContext(GlobalState);
   const [email] = state.UserAPI.email;
   const [token] = state.token;
+  const [isLogged] = state.UserAPI.isLogged
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [name] = state.UserAPI.name;
 
   // Fetches new and current trips associated with the user's email 
   useEffect(() => {
@@ -75,6 +79,15 @@ function Home() {
     );
   };
 
+  if (!isLogged) {
+    return (
+      <div>
+        <p>Please log in to view your trips.</p>
+      
+      </div>
+    );
+  }
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -107,16 +120,21 @@ function Home() {
   for (const year in groupedCurrentTrips) {
     groupedCurrentTrips[year].sort((a, b) => new Date(a.trip_start) - new Date(b.trip_start));
   }
+  
 
   return (
     <div className="home-container">
       <div className="search-container">
-        <h2 className='home-message'>Destination for smart planning</h2> 
+    
+        <h2 className='home-message'>Hi, {name}</h2> 
       </div>
 
       {/* Previous trip button */}
       <div className="center-button">
-        <Link to="/previous-trips" className="linkbutton">Previous</Link>
+      <Stack spacing={2} direction="row">
+      <Link to="/about"> <Button variant="outlined" className="linkbutton">About</Button></Link>
+        <Link to="/previous-trips"> <Button variant="outlined" className="linkbutton">Previous</Button></Link>
+        </Stack>
       </div>
     
       {/* Render current trips and organize by year when trip is */}

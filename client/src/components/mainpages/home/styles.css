@@ -10,6 +10,10 @@
  
   padding-left: 10%;
 }
+button.MuiButtonBase-root.MuiButton-root.MuiButton-outlined.MuiButton-outlinedPrimary.MuiButton-sizeMedium.MuiButton-outlinedSizeMedium.MuiButton-colorPrimary.MuiButton-root.MuiButton-outlined.MuiButton-outlinedPrimary.MuiButton-sizeMedium.MuiButton-outlinedSizeMedium.MuiButton-colorPrimary.linkbutton.css-1rwt2y5-MuiButtonBase-root-MuiButton-root {
+  color: #84A98C;
+  border-block-color: #84A98C;
+}
 
 .trip-image {
   width: 100%;

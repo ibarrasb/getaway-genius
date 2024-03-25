@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import './styles.css';
 import Add from '../add/Add';
 import Autocomplete from "react-google-autocomplete";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import Button from '@mui/material/Button';
 import { Link } from 'react-router-dom';
 
 const Search = () => {
   const [selectedPlace, setSelectedPlace] = useState(null);
-  // const [placePhotos, setPlacePhotos] = useState([]);
   const [photoURL, setPhotoURL] = useState([]);
   const [searchValue, setSearchValue] = useState('');
 
@@ -92,15 +93,21 @@ const Search = () => {
 
   return (
     <div className="container-search">
-    <Link to="/home" className="back-button">Back</Link>
+ 
+    <Link to="/home"> <Button variant="text" className="back-button"startIcon={<ArrowBackIcon />}>Back</Button></Link>
+       
+ 
       <h1 className='wyg-text'>Where are you going?</h1>
       <div className="search-bar-container">
+      
       <Autocomplete
-      className="custom-autocomplete"
+        className="custom-autocomplete"
         onPlaceSelected={handlePlaceSelected}
-        value={searchValue} // Bind the value of the input field to the searchValue state
-        onChange={(e) => setSearchValue(e.target.value)} // Update the searchValue state when the input changes
+        value={searchValue}
+        onChange={(e) => setSearchValue(e.target.value)}
+      
       />
+ 
       </div>
       {
         checkSelectedPlace()
