@@ -28,7 +28,7 @@ button {
     padding: 10px 20px;
     min-width: 100px; /* Set a minimum width for buttons */
     background-color: #007bff;
-    color: #fff;
+    color: black;
     border: none;
     border-radius: 5px;
     cursor: pointer;
