@@ -8,7 +8,6 @@ import Add from './add/Add.js';
 import Search from './search/Search'
 import DetailedTrip from './tripDetails/DetailedTrip.js'
 import NotFound from './utils/not_found/NotFound';
-// import { GlobalState } from '../../GlobalState'; // Make sure the import path is correct
 
 function Pages() {
    
