@@ -16,7 +16,6 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [name] = state.UserAPI.name;
 
-
 const theme = createTheme({
   palette: {
     primary: {

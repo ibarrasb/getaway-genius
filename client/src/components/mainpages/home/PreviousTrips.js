@@ -13,7 +13,6 @@ function PreviousTrips() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
-
 //fetches new and current trips associated to the user with the email 
   useEffect(() => {
     const fetchData = async () => {
