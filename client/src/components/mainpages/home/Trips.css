@@ -1,0 +1,31 @@
+.trip-box {
+
+  flex-direction: row;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.trip-image-container {
+  position: relative;
+}
+
+.favorite-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.trip-image {
+ /* Adjust the width as needed */
+  height: auto; /* Maintain aspect ratio */
+}
+
+.trip-details-box {
+  flex: 1;
+  padding: 12px;
+}
+
+/* Add additional styling as needed */

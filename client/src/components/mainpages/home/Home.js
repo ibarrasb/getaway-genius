@@ -5,6 +5,7 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Axios from 'axios';
+import Trip from './Trips'; // Import the Trip component
 import './styles.css';
 
 function Home() {
@@ -16,24 +17,23 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [name] = state.UserAPI.name;
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      light: '#84A98C',
-      main: '#84A98C',
-      dark: '#84A98C',
-      contrastText: '#84A98C',
+  const theme = createTheme({
+    palette: {
+      primary: {
+        light: '#84A98C',
+        main: '#84A98C',
+        dark: '#84A98C',
+        contrastText: '#84A98C',
+      },
+      secondary: {
+        light: '#84A98C',
+        main: '#84A98C',
+        dark: '#84A98C',
+        contrastText: '#84A98C',
+      },
     },
-    secondary: {
-      light: '#84A98C',
-      main: '#84A98C',
-      dark: '#84A98C',
-      contrastText: '#84A98C',
-    },
-  },
-});
+  });
 
-  // Fetches new and current trips associated with the user's email 
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -55,7 +55,6 @@ const theme = createTheme({
     fetchData();
   }, [email]);
 
-  // Delete trip 
   const removePost = async (id) => {
     if (window.confirm("Do you want to delete this post?")) {
       try {
@@ -63,7 +62,6 @@ const theme = createTheme({
           headers: { Authorization: token }
         });
         alert(res.data.msg);
-        // Remove the deleted trip from the trips state
         setTrips(prevTrips => prevTrips.filter(trip => trip._id !== id));
       } catch (error) {
         console.error('Error:', error);
@@ -71,37 +69,10 @@ const theme = createTheme({
     }
   };
 
-  // Current trip component
-  const renderTrip = (trip, index) => {
-    const startDate = new Date(trip.trip_start);
-    const endDate = new Date(trip.trip_end);
-    const startMonth = startDate.toLocaleString('default', { month: 'short' });
-    const startDay = startDate.getDate();
-    const endMonth = endDate.toLocaleString('default', { month: 'short' });
-    const endDay = endDate.getDate();
-
-    return (
-      <div className="trip-box" key={index}>
-        <img className="trip-image" src={trip.image_url} alt={trip.trip_location} />
-        <div className='trip-details-box'>
-          <div className="trip-duration">
-            {startMonth} {startDay + 1} - {endMonth} {endDay + 1}
-          </div>
-          <div className="trip-location">{trip.location_address}</div>
-          <div className='button-container'>
-            <Link to={{ pathname: `/trips/${trip._id}`, state: { trip } }} className="view-button">View</Link>
-            <button onClick={() => removePost(trip._id)} className="view-button" id='delete-button'>Delete</button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   if (!isLogged) {
     return (
       <div>
         <p>Please log in to view your trips.</p>
-      
       </div>
     );
   }
@@ -110,21 +81,14 @@ const theme = createTheme({
     return <div>Loading...</div>;
   }
 
-  // Categorize data by upcoming or past trip
   const currentDate = new Date();
-  // Current trip logic to include trips that end on the current day
   const currentTrips = trips.filter(trip => {
     const tripEndDate = new Date(trip.trip_end);
-    
-    // Add one day to the trip's end date
     const tripEndDatePlusOneDay = new Date(tripEndDate);
     tripEndDatePlusOneDay.setDate(tripEndDate.getDate() + 1);
- 
-    // Check if the adjusted end date is less than the current date
     return tripEndDatePlusOneDay >= currentDate;
   });
 
-  // Group current trips by year and sort them by start date
   const groupedCurrentTrips = currentTrips.reduce((acc, trip) => {
     const tripYear = new Date(trip.trip_end).getFullYear();
     if (!acc[tripYear]) {
@@ -134,38 +98,39 @@ const theme = createTheme({
     return acc;
   }, {});
 
-  // Sort trips within each year by start date
   for (const year in groupedCurrentTrips) {
     groupedCurrentTrips[year].sort((a, b) => new Date(a.trip_start) - new Date(b.trip_start));
   }
   
-
   return (
     <div className="home-container">
       <div className="search-container">
         <h2 className='home-message'>Hi, {name}</h2> 
       </div>
 
-      {/* MENU  */}
       <div className="center-button">
-      <Stack spacing={2} direction="row">
-      <ThemeProvider theme={theme}>
-        <Link to="/about">
-          <Button variant="outlined" color="primary" className="linkbutton">About</Button>
-        </Link>
-        <Link to="/previous-trips">
-          <Button variant="outlined" color="primary" className="linkbutton">Previous</Button>
-        </Link>
-      </ThemeProvider>
-    </Stack>
+        <Stack spacing={2} direction="row">
+          <ThemeProvider theme={theme}>
+            <Link to="/about">
+              <Button variant="outlined" color="primary" className="linkbutton">About</Button>
+            </Link>
+            <Link to="/previous-trips">
+              <Button variant="outlined" color="primary" className="linkbutton">Previous</Button>
+            </Link>
+            <Link to="/favorites">
+              <Button variant="outlined" color="primary" className="linkbutton">Favorites</Button>
+            </Link>
+          </ThemeProvider>
+        </Stack>
       </div>
     
-      {/* Render current trips and organize by year when trip is */}
       {Object.keys(groupedCurrentTrips).map(year => (
         <div key={year} className="year-trips">
           <h2 className='year-text'>{year}</h2>
           <div className="open-trips-container">
-            {groupedCurrentTrips[year].map((trip, index) => renderTrip(trip, index))}
+            {groupedCurrentTrips[year].map((trip, index) => (
+              <Trip key={index} trip={trip} onRemove={removePost} />
+            ))}
           </div>
         </div>
       ))}
