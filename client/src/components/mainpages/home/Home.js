@@ -143,11 +143,10 @@ const theme = createTheme({
   return (
     <div className="home-container">
       <div className="search-container">
-    
         <h2 className='home-message'>Hi, {name}</h2> 
       </div>
 
-      {/* Previous trip button */}
+      {/* MENU  */}
       <div className="center-button">
       <Stack spacing={2} direction="row">
       <ThemeProvider theme={theme}>
