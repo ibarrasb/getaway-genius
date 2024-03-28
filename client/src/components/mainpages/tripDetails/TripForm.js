@@ -1,10 +1,15 @@
 import React from 'react';
+import HotelSharpIcon from '@mui/icons-material/HotelSharp';
+import FlightSharpIcon from '@mui/icons-material/FlightSharp';
+import DirectionsCarFilledSharpIcon from '@mui/icons-material/DirectionsCarFilledSharp';
 
 function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, handleSubmit, calculateTotalExpenses, numberOfPeople, handlePeopleChange, calculateCostPerPerson }) {
     return (
+        
         <form className="detailed-form" onSubmit={handleSubmit}>
-            <label>
-                <h2>Stay Expense:</h2>
+        <div className={`expense-section ${editMode ? 'edit-mode' : ''}`} >
+            <label className='expense-specific'>
+                <HotelSharpIcon />
                 {editMode ? (
                     <input
                         type="text"
@@ -14,11 +19,11 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
                         required
                     />
                 ) : (
-                    <p>{formData.stay_expense}</p>
+                    <p>{`$${formData.stay_expense}`}</p>
                 )}
             </label>
-            <label>
-                <h2>Travel Expense:</h2>
+            <label className='expense-specific'>
+                <FlightSharpIcon />
                 {editMode ? (
                     <input
                         type="text"
@@ -28,11 +33,11 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
                         required
                     />
                 ) :(
-                    <p>{formData.travel_expense}</p>
+                    <p>{`$${formData.travel_expense}`}</p>
                 )}
             </label>
-            <label>
-                <h2>Car Expense:</h2>
+            <label className='expense-specific'>
+                <DirectionsCarFilledSharpIcon />
                 {editMode ? (
                     <input
                         type="text"
@@ -42,9 +47,10 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
                         required
                     />
                 ) : (
-                    <p>{formData.car_expense}</p>
+                    <p>{`$${formData.car_expense}`}</p>
                 )}
             </label>
+            </div>
             {editMode && (
                 <div>
                     <label>
@@ -72,7 +78,7 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
             )}
             {!editMode && (
                 <div>
-                    <h2>Total Expenses: ${calculateTotalExpenses().toFixed(2)}</h2>
+                    <h2>Total: ${calculateTotalExpenses().toFixed(2)}</h2>
                     <label>
                         Number of People:
                         <input
