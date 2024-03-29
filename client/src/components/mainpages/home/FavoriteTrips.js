@@ -8,28 +8,28 @@ import Axios from 'axios';
 import Trip from './Trips'; // Import the Trip component
 import './styles.css';
 
-function Home() {
+function FavoriteTrips() {
   const state = useContext(GlobalState);
   const [email] = state.UserAPI.email;
   const [token] = state.token;
-  const [isLogged] = state.UserAPI.isLogged
+  const [isLogged] = state.UserAPI.isLogged;
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name] = state.UserAPI.name;
-console.log(trips)
+
   const theme = createTheme({
     palette: {
       primary: {
         light: '#84A98C',
         main: '#84A98C',
         dark: '#84A98C',
-        contrastText: '#84A98C',
+        contrastText: '#ffffff', // Changed contrast text for better visibility
       },
       secondary: {
         light: '#84A98C',
         main: '#84A98C',
         dark: '#84A98C',
-        contrastText: '#84A98C',
+        contrastText: '#ffffff', // Changed contrast text for better visibility
       },
     },
   });
@@ -37,14 +37,14 @@ console.log(trips)
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await Axios.get('/api/trips/getaway-trip', {
+        const res = await Axios.get('/api/trips/favorites', {
           params: { email: email }
         });
-        if (res.status !== 200) {
+        if (res.status === 200) { // Check status before updating state
+          setTrips(res.data);
+        } else {
           throw new Error('Network response was not ok');
         }
-        const data = res.data;
-        setTrips(data);
         setLoading(false);
       } catch (error) {
         console.error('Error:', error);
@@ -138,4 +138,4 @@ console.log(trips)
   );
 }
 
-export default Home;
+export default FavoriteTrips;

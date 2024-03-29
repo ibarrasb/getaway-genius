@@ -29,12 +29,16 @@ const tripSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    image_url:{
+    image_url: {
         type: String,
         required: true
     },
+    isFavorite: {
+        type: Boolean,
+        default: false // Default value is false
+    }
 }, {
     timestamps: true
 });
 
-module.exports = mongoose.model('Trips', tripSchema);
+module.exports = mongoose.model('Trip', tripSchema);

@@ -8,7 +8,7 @@ import Add from './add/Add.js';
 import Search from './search/Search'
 import DetailedTrip from './tripDetails/DetailedTrip.js'
 import NotFound from './utils/not_found/NotFound';
-
+import FavoriteTrips from './home/FavoriteTrips.js'
 function Pages() {
    
     return (
@@ -21,6 +21,7 @@ function Pages() {
             <Route path='/add' element={<Add/>} />
             <Route path='/trips/:id' element={<DetailedTrip/>}/>
             <Route path='/search' element={<Search/>} />
+            <Route path='/favorites' element={<FavoriteTrips/>} />
             <Route path="/register" element={<Register />} />
             <Route path='*' element={<NotFound/>} />
         </Routes>

@@ -7,6 +7,10 @@ router.route('/getaway-trip')
     .get(tripCtrl.getTrips)
     .post(auth, tripCtrl.createTrips)
 
+//get favorite trips
+router.route('/favorites')
+    .get(tripCtrl.getFavoriteTrips)
+
 //deletes and updates specific posts
 router.route('/getaway/:id')
     .get(tripCtrl.getSpecificTrip)

@@ -11,7 +11,8 @@ const initialState = {
   "stay_expense": 0,
   "travel_expense": 0,
   "car_expense": 0,
-  "image_url": ''
+  "image_url": '',
+  "isFavorite": false
 }
 
 
@@ -76,12 +77,14 @@ function Add({ selectedPlace, photoURL }) {
         stay_expense: stayExpense,
         travel_expense: travelExpense,
         car_expense: carRentalExpense,
-        image_url: picURL
+        image_url: picURL,
+        isFavorite: false
       };
   
       // Create a Promise to wait for the state update to finish
       const stateUpdatePromise = new Promise(resolve => {
         setTripObject(sentObj);
+        console.log("Updated: " + sentObj)
         resolve(); // Resolve the Promise after the state is updated
       });
   

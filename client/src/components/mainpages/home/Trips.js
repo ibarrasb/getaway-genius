@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import FavoriteIcon from '@mui/icons-material/Favorite'; // Import the Favorite icon
+import Axios from 'axios'; // Import Axios for making HTTP requests
 import './Trips.css'; // Import CSS file for styling
 
 const Trips = ({ trip, onRemove }) => {
-  const [isFavorite, setIsFavorite] = useState(false); // State to manage the favorite status
+  const [isFavorite, setIsFavorite] = useState(trip.isFavorite); // State to manage the favorite status
 
   const startDate = new Date(trip.trip_start);
   const endDate = new Date(trip.trip_end);
@@ -13,8 +14,17 @@ const Trips = ({ trip, onRemove }) => {
   const endMonth = endDate.toLocaleString('default', { month: 'short' });
   const endDay = endDate.getDate();
 
-  const handleFavoriteToggle = () => {
-    setIsFavorite(prevState => !prevState); // Toggle the favorite status
+  const handleFavoriteToggle = async () => {
+    try {
+      // Update the isFavorite state to its opposite value
+      const newFavoriteStatus = !isFavorite;
+      setIsFavorite(newFavoriteStatus);
+
+      // Send a PUT request to update trip details including isFavorite property
+      await Axios.put(`/api/trips/getaway/${trip._id}`, { isFavorite: newFavoriteStatus });
+    } catch (error) {
+      console.error('Error updating trip details:', error);
+    }
   };
 
   const handleRemove = () => {
