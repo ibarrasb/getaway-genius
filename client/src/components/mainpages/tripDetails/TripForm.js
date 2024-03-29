@@ -5,7 +5,6 @@ import DirectionsCarFilledSharpIcon from '@mui/icons-material/DirectionsCarFille
 
 function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, handleSubmit, calculateTotalExpenses, numberOfPeople, handlePeopleChange, calculateCostPerPerson }) {
     return (
-        
         <form className="detailed-form" onSubmit={handleSubmit}>
         <div className={`expense-section ${editMode ? 'edit-mode' : ''}`} >
             <label className='expense-specific'>
@@ -79,16 +78,19 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
             {!editMode && (
                 <div>
                     <h2>Total: ${calculateTotalExpenses().toFixed(2)}</h2>
+                    {formData.trip_end && new Date(formData.trip_end) >= new Date() && ( // Check if trip_end is not in the past
+                  
                     <label>
-                        Number of People:
-                        <input
-                            type="number"
-                            value={numberOfPeople}
-                            onChange={handlePeopleChange}
-                            min="1"
-                        />
-                    </label>
+                    Number of People:
+                    <input
+                        type="number"
+                        value={numberOfPeople}
+                        onChange={handlePeopleChange}
+                        min="1"
+                    />
                     <h2>Cost per Person: ${calculateCostPerPerson()}</h2>
+                </label>                
+                )}   
                 </div>
             )}
             {editMode && <button className='updatetrip-button' type="submit">Update Trip</button>}
