@@ -24,7 +24,7 @@
 }
 .expense-section{
     display: inline-flex;
-    padding-left: 25%;
+    padding-left: 5%;
 }
 .expense-specific{
     padding-left: 5%;
@@ -109,7 +109,14 @@ button:hover {
 .dates {
     margin: 5px 0 0;
 }
+.activity-input {
+    display: flex;
+}
 
+.add-activity-container {
+    width: 70%;
+    margin-top: 5%;
+}
 .detailed-form {
     width: 40%;
     padding: 20px;
@@ -195,11 +202,15 @@ h2{
     }
     .expense-section{
         display: inline-flex;
-        padding-left: 15%;
+        padding-left: 3%;
     }
     .expense-specific{
         padding-left: 5%;
         display: ruby;
+    }
+    .add-activity-container {
+        width: 100%;
+        margin-top: 5%;
     }
 }
 @media (max-width: 414px) {
@@ -216,4 +227,3 @@ h2{
         padding-left: 10%;
     }
 }
-

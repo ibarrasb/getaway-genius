@@ -187,12 +187,13 @@ function DetailedTrip() {
                     handlePeopleChange={handlePeopleChange}
                     calculateCostPerPerson={calculateCostPerPerson}
                 />
-                <AddActivity
-                    addActivity={addActivity}
-                    removeActivity={removeActivity}
-                    activities={formData.activities}
-                />
+              
             </div>
+            <AddActivity className="add-activity"
+            addActivity={addActivity}
+            removeActivity={removeActivity}
+            activities={formData.activities}
+        />
         </div>
     );
 }

@@ -115,7 +115,7 @@ console.log(trips)
               <Button variant="outlined" color="primary" className="linkbutton">Home</Button>
             </Link>
             <Link to="/previous-trips">
-              <Button variant="outlined" color="primary" className="linkbutton">Previous</Button>
+              <Button variant="outlined" color="primary" className="linkbutton">Past Trips</Button>
             </Link>
             <Link to="/favorites">
               <Button variant="outlined" color="primary" className="linkbutton">Favorites</Button>

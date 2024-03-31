@@ -2,6 +2,7 @@ import React from 'react';
 import HotelSharpIcon from '@mui/icons-material/HotelSharp';
 import FlightSharpIcon from '@mui/icons-material/FlightSharp';
 import DirectionsCarFilledSharpIcon from '@mui/icons-material/DirectionsCarFilledSharp';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
 function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, handleSubmit, calculateTotalExpenses, numberOfPeople, handlePeopleChange, calculateCostPerPerson }) {
     return (
@@ -9,6 +10,7 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
         <div className={`expense-section ${editMode ? 'edit-mode' : ''}`} >
             <label className='expense-specific'>
                 <HotelSharpIcon />
+                <a>Stay</a>
                 {editMode ? (
                     <input
                         type="text"
@@ -23,6 +25,7 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
             </label>
             <label className='expense-specific'>
                 <FlightSharpIcon />
+                <a>Travel</a>
                 {editMode ? (
                     <input
                         type="text"
@@ -37,6 +40,7 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
             </label>
             <label className='expense-specific'>
                 <DirectionsCarFilledSharpIcon />
+                <a>Transportation</a>
                 {editMode ? (
                     <input
                         type="text"
@@ -49,6 +53,21 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
                     <p>{`$${formData.car_expense}`}</p>
                 )}
             </label>
+            <label className='expense-specific'>
+            <LocalOfferIcon />
+            <a>Other</a>
+            {editMode ? (
+                <input
+                    type="text"
+                    name="other_expense"
+                    value={formData.other_expense}
+                    onChange={(e) => handleExpenseChange('other_expense', e.target.value)}
+                    required
+                />
+            ) : (
+                <p>{`$${formData.other_expense}`}</p>
+            )}
+        </label>
             </div>
             {editMode && (
                 <div>
