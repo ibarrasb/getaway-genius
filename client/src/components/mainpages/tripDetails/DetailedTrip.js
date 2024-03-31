@@ -3,6 +3,7 @@ import Axios from 'axios';
 import { useParams, Link } from 'react-router-dom';
 import TripDetails from './TripDetails';
 import TripForm from './TripForm';
+import AddActivity from './AddActivities'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Button from '@mui/material/Button';
 import './detailed.css';
@@ -18,9 +19,12 @@ function DetailedTrip() {
         stay_expense: '',
         travel_expense: '',
         car_expense: '',
+        other_expense: '',
+        activities: []
     });
     const [numberOfPeople, setNumberOfPeople] = useState(1);
 
+    // GET API call for fetching currect expenses/details
     useEffect(() => {
         const fetchTripDetails = async () => {
             try {
@@ -33,6 +37,8 @@ function DetailedTrip() {
                     stay_expense: formatExpense(res.data.stay_expense),
                     travel_expense: formatExpense(res.data.travel_expense),
                     car_expense: formatExpense(res.data.car_expense),
+                    other_expense: formatExpense(res.data.other_expense),
+                    activities: res.data.activities || []
                 }));
                 setLoading(false);
             } catch (error) {
@@ -55,6 +61,7 @@ function DetailedTrip() {
         setEditMode(!editMode);
     };
 
+// POST API call for updating date and expenses
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -90,30 +97,55 @@ function DetailedTrip() {
         }));
     };
 
+//Adds costs of individual expenses
     const calculateTotalExpenses = () => {
-        const { stay_expense, travel_expense, car_expense } = formData;
-        return parseFloat(stay_expense) + parseFloat(travel_expense) + parseFloat(car_expense);
+        const { stay_expense, travel_expense, car_expense, other_expense } = formData;
+        return parseFloat(stay_expense) + parseFloat(travel_expense) + parseFloat(car_expense) + parseFloat(other_expense);
     };
 
+//handles change in amount of people in trip
     const handlePeopleChange = (e) => {
         const { value } = e.target;
         setNumberOfPeople(value);
     };
 
+//Logic that calculates the cost of the trip per person
     const calculateCostPerPerson = () => {
         const totalExpenses = calculateTotalExpenses();
         const costPerPerson = totalExpenses / numberOfPeople;
         return isNaN(costPerPerson) ? 0 : costPerPerson.toFixed(2);
     };
 
-    // const isValidDate = (date) => {
-    //     return !isNaN(Date.parse(date));
-    // };
-
-    // const formatDate = (dateString) => {
-    //     const date = new Date(dateString);
-    //     return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-    // };
+//Add activity to specfic trip
+    const addActivity = async (activity) => {
+        try {
+            const res = await Axios.put(`/api/trips/getaway/${tripDetails._id}`, { activities: [...formData.activities, activity] });
+            setFormData(prevState => ({
+                ...prevState,
+                activities: [...formData.activities, activity]
+            }));
+            console.log('Activity added:', res.data);
+        } catch (error) {
+            console.error('Error adding activity:', error);
+        }
+    };
+    
+//Remove Activity from specific trip
+    const removeActivity = async (index) => {
+        try {
+            const updatedActivities = [...formData.activities];
+            updatedActivities.splice(index, 1);
+            const res = await Axios.put(`/api/trips/getaway/${tripDetails._id}`, { activities: updatedActivities });
+            setFormData(prevState => ({
+                ...prevState,
+                activities: updatedActivities
+            }));
+            console.log('Activity removed:', res.data);
+        } catch (error) {
+            console.error('Error removing activity:', error);
+        }
+    };
+    
 
     const formatDateWithExtraDay = (dateString) => {
         const date = new Date(dateString);
@@ -133,8 +165,7 @@ function DetailedTrip() {
         <div className="detailed-container">
             <div className="detailed-button-container">
                 <div className="back-button-container">
-                <Link to="/home"> <Button variant="text" className="back-button"startIcon={<ArrowBackIcon />}>Back</Button></Link>
-                   
+                    <Link to="/home"> <Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>Back</Button></Link>
                 </div>
                 {tripDetails.trip_end && new Date(tripDetails.trip_end) >= new Date() && ( // Check if trip_end is not in the past
                     <div className="edit-button-container">
@@ -155,6 +186,11 @@ function DetailedTrip() {
                     numberOfPeople={numberOfPeople}
                     handlePeopleChange={handlePeopleChange}
                     calculateCostPerPerson={calculateCostPerPerson}
+                />
+                <AddActivity
+                    addActivity={addActivity}
+                    removeActivity={removeActivity}
+                    activities={formData.activities}
                 />
             </div>
         </div>

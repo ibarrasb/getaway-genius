@@ -11,8 +11,10 @@ const initialState = {
   "stay_expense": 0,
   "travel_expense": 0,
   "car_expense": 0,
+  "other_expense": 0,
   "image_url": '',
-  "isFavorite": false
+  "isFavorite": false,
+  "activities": []
 }
 
 
@@ -77,8 +79,10 @@ function Add({ selectedPlace, photoURL }) {
         stay_expense: stayExpense,
         travel_expense: travelExpense,
         car_expense: carRentalExpense,
+        other_expense: 0,
         image_url: picURL,
-        isFavorite: false
+        isFavorite: false, 
+        activities: []
       };
   
       // Create a Promise to wait for the state update to finish

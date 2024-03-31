@@ -29,6 +29,10 @@ const tripSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    other_expense: {
+        type: String, 
+        required: true
+    },
     image_url: {
         type: String,
         required: true
@@ -36,6 +40,10 @@ const tripSchema = new mongoose.Schema({
     isFavorite: {
         type: Boolean,
         default: false // Default value is false
+    },
+    activities: {
+        type: Array, 
+        default: []
     }
 }, {
     timestamps: true

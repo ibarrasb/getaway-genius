@@ -29,7 +29,7 @@ getFavoriteTrips: async (req, res) => {
 }, 
 createTrips: async (req, res) => {
     try {
-        const {user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url, isFavorite} = req.body;
+        const {user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, other_expense, image_url, isFavorite, activities} = req.body;
         if(!image_url) return res.status(400).json({msg: "No image upload"})
 
         // const tripstart = await Trips.findOne({user_email, trip_start})
@@ -37,7 +37,7 @@ createTrips: async (req, res) => {
         //     return res.status(400).json({msg: "You have an existing vacation on this day"})
 
         const newVacation = new Trips({
-            user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url, isFavorite
+            user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, other_expense, image_url, isFavorite, activities
         })
 
         await newVacation.save()
@@ -58,14 +58,14 @@ deleteTrip: async (req, res) => {
 },
 updateTrip: async (req, res) => {
     try {
-        const {user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url, isFavorite} = req.body;
+        const {user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, other_expense, image_url, isFavorite, activities} = req.body;
         // if(!image_url) return res.status(400).json({msg: "No image upload"})
 
         await Trips.findOneAndUpdate({_id: req.params.id}, {
-            user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, image_url, isFavorite
+            user_email, location_address, trip_start, trip_end, stay_expense, travel_expense, car_expense, other_expense, image_url, isFavorite, activities
         })
 
-        res.json({msg: "Updated a Product"})
+        res.json({msg: "Updated a Trip"})
     } catch (err) {
         return res.status(500).json({msg: err.message})
     }
