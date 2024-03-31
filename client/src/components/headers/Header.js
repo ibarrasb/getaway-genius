@@ -30,7 +30,6 @@ const theme = createTheme({
   },
 });
  
-
   const location = useLocation();
 
   const logoutUser = async () => {
