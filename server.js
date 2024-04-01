@@ -104,6 +104,7 @@ app.use('/api/user', usersRouter);
 // Connect to MongoDB using promises
 const URI = process.env.MONGODB_URL;
 
+//connect to DB
 async function connectToMongo() {
   try {
     await mongoose.connect(URI, {
