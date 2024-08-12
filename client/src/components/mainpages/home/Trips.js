@@ -45,6 +45,15 @@ const Trips = ({ trip, onRemove }) => {
         <div className="trip-duration">
           {startMonth} {startDay + 1} - {endMonth} {endDay + 1}
         </div>
+        <div className="trip-location">
+        ${(
+          (Number(trip.stay_expense) || 0) +
+          (Number(trip.car_expense) || 0) +
+          (Number(trip.travel_expense) || 0)
+        ).toFixed(2)}
+      </div>
+      
+      
         <div className="trip-location">{trip.location_address}</div>
         <div className='button-container'>
           <Link to={{ pathname: `/trips/${trip._id}`, state: { trip } }} className="view-button">View</Link>
