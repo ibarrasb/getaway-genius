@@ -23,7 +23,7 @@
     margin: 10px;
 }
 .expense-section{
-    display: inline-flex;
+    display: block;
     padding-left: 5%;
 }
 .expense-specific{
@@ -179,6 +179,7 @@ button[type="submit"]:hover {
 h2{
     text-align: center;
     padding-block: 10px;
+    margin: 10px;
 }
 
 @media (max-width: 430px) {
@@ -201,17 +202,25 @@ h2{
         margin: 5%;
     }
     .expense-section{
-        display: inline-flex;
+        display: grid;
         padding-left: 3%;
     }
     .expense-specific{
         padding-left: 5%;
-        display: ruby;
+        display: grid;
+        padding: 7px;
     }
     .add-activity-container {
         width: 100%;
         margin-top: 5%;
     }
+     .expense-specific p {
+        text-align: end;
+        font-size: x-large;
+     }
+     .expense-specific a{
+        font-size: x-large;
+     }
 }
 @media (max-width: 414px) {
 
