@@ -225,14 +225,14 @@ h2{
 @media (max-width: 414px) {
 
     .expense-section{
-        display: inline-flex;
-        padding-left: 13%;
+        display: grid;
+        padding-left: 0;
     }
 }
 @media (max-width: 390px) {
 
     .expense-section{
-        display: inline-flex;
-        padding-left: 10%;
+        display: grid;
+        padding-left: 0;
     }
 }
