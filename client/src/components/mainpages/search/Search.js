@@ -92,14 +92,15 @@ const Search = () => {
   
 
   return (
-    <div className="container-search">
- 
+
+    <div>
+
     <Link to="/home"> <Button variant="text" className="back-button"startIcon={<ArrowBackIcon />}>Back</Button></Link>
-       
- 
+
+    <div className="container-search">
+    <div className="contain-search">
       <h1 className='wyg-text'>Where are you going?</h1>
       <div className="search-bar-container">
-      
       <Autocomplete
         className="custom-autocomplete"
         onPlaceSelected={handlePlaceSelected}
@@ -109,9 +110,11 @@ const Search = () => {
       />
  
       </div>
+      </div>
       {
         checkSelectedPlace()
       }
+    </div>
     </div>
   );
 };

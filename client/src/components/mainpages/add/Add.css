@@ -1,13 +1,18 @@
 /* Add.css */
 
 .add-form-container {
-    width: 400px;
-    margin: 50px auto;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    padding: 20px;
+  margin: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 10px;
+  border: solid;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   }
+
+  .add-form-container img{
+text-align: center;
+  }
+  
   
   .add-form-container h2 {
     text-align: center;

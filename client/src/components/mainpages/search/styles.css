@@ -9,13 +9,20 @@
     padding-top: 5%;
 
   }
+  .contain-search{
+    display: block;
+    border: 2px solid;
+    padding: 4%;
+    border-radius: 10px;
+  }
 
   .wyg-text{
     font-family: 'Crimson Text', serif;
+    text-align: center;
   }
   /* styles.css */
   input.custom-autocomplete.pac-target-input {
-    width: 100%;
+    width: 95%;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;

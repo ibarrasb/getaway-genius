@@ -57,13 +57,13 @@ function Add({ selectedPlace, photoURL }) {
     return isNaN(formattedValue) ? '' : formattedValue;
   };
 
-  const handleExpenseChange = (setter) => (e) => {
-    setter(e.target.value);
-  };
+  // const handleExpenseChange = (setter) => (e) => {
+  //   setter(e.target.value);
+  // };
 
-  const handleExpenseBlur = (setter) => (e) => {
-    setter(formatExpense(e.target.value));
-  };
+  // const handleExpenseBlur = (setter) => (e) => {
+  //   setter(formatExpense(e.target.value));
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -89,6 +89,7 @@ function Add({ selectedPlace, photoURL }) {
       const stateUpdatePromise = new Promise(resolve => {
         setTripObject(sentObj);
         console.log("Updated: " + sentObj)
+        console.log(JSON.stringify(sentObj))
         resolve(); // Resolve the Promise after the state is updated
       });
   
@@ -125,6 +126,7 @@ function Add({ selectedPlace, photoURL }) {
 
   return (
     <div className="add-form-container">
+    <h1 className='wyg-text'>When are you going?</h1>
    {
     checkImage()
    }
@@ -152,7 +154,7 @@ function Add({ selectedPlace, photoURL }) {
           />
         </label>
         {errorMessage && <p className="error-message">{errorMessage}</p>}
-        <button type="submit">Submit</button>
+        <button type="submit">Create</button>
       </form>
     </div>
   );
