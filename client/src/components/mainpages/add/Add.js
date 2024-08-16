@@ -76,9 +76,9 @@ function Add({ selectedPlace, photoURL }) {
         location_address: location,
         trip_start: tripStart,
         trip_end: tripEnd,
-        stay_expense: stayExpense,
-        travel_expense: travelExpense,
-        car_expense: carRentalExpense,
+        stay_expense: 0,
+        travel_expense: 0,
+        car_expense: 0,
         other_expense: 0,
         image_url: picURL,
         isFavorite: false, 
@@ -151,36 +151,6 @@ function Add({ selectedPlace, photoURL }) {
             required
           />
         </label>
-        <label>
-          Stay Expense:
-          <input
-            type="text"
-            value={stayExpense}
-            onChange={handleExpenseChange(setStayExpense)}
-            onBlur={handleExpenseBlur(setStayExpense)}
-            required
-          />
-        </label>
-        <label>
-          Travel Expense:
-          <input
-            type="text"
-            value={travelExpense}
-            onChange={handleExpenseChange(setTravelExpense)}
-            onBlur={handleExpenseBlur(setTravelExpense)}
-            required
-          />
-        </label>
-        <label>
-          Car Rental Expense:
-          <input
-            type="text"
-            value={carRentalExpense}
-            onChange={handleExpenseChange(setCarRentalExpense)}
-            onBlur={handleExpenseBlur(setCarRentalExpense)}
-            required
-          />
-        </label>
         {errorMessage && <p className="error-message">{errorMessage}</p>}
         <button type="submit">Submit</button>
       </form>
@@ -188,4 +158,4 @@ function Add({ selectedPlace, photoURL }) {
   );
 }
 
-export default Add;
+export default Add
