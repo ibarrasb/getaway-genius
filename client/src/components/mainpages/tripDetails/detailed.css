@@ -30,6 +30,10 @@
     padding-left: 5%;
     display: ruby;
 }
+.arrow-fw {
+    padding-left: 95%;
+    padding-bottom: 5%;
+}
 .back-button,
 button {
     padding: 10px 20px;
@@ -234,5 +238,9 @@ h2{
     .expense-section{
         display: grid;
         padding-left: 0;
+    }
+    .arrow-fw {
+        padding-left: 95%;
+        padding-bottom: 5%;
     }
 }

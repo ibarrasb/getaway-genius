@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Axios from 'axios';
 import { useParams, Link } from 'react-router-dom';
 import TripDetails from './TripDetails';
-import TripForm from './TripForm';
+import TripDetailedExpenses from './TripDetailedExpenses';
 import AddActivity from './AddActivities'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Button from '@mui/material/Button';
@@ -176,7 +176,7 @@ function DetailedTrip() {
 
             <div className='tripinfo-container'>
                 <TripDetails tripDetails={tripDetails} formData={formData} formatDateWithExtraDay={formatDateWithExtraDay} />
-                <TripForm
+                <TripDetailedExpenses
                     formData={formData}
                     editMode={editMode}
                     handleExpenseChange={handleExpenseChange}

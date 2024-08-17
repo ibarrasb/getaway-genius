@@ -19,6 +19,20 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    birthday: {
+        type: Date, // Storing birthday as a Date type
+        required: true,
+    },
+    city: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    state: {
+        type: String,
+        required: true,
+        trim: true
+    }
 }, {
     timestamps: true
 });

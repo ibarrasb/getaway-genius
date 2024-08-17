@@ -4,16 +4,27 @@ import FlightSharpIcon from '@mui/icons-material/FlightSharp';
 import DirectionsCarFilledSharpIcon from '@mui/icons-material/DirectionsCarFilledSharp';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import Divider from '@mui/material/Divider';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
-function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, handleSubmit, calculateTotalExpenses, numberOfPeople, handlePeopleChange, calculateCostPerPerson }) {
+function TripDetailedExpenses({ formData, editMode, handleExpenseChange, handleDateChange, handleSubmit, calculateTotalExpenses, numberOfPeople, handlePeopleChange, calculateCostPerPerson }) {
     return (
         <form className="detailed-form" onSubmit={handleSubmit}>
             <div className={`expense-section ${editMode ? 'edit-mode' : ''}`} >
 
                 <div className="expense-item">
+                
                     <label className='expense-specific'>
                         <HotelSharpIcon />
                         <a>Stay</a>
+                        <ArrowForwardIosIcon
+                        className='arrow-fw'
+                        onClick={() => {
+                          // Your function logic here
+                          console.log('Arrow icon clicked');
+                          // Additional actions
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
                         {editMode ? (
                             <input
                                 type="text"
@@ -26,6 +37,7 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
                             <p>{`$${formData.stay_expense}`}</p>
                         )}
                     </label>
+                    
                     <Divider /> {/* Divider enclosed */}
                 </div>
 
@@ -33,6 +45,15 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
                     <label className='expense-specific'>
                         <FlightSharpIcon />
                         <a>Travel</a>
+                        <ArrowForwardIosIcon
+                        className='arrow-fw'
+                        onClick={() => {
+                          // Your function logic here
+                          console.log('Arrow icon clicked');
+                          // Additional actions
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
                         {editMode ? (
                             <input
                                 type="text"
@@ -52,6 +73,15 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
                     <label className='expense-specific'>
                         <DirectionsCarFilledSharpIcon />
                         <a>Transportation</a>
+                        <ArrowForwardIosIcon
+                        className='arrow-fw'
+                        onClick={() => {
+                          // Your function logic here
+                          console.log('Arrow icon clicked');
+                          // Additional actions
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
                         {editMode ? (
                             <input
                                 type="text"
@@ -71,6 +101,15 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
                     <label className='expense-specific'>
                         <LocalOfferIcon />
                         <a>Other</a>
+                        <ArrowForwardIosIcon
+                        className='arrow-fw'
+                        onClick={() => {
+                          // Your function logic here
+                          console.log('Arrow icon clicked');
+                          // Additional actions
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
                         {editMode ? (
                             <input
                                 type="text"
@@ -135,4 +174,4 @@ function TripForm({ formData, editMode, handleExpenseChange, handleDateChange, h
     );
 }
 
-export default TripForm;
+export default TripDetailedExpenses;
