@@ -8,7 +8,7 @@ const userCtrl = {
 
 register: async(req,res) => {
         try{
-            const{name, email, password, consoles} = req.body;
+            const{fname, lname, email, password, birthday, city, state, zip} = req.body;
 
             const user = await Users.findOne({email})
             if(user) return res.status(400).json({msg: 'This email already exists'})
@@ -19,7 +19,7 @@ register: async(req,res) => {
             // Password Encryption
             const passwordHash = await bcrypt.hash(password, 10)
             const newUser = new Users({
-                name, email, password: passwordHash, consoles
+                fname, lname, email, password: passwordHash, birthday, city, state, zip
             })
 
             //Save User to MongoDB

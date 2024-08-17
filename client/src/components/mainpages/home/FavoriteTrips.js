@@ -15,7 +15,6 @@ function FavoriteTrips() {
   const [isLogged] = state.UserAPI.isLogged;
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [name] = state.UserAPI.name;
 
   const theme = createTheme({
     palette: {
@@ -81,6 +80,33 @@ function FavoriteTrips() {
     return <div>Loading...</div>;
   }
 
+  if (trips.length === 0) {
+    return (
+      <div className="home-container">
+      <div className="search-container">
+        <h2 className='home-message'>Favorites</h2> 
+      </div>
+
+      <div className="center-button">
+        <Stack spacing={2} direction="row">
+          <ThemeProvider theme={theme}>
+            <Link to="/home">
+              <Button variant="outlined" color="primary" className="linkbutton">Home</Button>
+            </Link>
+            <Link to="/previous-trips">
+              <Button variant="outlined" color="primary" className="linkbutton">Previous</Button>
+            </Link>
+            <Link to="/favorites">
+              <Button variant="outlined" color="primary" className="linkbutton">Favorites</Button>
+            </Link>
+          </ThemeProvider>
+        </Stack>
+      </div>
+          <p>you dont have previous Trips.</p>
+      </div>
+    );
+  }
+
   const currentDate = new Date();
   const currentTrips = trips.filter(trip => {
     const tripEndDate = new Date(trip.trip_end);
@@ -105,7 +131,7 @@ function FavoriteTrips() {
   return (
     <div className="home-container">
       <div className="search-container">
-        <h2 className='home-message'>Hi, {name}</h2> 
+        <h2 className='home-message'>Favorites</h2> 
       </div>
 
       <div className="center-button">

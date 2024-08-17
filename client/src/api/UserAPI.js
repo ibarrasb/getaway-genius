@@ -16,7 +16,7 @@ function UserAPI(token) {
                     const res = await axios.get('/api/user/infor', {
                         headers: {Authorization: token}
                     })
-                    setName(res.data.name.split(' ')[0])
+                    setName(res.data.fname.split(' ')[0])
                     setEmail(res.data.email.split(' ')[0])
                     setIsLogged(true)
                     res.data.role === 1 ? setIsAdmin(true) : setIsAdmin(false)
@@ -47,7 +47,7 @@ function UserAPI(token) {
         isLogged: [isLogged, setIsLogged],
         isAdmin: [isAdmin, setIsAdmin],
         callback: [callback, setCallback],
-        name: [name, setName],
+        fname: [name, setName],
         email: [email, setEmail]
     }
 }

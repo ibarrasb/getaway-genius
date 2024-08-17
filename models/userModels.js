@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    name: {
+    fname: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    lname: {
         type: String,
         required: true,
         trim: true
@@ -32,6 +37,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true
+    },
+    zip: {
+        type: Number,
+        required: true,
     }
 }, {
     timestamps: true

@@ -15,7 +15,7 @@ function Home() {
   const [isLogged] = state.UserAPI.isLogged
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [name] = state.UserAPI.name;
+  const [fname] = state.UserAPI.fname;
 console.log(trips)
   const theme = createTheme({
     palette: {
@@ -105,7 +105,7 @@ console.log(trips)
   return (
     <div className="home-container">
       <div className="search-container">
-        <h2 className='home-message'>Hi, {name}</h2> 
+        <h2 className='home-message'>Hi, {fname}</h2> 
       </div>
 
       <div className="center-button">

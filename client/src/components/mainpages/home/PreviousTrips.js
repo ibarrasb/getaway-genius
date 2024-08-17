@@ -2,6 +2,8 @@ import React, { useContext, useState, useEffect } from 'react';
 import { GlobalState } from '../../../GlobalState';
 import { Link } from 'react-router-dom'; 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Axios from 'axios';
 import './styles.css';
@@ -12,6 +14,22 @@ function PreviousTrips() {
   const [token] = state.token;
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const theme = createTheme({
+    palette: {
+      primary: {
+        light: '#84A98C',
+        main: '#84A98C',
+        dark: '#84A98C',
+        contrastText: '#84A98C',
+      },
+      secondary: {
+        light: '#84A98C',
+        main: '#84A98C',
+        dark: '#84A98C',
+        contrastText: '#84A98C',
+      },
+    },
+  });
 
 //fetches new and current trips associated to the user with the email 
   useEffect(() => {
@@ -98,9 +116,25 @@ function PreviousTrips() {
   //if no previous trips, message will display
 if (trips.length === 0) {
     return (
-      <div>
-       <div className="back-button-container">
-    <Link to="/home"> <Button variant="text" className="back-button"startIcon={<ArrowBackIcon />}>Back</Button></Link>
+      <div className="home-container">
+      <div className="search-container">
+        <h2 className='home-message'>Previous Trips</h2> 
+      </div>
+
+      <div className="center-button">
+        <Stack spacing={2} direction="row">
+          <ThemeProvider theme={theme}>
+            <Link to="/home">
+              <Button variant="outlined" color="primary" className="linkbutton">Home</Button>
+            </Link>
+            <Link to="/previous-trips">
+              <Button variant="outlined" color="primary" className="linkbutton">Previous</Button>
+            </Link>
+            <Link to="/favorites">
+              <Button variant="outlined" color="primary" className="linkbutton">Favorites</Button>
+            </Link>
+          </ThemeProvider>
+        </Stack>
         </div>
           <p>you dont have previous Trips.</p>
       </div>
@@ -119,8 +153,24 @@ if (trips.length === 0) {
 
   return (
     <div className="home-container">
-      <div className="back-button-container">
-        <Link to="/home"> <Button variant="text" className="back-button"startIcon={<ArrowBackIcon />}>Back</Button></Link>
+    <div className="search-container">
+        <h2 className='home-message'>Previous Trips</h2> 
+      </div>
+
+      <div className="center-button">
+        <Stack spacing={2} direction="row">
+          <ThemeProvider theme={theme}>
+            <Link to="/home">
+              <Button variant="outlined" color="primary" className="linkbutton">Home</Button>
+            </Link>
+            <Link to="/previous-trips">
+              <Button variant="outlined" color="primary" className="linkbutton">Past Trips</Button>
+            </Link>
+            <Link to="/favorites">
+              <Button variant="outlined" color="primary" className="linkbutton">Favorites</Button>
+            </Link>
+          </ThemeProvider>
+        </Stack>
       </div>
       {/* Render current trips and organizes by year when trip is */}
       {Object.keys(groupedPreviousTrips).map(year => (
