@@ -103,15 +103,18 @@ function Register() {
                             value={user.password}
                             onChange={onChangeInput}
                         />
-                        
-                        <input
+                       
+                        <label htmlFor="birthday">Date of Birth</label>
+                            <input
                             type="date"
+                            id="birthday"
                             name="birthday"
                             required
-                            placeholder="Birthday"
+                            placeholder="birthday" // Example format
                             value={user.birthday}
                             onChange={onChangeInput}
-                        />
+                            />
+
 
                         <input
                             type="text"
