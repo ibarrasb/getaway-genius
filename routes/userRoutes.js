@@ -1,15 +1,30 @@
-const router = require('express').Router()
-const userCtrl = require('../controllers/userCtrl')
-const auth = require('../middleware/auth')
+const router = require('express').Router();
+const userCtrl = require('../controllers/userCtrl');
+const auth = require('../middleware/auth');
 
-router.post('/register', userCtrl.register)
+// Register a new user
+router.route('/register')
+    .post(userCtrl.register)
 
-router.post('/login', userCtrl.login)
+// Login a user
+router.route('/login')
+    .post(userCtrl.login)
 
-router.get('/logout', userCtrl.logout)
+// Logout a user
+router.route('/logout')
+    .get(userCtrl.logout)
 
-router.get('/refresh_token', userCtrl.refreshToken)
+// Refresh token
+router.route('/refresh_token')
+    .get(userCtrl.refreshToken)
 
-router.get('/infor', auth, userCtrl.getUser)
+// Get user information (protected route)
+router.route('/infor')
+    .get(auth, userCtrl.getUser)
+    
 
-module.exports = router
+router.route('/profile/:id')
+    .get(userCtrl.getLoggedUser)
+    .put(userCtrl.updateUser)
+
+module.exports = router;

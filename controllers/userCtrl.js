@@ -106,6 +106,31 @@ getUser: async(req, res) => {
     } catch (error) {
         res.status(500).json({msg: error.msg})
     }
+},
+getLoggedUser: async(req, res) => {
+    try {
+        
+        const detailedUser = await Users.findById(req.params.id)
+        console.log(detailedUser)
+        res.json(detailedUser)
+        
+    } catch (err) {
+        return res.status(500).json({msg: err.message})
+    }
+},
+updateUser: async(req, res) => {
+    try {
+        const {fname, lname, birthday, city, state, zip} = req.body;
+        // if(!image_url) return res.status(400).json({msg: "No image upload"})
+
+        await Users.findOneAndUpdate({_id: req.params.id}, {
+            fname, lname, birthday, city, state, zip
+        })
+
+        res.json({msg: "Updated User"})
+    } catch (err) {
+        return res.status(500).json({msg: err.message})
+    }
 }  
 }
 const createAccessToken = (user) =>{

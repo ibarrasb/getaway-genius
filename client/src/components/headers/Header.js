@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
+import { useNavigate } from 'react-router-dom';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import axios from 'axios';
 import './header.css';
@@ -11,6 +12,7 @@ import './header.css';
 function Header() {
   const state = useContext(GlobalState);
   const [isLogged, setIsLogged] = state.UserAPI.isLogged;
+  const [userID] = state.UserAPI.userID;
 
 
 const theme = createTheme({
@@ -39,17 +41,24 @@ const theme = createTheme({
     window.location.href = '/';
   };
 
+  
+    const navigate = useNavigate();
+  
+    const handleClick = () => {
+      navigate('/home');
+    };
+
   const loggedRouter = () => {
     return (
       <div className="container">
-      <div className="dv1">
-      <span className="getaway">Getaway</span> <span className="genius">Genius</span>
-  </div>
+      <button className="dv1" onClick={handleClick}>
+      <span className="getaway">Getaway</span><span className="genius">Genius</span>
+    </button>
         <div className="dv2">
         <Stack spacing={2} direction="row">
         <ThemeProvider theme={theme}>
         <Link to="/search"> <Button variant="text" className="back-button"startIcon={<AddIcon />}>Add</Button></Link>
-      
+        <Link to={{ pathname: `/profile/${userID}` }}> <Button variant="text" className="back-button">Profile</Button></Link>
         <Button variant="text" component={Link} to="/" className="log-out" onClick={logoutUser}>
         Logout
       </Button>
@@ -69,5 +78,6 @@ const theme = createTheme({
     </div>
   );
 }
+
 
 export default Header;

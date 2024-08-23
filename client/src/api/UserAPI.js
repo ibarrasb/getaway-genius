@@ -5,8 +5,11 @@ function UserAPI(token) {
     const [isLogged, setIsLogged] = useState(false)
     const [isAdmin, setIsAdmin] = useState(false)
     const [callback, setCallback] = useState(false)
-    const [name, setName] = useState([])
+    const [fname, setfName] = useState([])
+    // const [name, setlName] = useState([])
     const [email, setEmail] = useState([])
+    const [iD, setID] = useState([])
+    const [data, setData] = useState([])
     
 
     useEffect(() =>{
@@ -16,7 +19,9 @@ function UserAPI(token) {
                     const res = await axios.get('/api/user/infor', {
                         headers: {Authorization: token}
                     })
-                    setName(res.data.fname.split(' ')[0])
+                    setData(res.data)
+                    setID(res.data._id.split(' ')[0])
+                    setfName(res.data.fname.split(' ')[0])
                     setEmail(res.data.email.split(' ')[0])
                     setIsLogged(true)
                     res.data.role === 1 ? setIsAdmin(true) : setIsAdmin(false)
@@ -41,14 +46,14 @@ function UserAPI(token) {
     //         })
     // }
 
-
-
     return {
         isLogged: [isLogged, setIsLogged],
         isAdmin: [isAdmin, setIsAdmin],
         callback: [callback, setCallback],
-        fname: [name, setName],
-        email: [email, setEmail]
+        fname: [fname, setfName],
+        email: [email, setEmail],
+        userID: [iD, setID],
+        userData: [data, setData]
     }
 }
 

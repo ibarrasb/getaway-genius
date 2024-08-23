@@ -6,9 +6,12 @@ import Home from './home/Home.js';
 import PreviousTrips from './home/PreviousTrips.js'
 import Add from './add/Add.js';
 import Search from './search/Search'
+import Profile from './profile/Profile.js'
 import DetailedTrip from './tripDetails/DetailedTrip.js'
 import NotFound from './utils/not_found/NotFound';
 import FavoriteTrips from './home/FavoriteTrips.js'
+
+
 function Pages() {
    
     return (
@@ -20,6 +23,7 @@ function Pages() {
             <Route path="/previous-trips" element={<PreviousTrips/>} />
             <Route path='/add' element={<Add/>} />
             <Route path='/trips/:id' element={<DetailedTrip/>}/>
+            <Route path='/profile/:id' element={<Profile/>}/>
             <Route path='/search' element={<Search/>} />
             <Route path='/favorites' element={<FavoriteTrips/>} />
             <Route path="/register" element={<Register />} />

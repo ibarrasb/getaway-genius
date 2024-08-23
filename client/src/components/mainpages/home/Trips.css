@@ -22,6 +22,12 @@
  /* Adjust the width as needed */
   height: auto; /* Maintain aspect ratio */
 }
+.needs-attention {
+  color: red; /* Example: make the text red */
+  font-weight: bold; /* Example: make the text bold */
+  /* Add any other styles you want */
+}
+
 
 .trip-details-box {
   flex: 1;
