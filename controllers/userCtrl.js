@@ -1,143 +1,143 @@
 const Users = require('../models/userModels');
-const { use } = require('../routes/userRoutes');
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-//user controller for authentication
+// Create access token
+const createAccessToken = (user) => {
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
+};
+
+// Create refresh token
+const createRefreshToken = (user) => {
+    return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+};
+
+// User controller for authentication
 const userCtrl = {
+    register: async (req, res) => {
+        try {
+            const { fname, lname, email, password, birthday, city, state, zip } = req.body;
 
-register: async(req,res) => {
-        try{
-            const{fname, lname, email, password, birthday, city, state, zip} = req.body;
+            const user = await Users.findOne({ email });
+            if (user) return res.status(400).json({ msg: 'This email already exists' });
 
-            const user = await Users.findOne({email})
-            if(user) return res.status(400).json({msg: 'This email already exists'})
+            if (password.length < 6)
+                return res.status(400).json({ msg: 'Password must be at least 6 characters long' });
 
-            if(password.length < 6 )
-            return res.status(400).json({msg: 'Password is at least 6 characters long'})
-            
             // Password Encryption
-            const passwordHash = await bcrypt.hash(password, 10)
+            const passwordHash = await bcrypt.hash(password, 10);
             const newUser = new Users({
                 fname, lname, email, password: passwordHash, birthday, city, state, zip
-            })
+            });
 
-            //Save User to MongoDB
-            await newUser.save()
+            // Save User to MongoDB
+            await newUser.save();
 
-            //Then create jsonwebtoken to authentication
-            const accesstoken = createAccessToken({id: newUser._id})
-            const refreshtoken = createRefreshToken({id: newUser._id})
+            // Create jsonwebtoken for authentication
+            const accesstoken = createAccessToken({ id: newUser._id });
+            const refreshtoken = createRefreshToken({ id: newUser._id });
 
             res.cookie('refreshtoken', refreshtoken, {
-                httpOnly: true, 
+                httpOnly: true,
                 path: '/api/user/refresh_token'
-            })
+            });
 
-            res.json({accesstoken})
-        
+            res.json({ accesstoken });
+
         } catch (err) {
-            return res.status(500).json({msg: err.message})
+            return res.status(500).json({ msg: err.message });
         }
-}, 
-login: async (req, res) => {
+    },
+
+    login: async (req, res) => {
         try {
-            const {email, password} = req.body;
+            const { email, password } = req.body;
 
-            const user = await Users.findOne({email})
-            if(!user) return res.status(400).json({msg: "User does not exist. "})
+            const user = await Users.findOne({ email });
+            if (!user) return res.status(400).json({ msg: "User does not exist." });
 
-            const isMatch = await bcrypt.compare(password, user.password)
-            if(!isMatch) return res.status(400).json({msg: "Incorrect password. "})
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) return res.status(400).json({ msg: "Incorrect password." });
 
-            //If login is successful, create access token and refresh token
-            const accesstoken = createAccessToken({id: user._id})
-            const refreshtoken = createRefreshToken({id: user._id})
+            // Create access token and refresh token
+            const accesstoken = createAccessToken({ id: user._id });
+            const refreshtoken = createRefreshToken({ id: user._id });
 
             res.cookie('refreshtoken', refreshtoken, {
-                httpOnly: true, 
+                httpOnly: true,
                 path: '/api/user/refresh_token'
-            })
+            });
 
-            res.json({accesstoken})
+            res.json({ accesstoken });
 
         } catch (err) {
-            return res.status(500).json({msg: err.message})
+            return res.status(500).json({ msg: err.message });
         }
+    },
 
-},
-logout: async (req, res) => {
-try {
-    res.clearCookie('refreshtoken', {path: '/api/user/refresh_token'})
-    return res.json({msg: 'Logged out'})
-    
-} catch (error) {
-    return res.status(500).json({msg: err.message})
-}
-},
-refreshToken: (req, res) => {
-    try {
-        const rf_token = req.cookies.refreshtoken;
-        
-        if(!rf_token) return res.status(400).json({msg: "No Cookies Saved"})
-        
-        jwt.verify(rf_token, process.env.REFRESH_TOKEN_SECRET, (err, user) =>{
-            if(err) return res.status(400).json({msg: "verify error"})
-            const accesstoken = createAccessToken({id: user.id})
+    logout: async (req, res) => {
+        try {
+            res.clearCookie('refreshtoken', { path: '/api/user/refresh_token' });
+            return res.json({ msg: 'Logged out' });
 
-            res.json({accesstoken})
-        })
-
-    
-        } catch (err){
-            return res.status(500).json({msg: err.message})
+        } catch (error) {
+            return res.status(500).json({ msg: error.message });
         }
-        
+    },
 
-},
-getUser: async(req, res) => {
-    try {
-        //removes password from being showed in response 
-        const user = await Users.findById(req.user.id).select('-password')
-        if(!user) return res.status(400).json({"msg": "User does not exist. "})
+    refreshToken: (req, res) => {
+        try {
+            const rf_token = req.cookies.refreshtoken;
 
+            if (!rf_token) return res.status(400).json({ msg: "No Cookies Saved" });
 
-        res.json(user)
-    } catch (error) {
-        res.status(500).json({msg: error.msg})
+            jwt.verify(rf_token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+                if (err) return res.status(400).json({ msg: "Verify error" });
+                const accesstoken = createAccessToken({ id: user.id });
+
+                res.json({ accesstoken });
+            });
+
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    getUser: async (req, res) => {
+        try {
+            // Remove password from being shown in response
+            const user = await Users.findById(req.user.id).select('-password');
+            if (!user) return res.status(400).json({ msg: "User does not exist." });
+
+            res.json(user);
+        } catch (error) {
+            res.status(500).json({ msg: error.message });
+        }
+    },
+
+    getLoggedUser: async (req, res) => {
+        try {
+            const detailedUser = await Users.findById(req.params.id);
+            res.json(detailedUser);
+
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
+    },
+
+    updateUser: async (req, res) => {
+        try {
+            const { fname, lname, birthday, city, state, zip } = req.body;
+
+            await Users.findOneAndUpdate({ _id: req.params.id }, {
+                fname, lname, birthday, city, state, zip
+            });
+
+            res.json({ msg: "Updated User" });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
+        }
     }
-},
-getLoggedUser: async(req, res) => {
-    try {
-        
-        const detailedUser = await Users.findById(req.params.id)
-        console.log(detailedUser)
-        res.json(detailedUser)
-        
-    } catch (err) {
-        return res.status(500).json({msg: err.message})
-    }
-},
-updateUser: async(req, res) => {
-    try {
-        const {fname, lname, birthday, city, state, zip} = req.body;
-        // if(!image_url) return res.status(400).json({msg: "No image upload"})
+};
 
-        await Users.findOneAndUpdate({_id: req.params.id}, {
-            fname, lname, birthday, city, state, zip
-        })
-
-        res.json({msg: "Updated User"})
-    } catch (err) {
-        return res.status(500).json({msg: err.message})
-    }
-}  
-}
-const createAccessToken = (user) =>{
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1d'})
-}
-const createRefreshToken = (user) =>{
-    return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, {expiresIn: '7d'})
-}
-
-module.exports = userCtrl
+module.exports = userCtrl;

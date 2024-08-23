@@ -10,7 +10,7 @@ function TripDetails({ tripDetails, formData, formatDateWithExtraDay }) {
                 <p className="dates">Trip Start: {formatDateWithExtraDay(formData.trip_start)}</p>
                 <p className="dates">Trip End: {formatDateWithExtraDay(formData.trip_end)}</p>
             </div>
-                    <img src={tripDetails.image_url} alt="Trip Image" className="trip-image-detailed" />
+                    <img src={tripDetails.image_url} alt="TripPic" className="trip-image-detailed" />
                    
                 </div>
             </div>

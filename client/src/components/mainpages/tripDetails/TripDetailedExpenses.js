@@ -15,7 +15,7 @@ function TripDetailedExpenses({ formData, editMode, handleExpenseChange, handleD
                 
                     <label className='expense-specific'>
                         <HotelSharpIcon />
-                        <a>Stay</a>
+                        <h3>Stay</h3>
                         <ArrowForwardIosIcon
                         className='arrow-fw'
                         onClick={() => {
@@ -44,7 +44,7 @@ function TripDetailedExpenses({ formData, editMode, handleExpenseChange, handleD
                 <div className="expense-item">
                     <label className='expense-specific'>
                         <FlightSharpIcon />
-                        <a>Travel</a>
+                        <h3>Travel</h3>
                         <ArrowForwardIosIcon
                         className='arrow-fw'
                         onClick={() => {
@@ -72,7 +72,7 @@ function TripDetailedExpenses({ formData, editMode, handleExpenseChange, handleD
                 <div className="expense-item">
                     <label className='expense-specific'>
                         <DirectionsCarFilledSharpIcon />
-                        <a>Transportation</a>
+                        <h3>Transportation</h3>
                         <ArrowForwardIosIcon
                         className='arrow-fw'
                         onClick={() => {
@@ -100,7 +100,7 @@ function TripDetailedExpenses({ formData, editMode, handleExpenseChange, handleD
                 <div className="expense-item">
                     <label className='expense-specific'>
                         <LocalOfferIcon />
-                        <a>Other</a>
+                        <h3>Other</h3>
                         <ArrowForwardIosIcon
                         className='arrow-fw'
                         onClick={() => {
