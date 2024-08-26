@@ -1,4 +1,7 @@
 /* detailed.css */
+.weather-info{
+    margin-left: -20%;
+}
 
 .detailed-container {
     display: flex;
