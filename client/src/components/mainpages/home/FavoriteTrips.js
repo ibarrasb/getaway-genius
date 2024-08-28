@@ -102,7 +102,7 @@ function FavoriteTrips() {
           </ThemeProvider>
         </Stack>
       </div>
-          <p>you dont have previous Trips.</p>
+          <p className='dont-have'>You dont have Favorite Trips.</p>
       </div>
     );
   }

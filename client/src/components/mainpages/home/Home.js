@@ -16,9 +16,7 @@ function Home() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fname] = state.UserAPI.fname;
-  const [userData] = state.UserAPI.userData
-  console.log("USER: " + JSON.stringify(userData))
-console.log(trips)
+ 
   const theme = createTheme({
     palette: {
       primary: {

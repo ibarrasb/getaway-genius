@@ -2,16 +2,17 @@
 
 .add-form-container {
   margin: 20px;
-  background-color: #f9f9f9;
   border-radius: 8px;
   padding: 10px;
   border: solid;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
   }
 
-  .add-form-container img{
-text-align: center;
-  }
+  .add-form-container img {
+    text-align: center;
+    max-width: 100%;
+}
   
   
   .add-form-container h2 {

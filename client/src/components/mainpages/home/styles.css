@@ -34,6 +34,12 @@
 
   align-items: center;
 }
+.dont-have{
+  text-align: center;
+  font-size: xx-large;
+  margin-top: 10%;
+  margin-bottom: 100%;
+}
 
 .trip-location {
   font-size: 24px;

@@ -35,6 +35,14 @@ margin: 15px;
 .dv1, .dv2 {
   font-weight: bold;
 }
+.dv1{
+  display: grid;
+  background-color: #f9f7f3;
+  margin-left: -5px;
+}
+.dv2{
+  margin-left: -5px;
+}
 
 .welcome {
   margin-left: -5%;

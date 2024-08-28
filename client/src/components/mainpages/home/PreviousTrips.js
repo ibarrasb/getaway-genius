@@ -112,9 +112,9 @@ function PreviousTrips() {
     // Check if the adjusted end date is less than the current date
     return tripEndDatePlusOneDay < currentDate;
   });
-  
+  console.log(trips.length)
   //if no previous trips, message will display
-if (trips.length === 0) {
+if (previousTrips.length === 0) {
     return (
       <div className="home-container">
       <div className="search-container">
@@ -136,7 +136,7 @@ if (trips.length === 0) {
           </ThemeProvider>
         </Stack>
         </div>
-          <p>you dont have previous Trips.</p>
+          <p className='dont-have'>You dont have Previous Trips.</p>
       </div>
     );
   }

@@ -9,6 +9,9 @@
     padding-top: 5%;
 
   }
+  .search-container-search{
+  padding-top: 30px;
+  }
   .contain-search{
     display: block;
     border: 2px solid;
