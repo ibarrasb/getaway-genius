@@ -1,0 +1,49 @@
+.wishlist-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  /* WishlistModal.css */
+
+.disabled-input {
+  background-color: #f0f0f0; /* Light grey background */
+  cursor: not-allowed; /* Change cursor to indicate input is disabled */
+}
+
+  
+  .wishlist-modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .wishlist-options {
+    margin-bottom: 20px;
+  }
+  
+  .wishlist-options h3 {
+    margin-top: 0;
+  }
+  
+  /* In your CSS file */
+.wishlist-modal-buttons {
+    display: flex;        /* Flexbox layout for buttons */
+    gap: 10px;            /* Space between buttons */
+    justify-content: flex-end; /* Align buttons to the right (optional) */
+  }
+  
+  .wishlist-modal-buttons button {
+    padding: 8px 12px;    /* Optional: Add padding for button size */
+    font-size: 14px;      /* Optional: Set font size */
+  }
+  

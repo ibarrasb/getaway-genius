@@ -12,12 +12,14 @@ app.use(cookieParser());
 app.use(cors());
 
 // Import routes
-const googlePlacesRoutes = require('./routes/googlePlacesRoutes');
+const externalRoutes = require('./routes/externalRoutes');
 const tripsRouter = require('./routes/tripsRoutes');
 const usersRouter = require('./routes/userRoutes');
+const wishlistRoutes = require('./routes/wishlistRoutes');
 
 // Use routes
-app.use('/api', googlePlacesRoutes);
+app.use('/api', externalRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/trips', tripsRouter);
 app.use('/api/user', usersRouter);
 

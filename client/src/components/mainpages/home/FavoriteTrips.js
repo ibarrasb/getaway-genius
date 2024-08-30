@@ -84,7 +84,7 @@ function FavoriteTrips() {
     return (
       <div className="home-container">
       <div className="search-container">
-        <h2 className='home-message'>Favorites</h2> 
+        <h2 className='home-message'>Wishlists</h2> 
       </div>
 
       <div className="center-button">
@@ -97,12 +97,12 @@ function FavoriteTrips() {
               <Button variant="outlined" color="primary" className="linkbutton">Previous</Button>
             </Link>
             <Link to="/favorites">
-              <Button variant="outlined" color="primary" className="linkbutton">Favorites</Button>
+              <Button variant="outlined" color="primary" className="linkbutton">Wishlists</Button>
             </Link>
           </ThemeProvider>
         </Stack>
       </div>
-          <p className='dont-have'>You dont have Favorite Trips.</p>
+          <p className='dont-have'>You dont have Wishlists.</p>
       </div>
     );
   }
@@ -131,7 +131,7 @@ function FavoriteTrips() {
   return (
     <div className="home-container">
       <div className="search-container">
-        <h2 className='home-message'>Favorites</h2> 
+        <h2 className='home-message'>Wishlists</h2> 
       </div>
 
       <div className="center-button">
@@ -144,7 +144,7 @@ function FavoriteTrips() {
               <Button variant="outlined" color="primary" className="linkbutton">Previous</Button>
             </Link>
             <Link to="/favorites">
-              <Button variant="outlined" color="primary" className="linkbutton">Favorites</Button>
+              <Button variant="outlined" color="primary" className="linkbutton">Wishlists</Button>
             </Link>
           </ThemeProvider>
         </Stack>

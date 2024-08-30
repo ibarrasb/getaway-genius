@@ -10,6 +10,7 @@ import Profile from './profile/Profile.js'
 import DetailedTrip from './tripDetails/DetailedTrip.js'
 import NotFound from './utils/not_found/NotFound';
 import FavoriteTrips from './home/FavoriteTrips.js'
+import About from './auth/About.js'
 
 
 function Pages() {
@@ -18,7 +19,8 @@ function Pages() {
         <Routes>
             {/* Redirect to Home if the user is logged in */}
             
-            <Route path='/' element={<Login/>} />
+            <Route path='/' element={<About/>} />
+            <Route path='/login' element={<Login/>} />
             <Route path="/home" element={<Home />} />
             <Route path="/previous-trips" element={<PreviousTrips/>} />
             <Route path='/add' element={<Add/>} />
