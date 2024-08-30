@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Axios from 'axios';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
 import './WishlistModal.css'; // Import CSS for styling
 
 const initialState = {
   list_name: '',
   trips: [],
   email: ''
-}
+};
 
 const WishlistModal = ({ show, onClose, onSave, trip }) => {
   const [wishlists, setWishlists] = useState([]);
@@ -45,7 +47,7 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
         const response = await Axios.post(`/api/wishlist/addtrip/${selectedWishlist}`, trip);
         // Call onSave function to handle any additional logic after saving
         onSave();
-        alert('Trip has been added to ' + selectedWishlist)
+        alert('Trip has been added to ' + selectedWishlist);
       } else if (newWishlistName) {
         // Create new wishlist and add trip
         const setObj = {
@@ -57,14 +59,14 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
         setSentObject(setObj);
         await Axios.post('/api/wishlist/createlist', setObj);
         onSave();
-        alert('Trip has been added to ' + newWishlistName)
+        alert('Trip has been added to ' + newWishlistName);
       }
     } catch (error) {
       console.error('Error handling wishlist operation:', error);
     }
   };
 
-  const handleRadioChange = (wishlistId, wishlistName) => {
+  const handleButtonClick = (wishlistId, wishlistName) => {
     setSelectedWishlist(wishlistId);
     setSelectedWishlistName(wishlistName);
   };
@@ -86,39 +88,44 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
         <div className="wishlist-options">
           <div>
             <h3>Existing Wishlists</h3>
-            <ul>
+            <div className="wishlist-buttons">
               {wishlists.map(wishlist => (
-                <div key={wishlist._id}>
-                  <label>
-                    <input
-                      type="radio"
-                      name="wishlist"
-                      value={wishlist._id}
-                      checked={selectedWishlist === wishlist._id}
-                      onChange={() => handleRadioChange(wishlist._id, wishlist.list_name)}
-                    />
-                    {wishlist.list_name}
-                  </label>
-                </div>
+                <Button
+                  key={wishlist._id}
+                  variant={selectedWishlist === wishlist._id ? 'contained' : 'outlined'}
+                  className='wishlist-button'
+                  onClick={() => handleButtonClick(wishlist._id, wishlist.list_name)}
+                  style={{ marginBottom: '8px', marginRight: '8px'}}
+                >
+                  {wishlist.list_name}
+                </Button>
               ))}
-            </ul>
+            </div>
           </div>
           <div>
-            <h3>Create New Wishlist</h3>
-            <input
-              type="text"
-              placeholder="Wishlist Name"
+            <h3 className='new-wishlist-text'>Create New Wishlist</h3>
+            <TextField
+              label="Wishlist Name"
+              variant="outlined"
+              fullWidth
               value={newWishlistName}
               onChange={e => setNewWishlistName(e.target.value)}
               disabled={!!selectedWishlist} // Disable input if an existing wishlist is selected
               className={selectedWishlist ? 'disabled-input' : ''} // Apply a class for styling if disabled
+              style={{ marginTop: '16px' }}
             />
           </div>
         </div>
         <div className="wishlist-modal-buttons">
-          <button onClick={handleSave}>Save</button>
-          <button onClick={handleClear}>Clear</button> {/* Clear button */}
-          <button onClick={onClose}>Cancel</button>
+          <Button variant="contained" color="primary" onClick={handleSave} style={{ marginRight: '8px' }}>
+            Save
+          </Button>
+          <Button variant="outlined" color="secondary" onClick={handleClear} style={{ marginRight: '8px' }}>
+            Clear
+          </Button>
+          <Button variant="text" onClick={onClose}>
+            Cancel
+          </Button>
         </div>
       </div>
     </div>

@@ -22,7 +22,6 @@ router.route('/refresh_token')
 router.route('/infor')
     .get(auth, userCtrl.getUser)
     
-
 router.route('/profile/:id')
     .get(userCtrl.getLoggedUser)
     .put(userCtrl.updateUser)
