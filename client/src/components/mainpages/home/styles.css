@@ -26,6 +26,10 @@
   align-items: center;
   text-align: center;
 }
+.wishlists-with-trips{
+  display: block;
+}
+
 .trip-details-box{
   margin: 10px;
 }
@@ -40,7 +44,13 @@
   margin-top: 10%;
   margin-bottom: 100%;
 }
-
+.card-content-wishlist{
+  display: block;
+}
+.delete-button-wishlist{
+  justify-content: flex-end;
+    padding-left: 50%;
+}
 .trip-location {
   font-size: 24px;
   font-weight: bold;

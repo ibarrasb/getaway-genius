@@ -30,7 +30,7 @@ createWishlist: async (req, res) => {
 fetchLists: async (req, res) => {
     try {
         const user_email = req.query.email;
-        const wishlists = await Wishlist.find({ user_email: user_email});
+        const wishlists = await Wishlist.find({ email: user_email});
         res.status(200).json(wishlists);
     } catch (err) {
         return res.status(500).json({msg: err.message})
@@ -104,6 +104,27 @@ removeTripFromWishlist: async (req, res) => {
       res.status(500).json({ message: 'Error removing trip from wishlist', error });
     }
 },
+
+removeWishlist: async (req, res) => {
+
+  try {
+    await Wishlist.findByIdAndDelete(req.params.id)
+    res.json({msg: "Deleted a Wishlist"})
+} catch (err) {
+    return res.status(500).json({msg: err.message})
+}
+},
+
+fetchWishlist: async (req, res) => {
+  try {
+    const detailedWishlist = await Wishlist.findById(req.params.id)
+    console.log(detailedWishlist)
+    res.json(detailedWishlist)
+    
+} catch (err) {
+    return res.status(500).json({msg: err.message})
+}
+}
 }
 module.exports = wishCtrl
 

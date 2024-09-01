@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { GlobalState } from '../../../GlobalState';
 import { Link } from 'react-router-dom';
 import FavoriteIcon from '@mui/icons-material/Favorite'; // Import the Favorite icon
 import Axios from 'axios'; // Import Axios for making HTTP requests
@@ -6,10 +7,10 @@ import './Trips.css'; // Import CSS file for styling
 import WishlistModal from './WishlistModal'; // Import the WishlistModal component
 
 const Trips = ({ trip, onRemove }) => {
+  const state = useContext(GlobalState);
+  const [email] = state.UserAPI.email;
   const [isFavorite, setIsFavorite] = useState(trip.isFavorite); // State to manage the favorite status
   const [showWishlistModal, setShowWishlistModal] = useState(false); // State to control modal visibility
-
-
   const startDate = new Date(trip.trip_start);
   const endDate = new Date(trip.trip_end);
   const startMonth = startDate.toLocaleString('default', { month: 'short' });
@@ -58,7 +59,9 @@ const Trips = ({ trip, onRemove }) => {
   
     try {
       // Fetch all wishlists to find the one containing the trip
-      const wishlistsResponse = await Axios.get('/api/wishlist/getlists');
+      const wishlistsResponse = await Axios.get('/api/wishlist/getlists', {
+        params: { email: email }
+      });
       const wishlists = wishlistsResponse.data;
   
       // Find the wishlist containing the trip
@@ -87,9 +90,6 @@ const Trips = ({ trip, onRemove }) => {
     }
   };
   
-  
-  
-
   return (
     <div className="trip-box">
       <div className="trip-image-container">

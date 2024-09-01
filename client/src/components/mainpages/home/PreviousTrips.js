@@ -131,7 +131,7 @@ if (previousTrips.length === 0) {
               <Button variant="outlined" color="primary" className="linkbutton">Previous</Button>
             </Link>
             <Link to="/favorites">
-              <Button variant="outlined" color="primary" className="linkbutton">Favorites</Button>
+              <Button variant="outlined" color="primary" className="linkbutton">Wishlists</Button>
             </Link>
           </ThemeProvider>
         </Stack>
@@ -167,7 +167,7 @@ if (previousTrips.length === 0) {
               <Button variant="outlined" color="primary" className="linkbutton">Past Trips</Button>
             </Link>
             <Link to="/favorites">
-              <Button variant="outlined" color="primary" className="linkbutton">Favorites</Button>
+              <Button variant="outlined" color="primary" className="linkbutton">Wishlists</Button>
             </Link>
           </ThemeProvider>
         </Stack>

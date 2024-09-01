@@ -118,7 +118,7 @@ function Home() {
               <Button variant="outlined" color="primary" className="linkbutton">Past Trips</Button>
             </Link>
             <Link to="/favorites">
-              <Button variant="outlined" color="primary" className="linkbutton">Favorites</Button>
+              <Button variant="outlined" color="primary" className="linkbutton">Wishlists</Button>
             </Link>
           </ThemeProvider>
         </Stack>

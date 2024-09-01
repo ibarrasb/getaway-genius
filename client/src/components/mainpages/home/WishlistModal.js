@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { GlobalState } from '../../../GlobalState';
 import Axios from 'axios';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
@@ -11,6 +12,8 @@ const initialState = {
 };
 
 const WishlistModal = ({ show, onClose, onSave, trip }) => {
+  const state = useContext(GlobalState);
+  const [email] = state.UserAPI.email;
   const [wishlists, setWishlists] = useState([]);
   const [newWishlistName, setNewWishlistName] = useState('');
   const [selectedWishlist, setSelectedWishlist] = useState('');
@@ -28,7 +31,9 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
       // Fetch existing wishlists when the modal is shown
       const fetchWishlists = async () => {
         try {
-          const response = await Axios.get('/api/wishlist/getlists');
+          const response = await Axios.get('/api/wishlist/getlists', {
+            params: { email: email }
+          });
           setWishlists(response.data);
           console.log(response.data);
         } catch (error) {
@@ -86,22 +91,24 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
       <div className="wishlist-modal-content">
         <h2>Add to Wishlist</h2>
         <div className="wishlist-options">
-          <div>
-            <h3>Existing Wishlists</h3>
-            <div className="wishlist-buttons">
-              {wishlists.map(wishlist => (
-                <Button
-                  key={wishlist._id}
-                  variant={selectedWishlist === wishlist._id ? 'contained' : 'outlined'}
-                  className='wishlist-button'
-                  onClick={() => handleButtonClick(wishlist._id, wishlist.list_name)}
-                  style={{ marginBottom: '8px', marginRight: '8px'}}
-                >
-                  {wishlist.list_name}
-                </Button>
-              ))}
+          {wishlists.length > 0 && (
+            <div>
+              <h3>Existing Wishlists</h3>
+              <div className="wishlist-buttons">
+                {wishlists.map(wishlist => (
+                  <Button
+                    key={wishlist._id}
+                    variant={selectedWishlist === wishlist._id ? 'contained' : 'outlined'}
+                    className='wishlist-button'
+                    onClick={() => handleButtonClick(wishlist._id, wishlist.list_name)}
+                    style={{ marginBottom: '8px', marginRight: '8px'}}
+                  >
+                    {wishlist.list_name}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           <div>
             <h3 className='new-wishlist-text'>Create New Wishlist</h3>
             <TextField
