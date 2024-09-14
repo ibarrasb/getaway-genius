@@ -8,6 +8,7 @@ import Add from './add/Add.js';
 import Search from './search/Search'
 import Profile from './profile/Profile.js'
 import DetailedTrip from './tripDetails/DetailedTrip.js'
+import DetailedWishlist from './detailedWishlist/DetailedWishlist.js'
 import NotFound from './utils/not_found/NotFound';
 import FavoriteTrips from './home/FavoriteTrips.js'
 import About from './auth/About.js'
@@ -20,12 +21,14 @@ function Pages() {
             {/* Redirect to Home if the user is logged in */}
             
             <Route path='/' element={<About/>} />
+            
             <Route path='/login' element={<Login/>} />
             <Route path="/home" element={<Home />} />
             <Route path="/previous-trips" element={<PreviousTrips/>} />
             <Route path='/add' element={<Add/>} />
             <Route path='/trips/:id' element={<DetailedTrip/>}/>
             <Route path='/profile/:id' element={<Profile/>}/>
+            <Route path='/wishlist-detail/:id' element={<DetailedWishlist/>}/>
             <Route path='/search' element={<Search/>} />
             <Route path='/favorites' element={<FavoriteTrips/>} />
             <Route path="/register" element={<Register />} />

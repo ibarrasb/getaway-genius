@@ -114,22 +114,6 @@ function FavoriteTrips() {
         <h2 className='home-message'>Wishlists</h2>
       </div>
 
-      <div className="center-button">
-        <Stack spacing={2} direction="row">
-          <ThemeProvider theme={theme}>
-            <Link to="/home">
-              <Button variant="outlined" color="primary" className="linkbutton">Home</Button>
-            </Link>
-            <Link to="/previous-trips">
-              <Button variant="outlined" color="primary" className="linkbutton">Previous</Button>
-            </Link>
-            <Link to="/favorites">
-              <Button variant="outlined" color="primary" className="linkbutton">Wishlists</Button>
-            </Link>
-          </ThemeProvider>
-        </Stack>
-      </div>
-
       <div className="wishlists-container">
         {wishlistsWithTrips.length > 0 && (
           <div className="wishlists-with-trips">
