@@ -43,6 +43,16 @@
     background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="gray" d="M2 0 L0 2 h4 z"/></svg>') no-repeat right 10px center; /* Custom dropdown arrow */
     background-size: 10px; /* Size of the custom arrow */
 }
+.row {
+    display: flex;
+    justify-content: space-around; /* Space out buttons evenly */
+    margin-top: 20px;
+}
+
+.row .MuiButton-root { /* Optional styling for buttons */
+    min-width: 120px; /* Set a minimum width for the buttons */
+}
+
 
 .login-page form .row{
     display: flex;
