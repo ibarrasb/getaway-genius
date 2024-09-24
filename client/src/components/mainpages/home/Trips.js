@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { GlobalState } from '../../../GlobalState';
 import { Link } from 'react-router-dom';
 import FavoriteIcon from '@mui/icons-material/Favorite'; // Import the Favorite icon
@@ -11,6 +11,12 @@ const Trips = ({ trip, onRemove }) => {
   const [email] = state.UserAPI.email;
   const [isFavorite, setIsFavorite] = useState(trip.isFavorite); // State to manage the favorite status
   const [showWishlistModal, setShowWishlistModal] = useState(false); // State to control modal visibility
+  
+  // Update isFavorite state when trip prop changes
+  useEffect(() => {
+    setIsFavorite(trip.isFavorite);
+  }, [trip]); // Dependency array includes trip to trigger effect on changes
+
   const startDate = new Date(trip.trip_start);
   const endDate = new Date(trip.trip_end);
   const startMonth = startDate.toLocaleString('default', { month: 'short' });
@@ -68,14 +74,12 @@ const Trips = ({ trip, onRemove }) => {
       const wishlistWithTrip = wishlists.find(wishlist => 
         wishlist.trips.some(t => t._id === trip._id)
       );
-  console.log("wishlist ID: " + wishlistWithTrip._id)
-  console.log("trip ID: " + trip._id)
+
       if (wishlistWithTrip) {
         // Remove the trip from the found wishlist
         await Axios.delete(`/api/wishlist/${wishlistWithTrip._id}/remove-trip/${trip._id}`);
-        console.log(`Trip removed from wishlist with ID: ${wishlistWithTrip._id}`);
       }
-  
+
       // Update the trip to be unfavorite
       await Axios.put(`/api/trips/getaway/${trip._id}`, { isFavorite: false });
   
@@ -123,7 +127,7 @@ const Trips = ({ trip, onRemove }) => {
           <button onClick={handleRemove} className="view-button" id="delete-button">Delete</button>
           {/* Add an Unfavorite button */}
           {isFavorite && (
-            <button onClick={handleUnfavorite} className="view-button" id="unfavorite-button"></button>
+            <button onClick={handleUnfavorite} className="view-button" id="unfavorite-button"/>
           )}
         </div>
       </div>
@@ -134,7 +138,6 @@ const Trips = ({ trip, onRemove }) => {
         onClose={handleModalClose}
         onSave={handleModalSave}
         trip={trip}
-       // Pass the callback to update wishlist ID
       />
     </div>
   );
