@@ -222,7 +222,7 @@ h2{
         display: contents;
     }
     .details-left {
-        width: max-content;
+        width: 100%;
     }
     .detailed-form{
         width: 100%;
