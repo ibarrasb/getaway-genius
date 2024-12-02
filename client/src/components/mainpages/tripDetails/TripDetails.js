@@ -2,6 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { WiDaySunny, WiCloud, WiRain, WiSnow, WiThunderstorm } from 'react-icons/wi'; // Importing weather icons
 import { Typography, Box } from '@mui/material'; // MUI components for styling
 
+function formatModernDate(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const startMonth = start.toLocaleString('en-US', { month: 'short' }); // E.g., "Dec"
+    const startDay = start.getDate(); // E.g., 12
+    const endDay = end.getDate(); // E.g., 15
+    const endYear = end.getFullYear(); // E.g., 2025
+
+    if (start.getMonth() === end.getMonth()) {
+        // Same month, compact format
+        return `${startMonth} ${startDay + 1} - ${endDay + 1}, ${endYear}`;
+    } else {
+        // Different months, include both
+        const endMonth = end.toLocaleString('en-US', { month: 'short' });
+        return `${startMonth} ${startDay + 1} - ${endMonth} ${endDay + 1}, ${endYear}`;
+    }
+}
+
+
 function TripDetails({ tripDetails, formData, formatDateWithExtraDay }) {
     const [weatherData, setWeatherData] = useState(null);
     const [weatherError, setWeatherError] = useState(null);
@@ -59,8 +79,12 @@ function TripDetails({ tripDetails, formData, formatDateWithExtraDay }) {
                 <div className="trip-image-container">
                     <div className="destination-overlay">
                         <p className="location">{tripDetails.location_address}</p>
-                        <p className="dates">Trip Start: {formatDateWithExtraDay(formData.trip_start)}</p>
-                        <p className="dates">Trip End: {formatDateWithExtraDay(formData.trip_end)}</p>
+                        <div className="trip-dates-modern">
+    <p className="date-range">
+        {formatModernDate(formData.trip_start, formData.trip_end)}
+    </p>
+</div>
+
                     </div>
                     <img src={tripDetails.image_url} alt="TripPic" className="trip-image-detailed" />
                 </div>
