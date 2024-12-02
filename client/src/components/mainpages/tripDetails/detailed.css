@@ -15,6 +15,7 @@
     padding: 8px 12px; /* Add some padding for a modern look */
     border-radius: 20px; /* Rounded corners for a sleek look */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    font-size: 15px;
 }
 
 
@@ -134,8 +135,9 @@ button:hover {
 .location {
     color: black;
     margin: 0;
-    font-size: 18px;
+    font-size: 23px;
     font-weight: bold;
+    font-family: 'Crimson Text', serif;
 }
 
 .dates {
@@ -261,9 +263,12 @@ h2{
     .destination-overlay {
         bottom: 0;
         left: 0;
+        text-align: left;
         width: 100%;
         color: #fff;
-        padding: 0%;
+        padding-left: 5%;
+        padding-bottom: 0%;
+
     }
 }
 @media (max-width: 414px) {
