@@ -257,7 +257,7 @@ h2{
         font-size: x-large;
      }
      .weather-info{
-        margin-left: -50%;
+        margin-left: 0%;
         padding-bottom: 0%;
     }
     .destination-overlay {

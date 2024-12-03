@@ -1,6 +1,5 @@
 const express = require('express');
 const https = require('https');
-
 const router = express.Router();
 
 // Place Details
@@ -139,6 +138,33 @@ router.get('/weather', async (req, res) => {
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Failed to fetch weather data' });
+    }
+});
+
+// ChatGPT Fun Places
+router.post('/chatgpt/fun-places', async (req, res) => {
+    const { location } = req.body;
+
+    try {
+        // Dynamically import OpenAI directly in the route
+        const { default: OpenAI } = await import('openai');  // Dynamically import OpenAI
+
+        const openai = new OpenAI({
+            organization: 'org-zhk7ZnWbeRQ2l5XQZ5Zjt14E',
+            project: 'proj_bhGgO8C8Iw6Df4XXimaHkOoq',
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+
+        const response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: 'user', content: `List 5 fun and popular places to visit in ${location}.` }],
+        });
+
+        const list = response.choices[0].message.content.trim();
+        res.json({ funPlaces: list });
+    } catch (error) {
+        console.error('Error with ChatGPT API:', error);
+        res.status(500).json({ error: 'Failed to fetch data from ChatGPT' });
     }
 });
 
