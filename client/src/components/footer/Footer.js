@@ -9,7 +9,7 @@ const Footer = () => {
                 <div className='row'>
                     <div className='col-sm-12'>
                         <div className='copyright-box'>
-                            <p  className='footer'> © Copyright 2024 Eduardo Ibarra</p>
+                            <p  className='footer'> © Copyright 2024 Getaway Genius</p>
                         </div>
                     </div>
                 </div>

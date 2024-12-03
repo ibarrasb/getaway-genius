@@ -110,10 +110,7 @@ function FavoriteTrips() {
 
   return (
     <div className="home-container">
-      <div className="search-container">
-        <h2 className='home-message'>Wishlists</h2>
-      </div>
-
+     
       <div className="wishlists-container">
         {wishlistsWithTrips.length > 0 && (
           <div className="wishlists-with-trips">

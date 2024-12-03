@@ -1,12 +1,21 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { GlobalState } from '../../../GlobalState';
-// import { Link } from 'react-router-dom'; 
-// import Button from '@mui/material/Button';
-// import Stack from '@mui/material/Stack';
-// import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { Link } from 'react-router-dom';
+import Fab from '@mui/material/Fab';
+import AddIcon from '@mui/icons-material/Add';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Axios from 'axios';
 import Trip from './Trips'; // Import the Trip component
 import './styles.css';
+
+// Define custom theme
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#84A98C', // Custom color
+    },
+  },
+});
 
 function Home() {
   const state = useContext(GlobalState);
@@ -15,8 +24,7 @@ function Home() {
   const [isLogged] = state.UserAPI.isLogged;
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [fname] = state.UserAPI.fname;
- 
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -53,11 +61,7 @@ function Home() {
   };
 
   if (!isLogged) {
-    return (
-      <div>
-        <p>Please log in to view your trips.</p>
-      </div>
-    );
+    return <p>Please log in to view your trips.</p>;
   }
 
   if (loading) {
@@ -84,17 +88,13 @@ function Home() {
   for (const year in groupedCurrentTrips) {
     groupedCurrentTrips[year].sort((a, b) => new Date(a.trip_start) - new Date(b.trip_start));
   }
-  
+
   return (
     <div className="home-container">
-      <div className="search-container">
-        <h2 className='home-message'>Hi, {fname}</h2> 
-      </div>
-
       {Object.keys(groupedCurrentTrips).length > 0 ? (
         Object.keys(groupedCurrentTrips).map(year => (
           <div key={year} className="year-trips">
-            <h2 className='year-text'>{year}</h2>
+            <h2 className="year-text">{year}</h2>
             <div className="open-trips-container">
               {groupedCurrentTrips[year].map((trip, index) => (
                 <Trip key={index} trip={trip} onRemove={removePost} />
@@ -104,9 +104,29 @@ function Home() {
         ))
       ) : (
         <div className="no-trips-message">
-          <p className='notrips'>Start planning your trips!</p>
+          <p className="notrips">Start planning your trips!</p>
         </div>
       )}
+
+      {/* Floating Action Button */}
+      <ThemeProvider theme={theme}>
+        <div className="fab-container">
+          <Link to="/search" style={{ textDecoration: 'none' }}>
+          <Fab
+              color="primary"
+              aria-label="add"
+              variant="extended"
+              sx={{
+                color: '#FFFFFF', // Set text color to white
+              }}
+            >
+            <AddIcon style={{ marginRight: 8 }} />
+            Create
+          </Fab>
+
+          </Link>
+        </div>
+      </ThemeProvider>
     </div>
   );
 }

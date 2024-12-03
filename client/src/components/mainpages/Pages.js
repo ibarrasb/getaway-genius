@@ -19,10 +19,9 @@ function Pages() {
     return (
         <Routes>
             {/* Redirect to Home if the user is logged in */}
-            
-            <Route path='/' element={<About/>} />
-            
-            <Route path='/login' element={<Login/>} />
+            <Route path='/' element={<Login/>} />
+
+            <Route path='/about' element={<About/>} />
             <Route path="/home" element={<Home />} />
             <Route path="/previous-trips" element={<PreviousTrips/>} />
             <Route path='/add' element={<Add/>} />

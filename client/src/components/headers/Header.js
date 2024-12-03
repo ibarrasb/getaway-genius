@@ -88,13 +88,13 @@ function Header() {
           <div className="dv2">
             <Stack spacing={2} direction="row">
               <ThemeProvider theme={theme}>
-                <Link to="/search">
-                  <Button variant="text" className="back-button" startIcon={<AddIcon />}>
-                    Add
+                <Link to="/about">
+                  <Button variant="text" className="header-button">
+                    About
                   </Button>
                 </Link>
                 <Link to={`/profile/${userID}`}>
-                  <Button variant="text" className="back-button">
+                  <Button variant="text" className="header-button">
                     Profile
                   </Button>
                 </Link>
@@ -102,7 +102,7 @@ function Header() {
                   variant="text"
                   component={Link}
                   to="/"
-                  className="log-out"
+                  className="header-button"
                   onClick={logoutUser}
                 >
                   Logout
@@ -127,7 +127,7 @@ function Header() {
   return (
     <div>
       <div>
-        {!(location.pathname.startsWith('/search') || location.pathname.startsWith('/trips') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/wishlist-detail')) &&
+        {!(location.pathname.startsWith('/search') || location.pathname.startsWith('/trips') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/about') || location.pathname.startsWith('/wishlist-detail')) &&
         isLogged
           ? loggedRouter()
           : ''}

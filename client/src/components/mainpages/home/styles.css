@@ -17,6 +17,17 @@
 .notrips {
   text-align: center;
 }
+.home-button-container {
+    justify-content: flex-end;
+}
+.fab-container {
+  position: fixed;
+  bottom: 20px; /* Adjust based on your preference */
+  right: 20px;  /* Adjust based on your preference */
+  z-index: 1000; /* Ensure it floats above other content */
+}
+
+
 .trip-image {
   width: 100%;
   max-height: 150px;

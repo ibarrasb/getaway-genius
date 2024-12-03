@@ -117,9 +117,6 @@ function PreviousTrips() {
 if (previousTrips.length === 0) {
     return (
       <div className="home-container">
-      <div className="search-container">
-        <h2 className='home-message'>Previous Trips</h2> 
-      </div>
           <p className='dont-have'>You dont have Previous Trips.</p>
       </div>
     );
@@ -137,9 +134,6 @@ if (previousTrips.length === 0) {
 
   return (
     <div className="home-container">
-    <div className="search-container">
-        <h2 className='home-message'>Previous Trips</h2> 
-      </div>
       {/* Render current trips and organizes by year when trip is */}
       {Object.keys(groupedPreviousTrips).map(year => (
         <div key={year} className="year-trips">
