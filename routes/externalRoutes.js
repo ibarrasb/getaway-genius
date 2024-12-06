@@ -157,7 +157,7 @@ router.post('/chatgpt/fun-places', async (req, res) => {
 
         const response = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
-            messages: [{ role: 'user', content: `List 5 fun and popular places to visit in ${location}.` }],
+            messages: [{ role: 'user', content: `List 5 popular and must see places to visit in ${location}.` }],
         });
 
         const list = response.choices[0].message.content.trim();

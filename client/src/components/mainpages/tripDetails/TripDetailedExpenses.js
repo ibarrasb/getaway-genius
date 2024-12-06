@@ -5,10 +5,14 @@ import DirectionsCarFilledSharpIcon from '@mui/icons-material/DirectionsCarFille
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import Divider from '@mui/material/Divider';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import { Typography, Box, CircularProgress, Button } from '@mui/material';
 
 function TripDetailedExpenses({ formData, editMode, handleExpenseChange, handleDateChange, handleSubmit, calculateTotalExpenses, numberOfPeople, handlePeopleChange, calculateCostPerPerson }) {
     return (
+<div className='expense-container'>
+
         <form className="detailed-form" onSubmit={handleSubmit}>
+   
             <div className={`expense-section ${editMode ? 'edit-mode' : ''}`} >
 
                 <div className="expense-item">
@@ -171,6 +175,7 @@ function TripDetailedExpenses({ formData, editMode, handleExpenseChange, handleD
             )}
             {editMode && <button className='updatetrip-button' type="submit">Update Trip</button>}
         </form>
+        </div>
     );
 }
 

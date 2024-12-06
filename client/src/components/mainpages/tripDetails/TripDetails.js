@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WiDaySunny, WiCloud, WiRain, WiSnow, WiThunderstorm } from 'react-icons/wi';
-import { Typography, Box, CircularProgress } from '@mui/material';
+import { Typography, Box, CircularProgress, Button } from '@mui/material';
 
 function TripDetails({ tripDetails, formData }) {
     const [weatherData, setWeatherData] = useState(null);
@@ -108,34 +108,40 @@ function TripDetails({ tripDetails, formData }) {
                     ) : weatherData ? (
                         <>
                             {getWeatherIcon(weatherData.weather[0].description)}
-                            <Typography variant="h4">
-                                {weatherData.weather[0].description}
+                            <Typography variant="h4" className='w-description'>
+                                {(weatherData.weather[0].description).split(' ') 
+                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1)) 
+                                    .join(' ')}
                             </Typography>
-                            <Typography variant="h5">
+                            <Typography variant="h5" className='degrees'>
                                 {weatherData.main.temp.toFixed(1)}°C
                             </Typography>
                         </>
                     ) : null}
                 </Box>
 
-                {/* Fun Places Section */}
-                <Box className="fun-places">
-                    {funPlacesLoading ? (
-                        <CircularProgress />
-                    ) : funPlaces ? (
-                        <>
-                            <Typography variant="h6">Fun Places to Visit:</Typography>
-                            <ul>
-                                {funPlaces.split('\n').map((place, index) => (
-                                    <div key={index}>{place}</div>
-                                ))}
-                            </ul>
-                        </>
-                    ) : null}
-                </Box>
+            {/* Fun Places Section */}
+            <button>Suggestions</button>
+       
             </div>
         </div>
     );
 }
 
 export default TripDetails;
+
+
+// <Box className="fun-places">
+// {funPlacesLoading ? (
+//     <CircularProgress />
+// ) : funPlaces ? (
+//     <>
+//         <Typography variant="h6">Fun Places to Visit:</Typography>
+//         <ul>
+//             {funPlaces.split('\n').map((place, index) => (
+//                 <div key={index}>{place}</div>
+//             ))}
+//         </ul>
+//     </>
+// ) : null}
+// </Box>

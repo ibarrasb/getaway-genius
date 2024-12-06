@@ -18,11 +18,18 @@
     font-size: 15px;
 }
 
+button.MuiButtonBase-root.MuiButton-root.MuiButton-text.MuiButton-textPrimary.MuiButton-sizeMedium.MuiButton-textSizeMedium.MuiButton-colorPrimary.MuiButton-root.MuiButton-text.MuiButton-textPrimary.MuiButton-sizeMedium.MuiButton-textSizeMedium.MuiButton-colorPrimary.back-button.css-1e6y48t-MuiButtonBase-root-MuiButton-root {
+    color: #84A98C;
+}
+
 
 
 .weather-info{
-    margin-left: -20%;
+    /* margin-left: -20%; */
     padding-bottom: 15%;
+}
+.w-description .degrees{
+font-family: 'Crimson Text';
 }
 
 .detailed-container {
@@ -42,6 +49,10 @@
     width: 100%;
     margin-bottom: 20px;
 }
+.suggestions-button{
+    width: 200px;
+}
+
 
 .back-button-container,
 .edit-button-container {
@@ -90,12 +101,12 @@ button:hover {
 
 .trip-details-container {
     width: 60%;
-    padding: 20px;
-    display: contents;
+   
 }
 
 .details-left {
-    width: 50%;
+    width: 90%;
+    display: block;
 }
 
 .trip-image-container {
@@ -112,10 +123,17 @@ button:hover {
 }
 .editbutton-txt{
     font-size: 16px;
+    color: #84A98C;
 }
 .edit-mode{
     padding-right: 15px;
     padding-left: 0!important;
+}
+.details-right {
+    display: inline-block;
+}
+.expense-container{
+    display: contents;
 }
 
 .trip-image-detailed {
@@ -133,6 +151,7 @@ button:hover {
 }
 
 .location {
+    white-space: nowrap;
     color: black;
     margin: 0;
     font-size: 23px;
@@ -153,7 +172,7 @@ button:hover {
     margin-top: 5%;
 }
 .detailed-form {
-    width: 40%;
+    width: 50%;
     padding: 20px;
     margin-right: 5%;
     background-color: #f9f9f9;
@@ -185,7 +204,7 @@ p {
 
 button[type="submit"] {
     padding: 10px 20px;
-    background-color: #007bff;
+    background-color: #84A98C;
     color: #fff;
     border: none;
     border-radius: 5px;
@@ -225,7 +244,7 @@ h2{
         width: 100%;
     }
     .detailed-form{
-        width: 100%;
+        width: 350px;
         margin-right: 0;
         margin-top: 5%;
     }
@@ -258,7 +277,11 @@ h2{
      }
      .weather-info{
         margin-left: 0%;
-        padding-bottom: 0%;
+        display: inline-flex;
+    }
+    .degrees{
+        padding-left: 5%;
+        padding-top: 5px;
     }
     .destination-overlay {
         bottom: 0;
@@ -269,6 +292,9 @@ h2{
         padding-left: 5%;
         padding-bottom: 0%;
 
+    }
+    .trip-details-container {
+        width: 100%;
     }
 }
 @media (max-width: 414px) {

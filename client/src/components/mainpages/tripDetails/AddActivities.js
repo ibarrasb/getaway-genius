@@ -26,7 +26,7 @@ function AddActivity({ addActivity, removeActivity, activities }) {
         <div className="activity-input">
             <TextField
                 id="activity"
-                label="Add Activity"
+                label="Add Note"
                 variant="outlined"
                 value={activity}
                 onChange={handleChange}
