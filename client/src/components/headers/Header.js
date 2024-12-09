@@ -47,30 +47,36 @@ function Header() {
     setValue(newValue);
     switch (newValue) {
       case 0:
-        navigate('/home');
+        navigate('/discover');
         break;
       case 1:
-        navigate('/favorites');
+        navigate('/home');
         break;
       case 2:
-        navigate('/previous-trips');
+        navigate('/favorites');
+        break;
+      case 3: 
+      navigate('/previous-trips');
         break;
       default:
-        navigate('/home');
+        navigate('/discover');
     }
   };
 
   // useEffect to sync the tab value with the current route
   useEffect(() => {
     switch (location.pathname) {
-      case '/home':
+      case '/discover':
         setValue(0);
         break;
-      case '/favorites':
+      case '/home':
         setValue(1);
         break;
-      case '/previous-trips':
+      case '/favorites':
         setValue(2);
+        break;
+      case '/previous-trips':
+        setValue(3);
         break;
       default:
         setValue(0);
@@ -113,11 +119,18 @@ function Header() {
         </div>
         <div className="center-button">
           <ThemeProvider theme={theme}>
-            <Tabs value={value} onChange={handleTabChange} aria-label="navigation tabs">
-              <Tab label="Home" />
-              <Tab label="Wishlists" />
-              <Tab label="Past Trips" />
-            </Tabs>
+          <Tabs
+  value={value}
+  onChange={handleTabChange}
+  aria-label="navigation tabs"
+  sx={{ gap: '8px' }} // Adjust spacing between the tabs
+>
+  <Tab label="Discover" sx={{ minWidth: '80px' }} />
+  <Tab label="Trips" sx={{ minWidth: '80px' }} />
+  <Tab label="Wishlists" sx={{ minWidth: '80px' }} />
+  <Tab label="Past" sx={{ minWidth: '80px' }} />
+</Tabs>
+
           </ThemeProvider>
         </div>
       </div>
