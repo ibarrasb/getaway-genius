@@ -11,17 +11,11 @@
   text-decoration: none;
 }
 .getaway {
-  color: #84A98C; /* Change the color of "Getaway" to your desired color */
+  color: #14213D; /* Change the color of "Getaway" to your desired color */
 }
 .genius {
   color: black; /* Change the color of "Genius" to your desired color */
 }
-/* a.MuiButtonBase-root.MuiButton-root.MuiButton-text.MuiButton-textPrimary.MuiButton-sizeMedium.MuiButton-textSizeMedium.MuiButton-colorPrimary.MuiButton-root.MuiButton-text.MuiButton-textPrimary.MuiButton-sizeMedium.MuiButton-textSizeMedium.MuiButton-colorPrimary.log-out.css-1e6y48t-MuiButtonBase-root-MuiButton-root {
-  color: #84A98C;
-}
-button.MuiButtonBase-root.MuiButton-root.MuiButton-text.MuiButton-textPrimary.MuiButton-sizeMedium.MuiButton-textSizeMedium.MuiButton-colorPrimary.MuiButton-root.MuiButton-text.MuiButton-textPrimary.MuiButton-sizeMedium.MuiButton-textSizeMedium.MuiButton-colorPrimary.back-button.css-1e6y48t-MuiButtonBase-root-MuiButton-root {
-  color: #84A98C;
-} */
 
 
 .dv1, .dv2, .welcome{
@@ -42,7 +36,7 @@ margin: 15px;
 }
 .dv1{
   display: grid;
-  background-color: #f9f7f3;
+  background-color: #E5E5E5;
   margin-left: -5px;
 }
 .dv2{

@@ -12,8 +12,9 @@ code {
     monospace;
 }
 body {
-  background-color: #f9f7f3;
+  background-color: #E5E5E5;
 }
+/* f9f7f3 */
 
 @media (max-width: 820px){
 

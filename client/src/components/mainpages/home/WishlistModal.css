@@ -40,7 +40,7 @@
 
 /* Headings */
 .wishlist-options h3 {
-  margin-top: 0;
+  padding-bottom: 3%;
   font-size: 1.1em; /* Slightly larger font size */
   color: #333; /* Darker color for headings */
 }
@@ -59,14 +59,14 @@
   font-size: 14px; /* Set font size */
   border-radius: 6px; /* Rounded corners */
   border: none; /* Remove default border */
-  background-color: #cce3de!important; /* Apply the theme color */
-  color: #333; /* Dark text color for better contrast */
+  background-color: #14213D!important; /* Apply the theme color */
+  color: white; /* Dark text color for better contrast */
   transition: background-color 0.3s ease; /* Smooth background transition on hover */
 }
 
 /* Hover effects for buttons */
 .wishlist-modal-buttons button:hover {
-  background-color: #cce3de!important; /* Darker shade of theme color on hover */
+  background-color: #14213D!important; /* Darker shade of theme color on hover */
   color: #000; /* Change text color on hover */
 }
 
@@ -91,11 +91,11 @@
 
 /* Hover effect for existing wishlist buttons */
 .wishlist-button:hover {
-  background-color: #cce3de!important; /* Darker shade of theme color on hover */
+  background-color: #14213D!important; /* Darker shade of theme color on hover */
   color: #000!important; /* Change text color on hover */
 }
 .css-sghohy-MuiButtonBase-root-MuiButton-root {
-  background-color: #cce3de!important;
+  background-color: #14213D!important;
 }
 .new-wishlist-text{
   margin-bottom: -5%;

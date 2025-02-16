@@ -14,22 +14,6 @@ function PreviousTrips() {
   const [token] = state.token;
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
-  const theme = createTheme({
-    palette: {
-      primary: {
-        light: '#84A98C',
-        main: '#84A98C',
-        dark: '#84A98C',
-        contrastText: '#84A98C',
-      },
-      secondary: {
-        light: '#84A98C',
-        main: '#84A98C',
-        dark: '#84A98C',
-        contrastText: '#84A98C',
-      },
-    },
-  });
 
 //fetches new and current trips associated to the user with the email 
   useEffect(() => {

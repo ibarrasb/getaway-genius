@@ -12,6 +12,8 @@ import DetailedWishlist from './detailedWishlist/DetailedWishlist.js'
 import NotFound from './utils/not_found/NotFound';
 import FavoriteTrips from './home/FavoriteTrips.js'
 import About from './auth/About.js'
+import Discover from './discover/Discover.js'
+import Landing from './landing/Landing.js'
 
 
 function Pages() {
@@ -19,8 +21,9 @@ function Pages() {
     return (
         <Routes>
             {/* Redirect to Home if the user is logged in */}
-            <Route path='/' element={<Login/>} />
+            <Route path='/' element={<Landing/>} />
 
+            <Route path='/discover' element={<Discover/>} />
             <Route path='/about' element={<About/>} />
             <Route path="/home" element={<Home />} />
             <Route path="/previous-trips" element={<PreviousTrips/>} />
@@ -30,6 +33,7 @@ function Pages() {
             <Route path='/wishlist-detail/:id' element={<DetailedWishlist/>}/>
             <Route path='/search' element={<Search/>} />
             <Route path='/favorites' element={<FavoriteTrips/>} />
+            <Route path='/login' element={<Login/>} />
             <Route path="/register" element={<Register />} />
             <Route path='*' element={<NotFound/>} />
         </Routes>

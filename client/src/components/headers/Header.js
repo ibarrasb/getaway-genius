@@ -19,16 +19,16 @@ function Header() {
   const theme = createTheme({
     palette: {
       primary: {
-        light: '#84A98C',
-        main: '#84A98C',
-        dark: '#84A98C',
-        contrastText: '#84A98C',
+        light: '#14213D',
+        main: '#14213D',
+        dark: '#14213D',
+        contrastText: '#14213D',
       },
       secondary: {
-        light: '#84A98C',
-        main: '#84A98C',
-        dark: '#84A98C',
-        contrastText: '#84A98C',
+        light: '#14213D',
+        main: '#14213D',
+        dark: '#14213D',
+        contrastText: '#14213D',
       },
     },
   });
@@ -46,14 +46,17 @@ function Header() {
   const handleTabChange = (event, newValue) => {
     setValue(newValue);
     switch (newValue) {
+      // case 0:
+      //   navigate('/discover');
+      //   break;
       case 0:
         navigate('/home');
         break;
       case 1:
         navigate('/favorites');
         break;
-      case 2:
-        navigate('/previous-trips');
+      case 2: 
+      navigate('/previous-trips');
         break;
       default:
         navigate('/home');
@@ -63,6 +66,9 @@ function Header() {
   // useEffect to sync the tab value with the current route
   useEffect(() => {
     switch (location.pathname) {
+      // case '/discover':
+      //   setValue(0);
+      //   break;
       case '/home':
         setValue(0);
         break;
@@ -113,11 +119,19 @@ function Header() {
         </div>
         <div className="center-button">
           <ThemeProvider theme={theme}>
-            <Tabs value={value} onChange={handleTabChange} aria-label="navigation tabs">
-              <Tab label="Home" />
-              <Tab label="Wishlists" />
-              <Tab label="Past Trips" />
-            </Tabs>
+          <Tabs
+  value={value}
+  onChange={handleTabChange}
+  aria-label="navigation tabs"
+  sx={{ gap: '8px' }} // Adjust spacing between the tabs
+  //<Tab label="Discover" sx={{ minWidth: '80px' }} />
+>
+  
+  <Tab label="Trips" sx={{ minWidth: '80px' }} />
+  <Tab label="Wishlists" sx={{ minWidth: '80px' }} />
+  <Tab label="Past" sx={{ minWidth: '80px' }} />
+</Tabs>
+
           </ThemeProvider>
         </div>
       </div>
@@ -127,7 +141,7 @@ function Header() {
   return (
     <div>
       <div>
-        {!(location.pathname.startsWith('/search') || location.pathname.startsWith('/trips') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/about') || location.pathname.startsWith('/wishlist-detail')) &&
+        {!( location.pathname.startsWith('/trips') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/about') || location.pathname.startsWith('/wishlist-detail')) &&
         isLogged
           ? loggedRouter()
           : ''}

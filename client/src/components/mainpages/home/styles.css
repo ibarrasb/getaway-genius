@@ -10,10 +10,7 @@
  
   padding-left: 10%;
 }
-/* button.MuiButtonBase-root.MuiButton-root.MuiButton-outlined.MuiButton-outlinedPrimary.MuiButton-sizeMedium.MuiButton-outlinedSizeMedium.MuiButton-colorPrimary.MuiButton-root.MuiButton-outlined.MuiButton-outlinedPrimary.MuiButton-sizeMedium.MuiButton-outlinedSizeMedium.MuiButton-colorPrimary.linkbutton.css-1rwt2y5-MuiButtonBase-root-MuiButton-root {
-  color: #84A98C;
-  border-block-color: #84A98C;
-} */
+
 .notrips {
   text-align: center;
 }
@@ -41,6 +38,8 @@
 }
 .wishlists-with-trips{
   display: block;
+  padding-left: 20%;
+  padding-right: 20%;
 }
 
 .trip-details-box{
@@ -85,9 +84,9 @@
   margin: 15px;
   box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
   display: inline-block;
-  background-color: #edede9;
+  background-color: #E5E5E5;
   font-family: 'Crimson Text', serif;
-  width: 300px;
+  /* width: 300px; */
 }
 .trip-box-previous {
   display: flex;
@@ -105,9 +104,9 @@
   width: 300px;
 }
 .view-button {
-  background-color: #cae1da;
+  background-color: #C5CBD3;
   border: none;
-  color: white;
+  color: black;
   padding: 10px 20px;
   text-align: center;
   text-decoration: none;
@@ -229,6 +228,11 @@
   }
   .trip-image{
     max-height: 100%;
+  }
+  .wishlists-with-trips{
+    display: block;
+    padding-left: 0%;
+    padding-right: 0%;
   }
 } 
 
