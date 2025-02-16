@@ -141,7 +141,7 @@ function Header() {
   return (
     <div>
       <div>
-        {!( location.pathname.startsWith('/trips') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/about') || location.pathname.startsWith('/wishlist-detail')) &&
+        {!( location.pathname.startsWith('/search') || location.pathname.startsWith('/trips') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/about') || location.pathname.startsWith('/wishlist-detail')) &&
         isLogged
           ? loggedRouter()
           : ''}
