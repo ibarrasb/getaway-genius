@@ -96,16 +96,20 @@ const Trips = ({ trip, onRemove }) => {
   
   return (
     <div className="trip-box">
+    <div className="trip-location">{trip.location_address}</div>
+    <div className="trip-duration">
+          {startMonth} {startDay + 1} - {endMonth} {endDay + 1}
+        </div>
       <div className="trip-image-container">
+      
         <div className="favorite-icon" onClick={handleFavoriteToggle}>
           <FavoriteIcon style={{ color: isFavorite ? 'red' : 'grey' }} />
         </div>
+        
         <img className="trip-image" src={trip.image_url} alt={trip.trip_location} />
       </div>
       <div className="trip-details-box">
-        <div className="trip-duration">
-          {startMonth} {startDay + 1} - {endMonth} {endDay + 1}
-        </div>
+        
         <div className="trip-location">
           {
             (
@@ -121,7 +125,7 @@ const Trips = ({ trip, onRemove }) => {
               ).toFixed(2)}`
           }
         </div>
-        <div className="trip-location">{trip.location_address}</div>
+        
         <div className="button-container">
           <Link to={{ pathname: `/trips/${trip._id}`, state: { trip } }} className="view-button">View</Link>
           <button onClick={handleRemove} className="view-button" id="delete-button">Delete</button>
@@ -131,7 +135,6 @@ const Trips = ({ trip, onRemove }) => {
           )}
         </div>
       </div>
-
       {/* Render WishlistModal when showWishlistModal is true */}
       <WishlistModal
         show={showWishlistModal}
