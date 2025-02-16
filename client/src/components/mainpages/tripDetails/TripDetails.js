@@ -122,7 +122,20 @@ function TripDetails({ tripDetails, formData }) {
 
             {/* Fun Places Section */}
             <button>Suggestions</button>
-       
+            <Box className="fun-places">
+            {funPlacesLoading ? (
+                <CircularProgress />
+            ) : funPlaces ? (
+                <>
+                    <Typography variant="h6">Fun Places to Visit:</Typography>
+                    <ul>
+                        {funPlaces.split('\n').map((place, index) => (
+                            <div key={index}>{place}</div>
+                        ))}
+                    </ul>
+                </>
+            ) : null}
+            </Box>
             </div>
         </div>
     );
