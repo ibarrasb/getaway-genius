@@ -29,6 +29,8 @@ function Add({ selectedPlace, photoURL }) {
   const [picURL, setPicURL] = useState('');
   const [callback, setCallback] = state.UserAPI.callback;
   const [tripObject, setTripObject] = useState(initialState); // Declared and used
+  const [suggestions, setSuggestions] = useState(null);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
 
   useEffect(() => {
     if (selectedPlace) {
@@ -89,6 +91,29 @@ function Add({ selectedPlace, photoURL }) {
     console.log('Trip Object updated:', tripObject);
   }, [tripObject]); // This effect runs whenever tripObject changes
 
+  useEffect(() => {
+    if (location) {
+        const loc = { location }; // Wrap location in an object
+        console.log("HERE:" + JSON.stringify(loc));
+
+        fetch(`/api/chatgpt/trip-suggestion`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(loc), // Ensure body is a JSON string
+        })
+            .then(response => response.ok ? response.json() : Promise.reject('Recommendation Suggestion fetch failed'))
+            .then(data => {
+                setSuggestions(data.tripSuggestions); // Match the key from the server response
+            })
+            .catch(error => console.error('Error fetching fun places:', error))
+            .finally(() => setSuggestionLoading(false));
+    }
+}, [location]);
+
+  console.log(suggestions)
+ 
   return (
     <div className="add-form-container">
       <h1 className="wyg-text">When are you going?</h1>

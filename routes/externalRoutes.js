@@ -143,6 +143,7 @@ router.get('/weather', async (req, res) => {
 
 // ChatGPT Fun Places
 router.post('/chatgpt/fun-places', async (req, res) => {
+    console.log('FUN Received request body:', req.body);
     const { location } = req.body;
 
     try {
@@ -162,6 +163,33 @@ router.post('/chatgpt/fun-places', async (req, res) => {
 
         const list = response.choices[0].message.content.trim();
         res.json({ funPlaces: list });
+    } catch (error) {
+        console.error('Error with ChatGPT API:', error);
+        res.status(500).json({ error: 'Failed to fetch data from ChatGPT' });
+    }
+});
+
+router.post('/chatgpt/trip-suggestion', async (req, res) => {
+    console.log('Received request body:', req.body);
+    const { location } = req.body;
+
+    try {
+        // Dynamically import OpenAI directly in the route
+        const { default: OpenAI } = await import('openai');  // Dynamically import OpenAI
+
+        const openai = new OpenAI({
+            organization: 'org-zhk7ZnWbeRQ2l5XQZ5Zjt14E',
+            project: 'proj_bhGgO8C8Iw6Df4XXimaHkOoq',
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+
+        const response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: 'user', content: `Please list the 3 best time to travel to ${location}, Based on cost, experience( maybe events that happen at that place during a certain time), and time where it seems to be more popular. List the response as json ( reason, season, month intervals, and description)` }],
+        });
+
+        const resp = response.choices[0].message.content.trim();
+        res.json({ tripSuggestions: resp });
     } catch (error) {
         console.error('Error with ChatGPT API:', error);
         res.status(500).json({ error: 'Failed to fetch data from ChatGPT' });

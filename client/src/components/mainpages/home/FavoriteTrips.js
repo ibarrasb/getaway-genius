@@ -25,23 +25,6 @@ function FavoriteTrips() {
 
   const navigate = useNavigate(); // Hook for programmatic navigation
 
-  const theme = React.useMemo(() => createTheme({
-    palette: {
-      primary: {
-        light: '#84A98C',
-        main: '#84A98C',
-        dark: '#84A98C',
-        contrastText: '#ffffff',
-      },
-      secondary: {
-        light: '#84A98C',
-        main: '#84A98C',
-        dark: '#84A98C',
-        contrastText: '#ffffff',
-      },
-    },
-  }), []);
-
   useEffect(() => {
     const fetchData = async () => {
       try {

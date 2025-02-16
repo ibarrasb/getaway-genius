@@ -19,7 +19,7 @@
 }
 
 button.MuiButtonBase-root.MuiButton-root.MuiButton-text.MuiButton-textPrimary.MuiButton-sizeMedium.MuiButton-textSizeMedium.MuiButton-colorPrimary.MuiButton-root.MuiButton-text.MuiButton-textPrimary.MuiButton-sizeMedium.MuiButton-textSizeMedium.MuiButton-colorPrimary.back-button.css-1e6y48t-MuiButtonBase-root-MuiButton-root {
-    color: #84A98C;
+    color: #14213D;
 }
 
 
@@ -123,7 +123,7 @@ button:hover {
 }
 .editbutton-txt{
     font-size: 16px;
-    color: #84A98C;
+    color: #14213D;
 }
 .edit-mode{
     padding-right: 15px;
@@ -204,7 +204,7 @@ p {
 
 button[type="submit"] {
     padding: 10px 20px;
-    background-color: #84A98C;
+    background-color: #14213D;
     color: #fff;
     border: none;
     border-radius: 5px;
@@ -234,6 +234,7 @@ h2{
     text-align: center;
     padding-block: 10px;
     margin: 10px;
+    font-family: 'Crimson Text', serif;
 }
 
 @media (max-width: 430px) {

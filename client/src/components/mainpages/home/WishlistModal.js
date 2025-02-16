@@ -52,7 +52,8 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
         await Axios.post(`/api/wishlist/addtrip/${selectedWishlist}`, trip);
         // Call onSave function to handle any additional logic after saving
         onSave();
-        alert('Trip has been added to ' + selectedWishlist);
+        console.log(selectedWishlistName)
+        alert('Trip has been added to ' + selectedWishlistName);
       } else if (newWishlistName) {
         // Create new wishlist and add trip
         const setObj = {

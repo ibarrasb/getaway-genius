@@ -12,7 +12,7 @@ import './styles.css';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#84A98C', // Custom color
+      main: '#14213D', // Custom color
     },
   },
 });

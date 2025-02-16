@@ -19,16 +19,16 @@ function Header() {
   const theme = createTheme({
     palette: {
       primary: {
-        light: '#84A98C',
-        main: '#84A98C',
-        dark: '#84A98C',
-        contrastText: '#84A98C',
+        light: '#14213D',
+        main: '#14213D',
+        dark: '#14213D',
+        contrastText: '#14213D',
       },
       secondary: {
-        light: '#84A98C',
-        main: '#84A98C',
-        dark: '#84A98C',
-        contrastText: '#84A98C',
+        light: '#14213D',
+        main: '#14213D',
+        dark: '#14213D',
+        contrastText: '#14213D',
       },
     },
   });
@@ -46,37 +46,37 @@ function Header() {
   const handleTabChange = (event, newValue) => {
     setValue(newValue);
     switch (newValue) {
+      // case 0:
+      //   navigate('/discover');
+      //   break;
       case 0:
-        navigate('/discover');
-        break;
-      case 1:
         navigate('/home');
         break;
-      case 2:
+      case 1:
         navigate('/favorites');
         break;
-      case 3: 
+      case 2: 
       navigate('/previous-trips');
         break;
       default:
-        navigate('/discover');
+        navigate('/home');
     }
   };
 
   // useEffect to sync the tab value with the current route
   useEffect(() => {
     switch (location.pathname) {
-      case '/discover':
+      // case '/discover':
+      //   setValue(0);
+      //   break;
+      case '/home':
         setValue(0);
         break;
-      case '/home':
+      case '/favorites':
         setValue(1);
         break;
-      case '/favorites':
-        setValue(2);
-        break;
       case '/previous-trips':
-        setValue(3);
+        setValue(2);
         break;
       default:
         setValue(0);
@@ -124,8 +124,9 @@ function Header() {
   onChange={handleTabChange}
   aria-label="navigation tabs"
   sx={{ gap: '8px' }} // Adjust spacing between the tabs
+  //<Tab label="Discover" sx={{ minWidth: '80px' }} />
 >
-  <Tab label="Discover" sx={{ minWidth: '80px' }} />
+  
   <Tab label="Trips" sx={{ minWidth: '80px' }} />
   <Tab label="Wishlists" sx={{ minWidth: '80px' }} />
   <Tab label="Past" sx={{ minWidth: '80px' }} />
@@ -140,7 +141,7 @@ function Header() {
   return (
     <div>
       <div>
-        {!(location.pathname.startsWith('/search') || location.pathname.startsWith('/trips') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/about') || location.pathname.startsWith('/wishlist-detail')) &&
+        {!( location.pathname.startsWith('/trips') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/about') || location.pathname.startsWith('/wishlist-detail')) &&
         isLogged
           ? loggedRouter()
           : ''}

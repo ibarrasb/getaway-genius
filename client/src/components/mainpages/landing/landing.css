@@ -1,0 +1,119 @@
+/* Landing.css - Sleek and Engaging UI */
+
+/* General Styles */
+.landing-container {
+    font-family: "Poppins", sans-serif;
+    text-align: center;
+    color: #333;
+  }
+  .getaway-start {
+    color: #14213D;
+    font-size: 50px;
+    font-family: 'Crimson Text', serif; /* Change the color of "Getaway" to your desired color */
+  }
+  .genius-start {
+    color: black; 
+    font-size: 50px;
+    font-family: 'Crimson Text', serif;/* Change the color of "Genius" to your desired color */
+  }
+
+  /* Hero Section */
+  .hero-section {
+    position: relative;
+    background: url("./travel-img.jpg") no-repeat center center;
+    background-size: cover; /* Ensures the image covers the entire section */
+    background-attachment: fixed; /* Creates a subtle parallax effect */
+    width: 100%;
+    height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+  }
+  
+  .hero-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+  }
+  
+  .hero-content {
+    position: relative;
+    max-width: 600px;
+    z-index: 2;
+  }
+  
+  .hero-title {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    opacity: 0.9;
+  }
+  
+  .button-group button {
+    margin: 10px;
+    font-size: 1rem;
+  }
+  
+  /* How It Works Section */
+  .how-it-works {
+    padding: 60px 20px;
+    background: #f8f9fa;
+  }
+  
+  .section-title {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #14213D;
+  }
+  
+  .steps-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+  }
+  
+  .step-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    text-align: center;
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .step-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  /* Call to Action Section */
+  .cta-section {
+    background: linear-gradient(135deg, #007bff, #14213D);
+    color: white;
+    padding: 60px 20px;
+  }
+  
+  .cta-button {
+    background: white !important;
+    color: #14213D !important;
+    font-size: 1.2rem;
+    margin-top: 20px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+  
+  .cta-button:hover {
+    transform: scale(1.05);
+  }
+  
