@@ -41,7 +41,7 @@ createTrips: async (req, res) => {
         })
 
         await newVacation.save()
-        res.json({msg: "Created a planned trip"})
+        res.json({ msg: "Created a planned trip", tripId: newVacation._id });
 
     } catch (err) {
         return res.status(500).json({msg: err.message})

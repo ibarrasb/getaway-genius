@@ -127,8 +127,8 @@ function Header() {
   //<Tab label="Discover" sx={{ minWidth: '80px' }} />
 >
   
-  <Tab label="Trips" sx={{ minWidth: '80px' }} />
-  <Tab label="Wishlists" sx={{ minWidth: '80px' }} />
+  <Tab label="My Trips" sx={{ minWidth: '80px' }} />
+  <Tab label="Explore" sx={{ minWidth: '80px' }} />
   <Tab label="Past" sx={{ minWidth: '80px' }} />
 </Tabs>
 

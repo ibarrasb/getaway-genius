@@ -13,6 +13,8 @@
   padding: 20px; /* Add padding around the entire modal to keep it away from screen edges */
 }
 
+
+
 /* Styling for disabled input fields */
 .disabled-input {
   background-color: #e0e0e0; /* Slightly darker grey background for more contrast */

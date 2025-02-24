@@ -14,7 +14,18 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
+import Fab from '@mui/material/Fab';
+import AddIcon from '@mui/icons-material/Add';
 import './styles.css'; // Assuming this CSS file contains your styles
+
+// Define custom theme
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#14213D', // Custom color
+    },
+  },
+});
 
 function FavoriteTrips() {
   const state = useContext(GlobalState);
@@ -55,7 +66,7 @@ function FavoriteTrips() {
       // Fetch the specific wishlist to get its trips
       const response = await Axios.get(`/api/wishlist/spec-wishlist/${wishlistId}`);
       const { trips } = response.data; // Assuming the response contains a trips array
-   console.log(response)
+      console.log(response)
       // Update the isFavorite status for each trip in the wishlist to false
       const updatePromises = trips.map(trip =>
         Axios.put(`/api/trips/getaway/${trip._id}`, { isFavorite: false })
@@ -148,7 +159,7 @@ function FavoriteTrips() {
           <div className="wishlists-without-trips">
             {wishlistsWithoutTrips.map(wishlist => (
               <List key={wishlist._id} className="wishlist-list">
-                <ListItem ListItemButton onClick={() => handleClick(wishlist._id)}>
+                <ListItem button onClick={() => handleClick(wishlist._id)}> {/* Use the button prop here */}
                   <ListItemText
                     primary={wishlist.list_name}
                     secondary="No trips available"
@@ -171,9 +182,28 @@ function FavoriteTrips() {
         )}
 
         {wishlists.length === 0 && (
-          <p className='dont-have'>You don't have any wishlists.</p>
+          <p className='dont-have'>Start planning!</p>
         )}
       </div>
+
+      <ThemeProvider theme={theme}>
+        <div className="fab-container">
+          <Link to="/search" style={{ textDecoration: 'none' }}>
+          <Fab
+              color="primary"
+              aria-label="add"
+              variant="extended"
+              sx={{
+                color: '#FFFFFF', // Set text color to white
+              }}
+            >
+            <AddIcon style={{ marginRight: 8 }} />
+            Create
+          </Fab>
+
+          </Link>
+        </div>
+      </ThemeProvider>
     </div>
   );
 }

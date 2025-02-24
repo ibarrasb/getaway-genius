@@ -109,23 +109,7 @@ const Trips = ({ trip, onRemove }) => {
         <img className="trip-image" src={trip.image_url} alt={trip.trip_location} />
       </div>
       <div className="trip-details-box">
-        
-        <div className="trip-location">
-          {
-            (
-              (Number(trip.stay_expense) || 0) +
-              (Number(trip.car_expense) || 0) +
-              (Number(trip.travel_expense) || 0)
-            ).toFixed(2) === "0.00"
-              ? <span className="needs-attention">Needs Attention</span>
-              : `$${(
-                (Number(trip.stay_expense) || 0) +
-                (Number(trip.car_expense) || 0) +
-                (Number(trip.travel_expense) || 0)
-              ).toFixed(2)}`
-          }
-        </div>
-        
+                
         <div className="button-container">
           <Link to={{ pathname: `/trips/${trip._id}`, state: { trip } }} className="view-button">View</Link>
           <button onClick={handleRemove} className="view-button" id="delete-button">Delete</button>
