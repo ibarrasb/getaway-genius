@@ -16,6 +16,7 @@ import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
+import Home from './Home';
 import './styles.css'; // Assuming this CSS file contains your styles
 
 // Define custom theme
@@ -104,6 +105,7 @@ function FavoriteTrips() {
 
   return (
     <div className="home-container">
+    <Home/>
      
       <div className="wishlists-container">
         {wishlistsWithTrips.length > 0 && (

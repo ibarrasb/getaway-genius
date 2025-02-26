@@ -144,11 +144,6 @@
 }
 
 /* Slider container */
-.slick-slider {
-  margin: 0 auto;
-  width: 80%; /* You can adjust the width */
-  padding: 20px;
-}
 
 /* Slick track (holds all slides) */
 .slick-track {

@@ -54,18 +54,22 @@ function Home() {
   if (trips.length === 0) return <p className="notrips">Start planning your trips!</p>;
 
   const settings = {
-    dots: true,
+    dots: false,
     infinite: true,
     speed: 500,
     slidesToShow: 1,
     slidesToScroll: 1,
-    adaptiveHeight: true,
-    arrows: true,
+    adaptiveHeight: false,
+    swipe: true, // Enables swipe gestures
+    touchMove: true, // Ensures smooth touch interaction
+    draggable: true,
+    arrows: false, // Allows dragging with a mouse
   };
 
   return (
     <div className="home-container">
-    <h2>In Progress</h2>
+      <h2>In Progress</h2>
+      <p>Swipe to view trips in progress</p>
       <Slider {...settings}>
         {trips.map((trip) => (
           <div key={trip._id}>
@@ -73,10 +77,9 @@ function Home() {
           </div>
         ))}
       </Slider>
+      <p>Remember to ❤️ to add to a plan</p>
     </div>
   );
 }
 
 export default Home;
-
-
