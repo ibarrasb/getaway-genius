@@ -41,9 +41,9 @@ function TripDetails({ tripDetails, formData }) {
             // Fetch weather data
             setWeatherLoading(true);
             const queryParams = new URLSearchParams();
-            if (city) queryParams.append('city', city);
-            if (state) queryParams.append('state', state);
-            if (country) queryParams.append('country', country);
+            if (city) queryParams.append('city', encodeURIComponent(city));
+            if (state) queryParams.append('state', encodeURIComponent(state));
+            if (country) queryParams.append('country', encodeURIComponent(country));
             queryParams.append('units', 'metric');
 
             fetch(`/api/weather?${queryParams.toString()}`)
@@ -57,7 +57,7 @@ function TripDetails({ tripDetails, formData }) {
 
             // Fetch fun places using OpenAI API
             setFunPlacesLoading(true);
-            const location = `${city}, ${state}, ${country}`;
+            const location = encodeURIComponent(`${city}, ${state}, ${country}`);
             fetch(`/api/chatgpt/fun-places`, {
                 method: 'POST',
                 headers: {
@@ -93,7 +93,7 @@ function TripDetails({ tripDetails, formData }) {
                             </p>
                         </div>
                     </div>
-                    <img src={tripDetails.image_url} alt="TripPic" className="trip-image-detailed" />
+                    <img src={encodeURI(tripDetails.image_url)} alt="TripPic" className="trip-image-detailed" />
                 </div>
             </div>
             <div className="details-right">
@@ -120,29 +120,28 @@ function TripDetails({ tripDetails, formData }) {
                     ) : null}
                 </Box>
 
-            {/* Fun Places Section */}
-            <button>Suggestions</button>
-            <Box className="fun-places">
-            {funPlacesLoading ? (
-                <CircularProgress />
-            ) : funPlaces ? (
-                <>
-                    <Typography variant="h6">Fun Places to Visit:</Typography>
-                    <ul>
-                        {funPlaces.split('\n').map((place, index) => (
-                            <div key={index}>{place}</div>
-                        ))}
-                    </ul>
-                </>
-            ) : null}
-            </Box>
+                {/* Fun Places Section */}
+                <button>Suggestions</button>
+                <Box className="fun-places">
+                    {funPlacesLoading ? (
+                        <CircularProgress />
+                    ) : funPlaces ? (
+                        <>
+                            <Typography variant="h6">Fun Places to Visit:</Typography>
+                            <ul>
+                                {funPlaces.split('\n').map((place, index) => (
+                                    <div key={index}>{place}</div>
+                                ))}
+                            </ul>
+                        </>
+                    ) : null}
+                </Box>
             </div>
         </div>
     );
 }
 
 export default TripDetails;
-
 
 // <Box className="fun-places">
 // {funPlacesLoading ? (

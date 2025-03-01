@@ -13,12 +13,12 @@ const Search = () => {
 
   const getPhoto = async (photoreference) => {
     try {
-      const response = await fetch(`/api/places-pics?photoreference=${photoreference}`);
+      const encodedPhotoreference = encodeURIComponent(photoreference); // Ensure encoding
+      const response = await fetch(`/api/places-pics?photoreference=${encodedPhotoreference}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
-      console.log(data);
       setPhotoURL(data.photoUri);
     } catch (error) {
       console.error('Error:', error);
@@ -29,27 +29,20 @@ const Search = () => {
   // Memoized getPlacePhotos using useCallback
   const getPlacePhotos = useCallback(async (placeid) => {
     try {
-      const response = await fetch(`/api/places-details?placeid=${placeid}`);
+      const encodedPlaceId = encodeURIComponent(placeid); // Ensure encoding
+      const response = await fetch(`/api/places-details?placeid=${encodedPlaceId}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
-      console.log(data);
-      
-      // Extract photos data from the response
       const photos = data.photos || [];
       if (photos.length === 0) {
         console.log('No photos found for this place.');
         return null;
       }
 
-      // Generate a random index within the range of the array length
       const randomIndex = Math.floor(Math.random() * photos.length);
-
       const randomPhotoReference = photos[randomIndex].name;
-      console.log("Random Photo Reference: " + randomPhotoReference);
-
-      // Fetch the photo for the random reference
       await getPhoto(randomPhotoReference);
 
     } catch (error) {

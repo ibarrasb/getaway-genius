@@ -1,19 +1,19 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom'; // Import Navigate
-import Login from './auth/Login';
-import Register from './auth/Register';
-import Home from './home/Home.js';
-import PreviousTrips from './home/PreviousTrips.js'
-import Add from './add/Add.js';
-import Search from './search/Search'
-import Profile from './profile/Profile.js'
-import DetailedTrip from './tripDetails/DetailedTrip.js'
-import DetailedWishlist from './detailedWishlist/DetailedWishlist.js'
-import NotFound from './utils/not_found/NotFound';
-import FavoriteTrips from './home/FavoriteTrips.js'
-import About from './auth/About.js'
-import Discover from './discover/Discover.js'
-import Landing from './landing/Landing.js'
+import Login from './auth/Login.jsx';
+import Register from './auth/Register.jsx';
+import Home from './home/Home.jsx';
+import PreviousTrips from './home/PreviousTrips.jsx'
+import Add from './add/Add.jsx';
+import Search from './search/Search.jsx'
+import Profile from './profile/Profile.jsx'
+import DetailedTrip from './tripDetails/DetailedTrip.jsx'
+import DetailedWishlist from './detailedWishlist/DetailedWishlist.jsx'
+import NotFound from './utils/not_found/NotFound.jsx';
+import FavoriteTrips from './home/FavoriteTrips.jsx'
+import About from './auth/About.jsx'
+import Discover from './discover/Discover.jsx'
+import Landing from './landing/Landing.jsx'
 
 
 function Pages() {

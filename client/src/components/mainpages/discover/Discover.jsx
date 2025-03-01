@@ -43,7 +43,7 @@ function Discover() {
     const renderDateSelector = () => (
         <div className="custom-calendar">
             <div className="calendar-header">
-            
+                {/* You can add a header for the calendar */}
             </div>
             <div className="calendar-body">
                 <div className="calendar-date">
@@ -73,6 +73,22 @@ function Discover() {
             </div>
         </div>
     );
+
+    const handleSearch = () => {
+        // Encode the selected parameters before use in the URL
+        const locationEncoded = encodeURIComponent(selectedLocation);
+        const datesEncoded = encodeURIComponent(selectedDates);
+        const priceEncoded = encodeURIComponent(priceRange);
+
+        // Build the search URL with encoded parameters
+        const searchURL = `/api/search?location=${locationEncoded}&dates=${datesEncoded}&price=${priceEncoded}`;
+        
+        // You can replace fetch with your preferred HTTP method
+        fetch(searchURL)
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+    };
 
     return (
         <div className="discover-container">
@@ -138,6 +154,16 @@ function Discover() {
                     </Stack>
                 </div>
             )}
+
+            {/* Search Button */}
+            <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={handleSearch} 
+                disabled={!selectedLocation || !selectedDates || !priceRange}
+            >
+                Search
+            </Button>
         </div>
     );
 }

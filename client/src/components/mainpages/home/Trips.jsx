@@ -66,7 +66,7 @@ const Trips = ({ trip, onRemove }) => {
     try {
       // Fetch all wishlists to find the one containing the trip
       const wishlistsResponse = await Axios.get('/api/wishlist/getlists', {
-        params: { email: email }
+        params: { email: encodeURIComponent(email) } // Automatically URL encode the email parameter
       });
       const wishlists = wishlistsResponse.data;
   
@@ -96,20 +96,17 @@ const Trips = ({ trip, onRemove }) => {
   
   return (
     <div className="trip-box">
-    <div className="trip-location">{trip.location_address}</div>
-    <div className="trip-duration">
-          {startMonth} {startDay + 1} - {endMonth} {endDay + 1}
-        </div>
+      <div className="trip-location">{trip.location_address}</div>
+      <div className="trip-duration">
+        {startMonth} {startDay} - {endMonth} {endDay}
+      </div>
       <div className="trip-image-container">
-      
         <div className="favorite-icon" onClick={handleFavoriteToggle}>
           <FavoriteIcon style={{ color: isFavorite ? 'red' : 'grey' }} />
         </div>
-        
         <img className="trip-image" src={trip.image_url} alt={trip.trip_location} />
       </div>
       <div className="trip-details-box">
-        
         <div className="trip-location">
           {
             (
@@ -131,7 +128,7 @@ const Trips = ({ trip, onRemove }) => {
           <button onClick={handleRemove} className="view-button" id="delete-button">Delete</button>
           {/* Add an Unfavorite button */}
           {isFavorite && (
-            <button onClick={handleUnfavorite} className="view-button" id="unfavorite-button"/>
+            <button onClick={handleUnfavorite} className="view-button" id="unfavorite-button">Unfavorite</button>
           )}
         </div>
       </div>

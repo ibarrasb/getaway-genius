@@ -3,7 +3,7 @@ import Axios from 'axios';
 import { useParams, Link } from 'react-router-dom';
 import TripDetails from './TripDetails';
 import TripDetailedExpenses from './TripDetailedExpenses';
-import AddActivity from './AddActivities'
+import AddActivity from './AddActivities';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Button from '@mui/material/Button';
 import './detailed.css';
@@ -24,11 +24,12 @@ function DetailedTrip() {
     });
     const [numberOfPeople, setNumberOfPeople] = useState(1);
 
-    // GET API call for fetching currect expenses/details
+    // GET API call for fetching current expenses/details
     useEffect(() => {
         const fetchTripDetails = async () => {
             try {
-                const res = await Axios.get(`/api/trips/getaway/${id}`);
+                const encodedId = encodeURIComponent(id); // Encoding the trip id
+                const res = await Axios.get(`/api/trips/getaway/${encodedId}`);
                 setTripDetails(res.data);
                 setFormData(prevState => ({
                     ...prevState,
@@ -61,11 +62,12 @@ function DetailedTrip() {
         setEditMode(!editMode);
     };
 
-// POST API call for updating date and expenses
+    // POST API call for updating date and expenses
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await Axios.put(`/api/trips/getaway/${id}`, formData);
+            const encodedId = encodeURIComponent(id); // Encoding the trip id
+            await Axios.put(`/api/trips/getaway/${encodedId}`, formData);
             setEditMode(false);
             window.location.reload();
         } catch (error) {
@@ -97,29 +99,30 @@ function DetailedTrip() {
         }));
     };
 
-//Adds costs of individual expenses
+    // Adds costs of individual expenses
     const calculateTotalExpenses = () => {
         const { stay_expense, travel_expense, car_expense, other_expense } = formData;
         return parseFloat(stay_expense) + parseFloat(travel_expense) + parseFloat(car_expense) + parseFloat(other_expense);
     };
 
-//handles change in amount of people in trip
+    // Handles change in amount of people in trip
     const handlePeopleChange = (e) => {
         const { value } = e.target;
         setNumberOfPeople(value);
     };
 
-//Logic that calculates the cost of the trip per person
+    // Logic that calculates the cost of the trip per person
     const calculateCostPerPerson = () => {
         const totalExpenses = calculateTotalExpenses();
         const costPerPerson = totalExpenses / numberOfPeople;
         return isNaN(costPerPerson) ? 0 : costPerPerson.toFixed(2);
     };
 
-//Add activity to specfic trip
+    // Add activity to specific trip
     const addActivity = async (activity) => {
         try {
-            const res = await Axios.put(`/api/trips/getaway/${tripDetails._id}`, { activities: [...formData.activities, activity] });
+            const encodedId = encodeURIComponent(tripDetails._id); // Encoding the trip id
+            const res = await Axios.put(`/api/trips/getaway/${encodedId}`, { activities: [...formData.activities, activity] });
             setFormData(prevState => ({
                 ...prevState,
                 activities: [...formData.activities, activity]
@@ -129,13 +132,14 @@ function DetailedTrip() {
             console.error('Error adding activity:', error);
         }
     };
-    
-//Remove Activity from specific trip
+
+    // Remove Activity from specific trip
     const removeActivity = async (index) => {
         try {
             const updatedActivities = [...formData.activities];
             updatedActivities.splice(index, 1);
-            const res = await Axios.put(`/api/trips/getaway/${tripDetails._id}`, { activities: updatedActivities });
+            const encodedId = encodeURIComponent(tripDetails._id); // Encoding the trip id
+            const res = await Axios.put(`/api/trips/getaway/${encodedId}`, { activities: updatedActivities });
             setFormData(prevState => ({
                 ...prevState,
                 activities: updatedActivities
@@ -145,7 +149,6 @@ function DetailedTrip() {
             console.error('Error removing activity:', error);
         }
     };
-    
 
     const formatDateWithExtraDay = (dateString) => {
         const date = new Date(dateString);
@@ -187,13 +190,12 @@ function DetailedTrip() {
                     handlePeopleChange={handlePeopleChange}
                     calculateCostPerPerson={calculateCostPerPerson}
                 />
-              
             </div>
             <AddActivity className="add-activity"
-            addActivity={addActivity}
-            removeActivity={removeActivity}
-            activities={formData.activities}
-        />
+                addActivity={addActivity}
+                removeActivity={removeActivity}
+                activities={formData.activities}
+            />
         </div>
     );
 }

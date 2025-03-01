@@ -51,29 +51,32 @@ function FavoriteTrips() {
   };
 
   const handleDelete = async (wishlistId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this wishlist?");
+    if (!confirmDelete) return;
+
     try {
       // Fetch the specific wishlist to get its trips
       const response = await Axios.get(`/api/wishlist/spec-wishlist/${wishlistId}`);
       const { trips } = response.data; // Assuming the response contains a trips array
-   console.log(response)
+      console.log(response);
+
       // Update the isFavorite status for each trip in the wishlist to false
       const updatePromises = trips.map(trip =>
         Axios.put(`/api/trips/getaway/${trip._id}`, { isFavorite: false })
       );
-  
+
       // Wait for all the updates to complete
       await Promise.all(updatePromises);
-  
+
       // Delete the wishlist after updating all trips
       await Axios.delete(`/api/wishlist/removewishlist/${wishlistId}`);
-  
+
       // Update state to remove the wishlist from the list
       setWishlists(prevWishlists => prevWishlists.filter(wishlist => wishlist._id !== wishlistId));
     } catch (error) {
       console.error('Error deleting wishlist:', error);
     }
   };
-  
 
   if (!isLogged) {
     return (
@@ -91,9 +94,11 @@ function FavoriteTrips() {
   const wishlistsWithTrips = wishlists.filter(wishlist => wishlist.trips.length > 0);
   const wishlistsWithoutTrips = wishlists.filter(wishlist => wishlist.trips.length === 0);
 
+  // Fallback image URL
+  const fallbackImage = "https://source.unsplash.com/random/1600x900/?nature,water";
+
   return (
     <div className="home-container">
-     
       <div className="wishlists-container">
         {wishlistsWithTrips.length > 0 && (
           <div className="wishlists-with-trips">
@@ -104,40 +109,30 @@ function FavoriteTrips() {
                 onClick={() => handleClick(wishlist._id)} // Handle card click
                 sx={{ cursor: 'pointer', mb: 2 }} // Add margin-bottom for spacing
               >
-                {wishlist.trips.length > 0 && wishlist.trips[0].image_url ? (
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={wishlist.trips[0].image_url}
-                    alt="Trip Image"
-                  />
-                ) : (
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image="https://source.unsplash.com/random/1600x900/?nature,water" // Creative fallback image
-                    alt="Creative Fallback Image"
-                  />
-                )}
+                <CardMedia
+                  component="img"
+                  height="140"
+                  image={wishlist.trips.length > 0 && wishlist.trips[0].image_url ? wishlist.trips[0].image_url : fallbackImage}
+                  alt="Trip Image"
+                />
                 <CardContent className='card-content-wishlist'>
-                <div>
-                <Typography variant="h6" component="div">
-                    {wishlist.list_name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {wishlist.trips.length} trips
-                  </Typography>
-                </div>
-                  
-                
-                    <DeleteIcon edge="end"
+                  <div>
+                    <Typography variant="h6" component="div">
+                      {wishlist.list_name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {wishlist.trips.length} trips
+                    </Typography>
+                  </div>
+                  <DeleteIcon
+                    edge="end"
                     aria-label="delete"
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent click event from bubbling up to the card
                       handleDelete(wishlist._id);
                     }}
-                    className="delete-button-wishlist"/>
-                  
+                    className="delete-button-wishlist"
+                  />
                 </CardContent>
               </Card>
             ))}

@@ -29,7 +29,7 @@ function Home() {
     const fetchData = async () => {
       try {
         const res = await Axios.get('/api/trips/getaway-trip', {
-          params: { email: email }
+          params: { email: encodeURIComponent(email) }  // Encoding email parameter
         });
         if (res.status !== 200) {
           throw new Error('Network response was not ok');
@@ -49,7 +49,7 @@ function Home() {
   const removePost = async (id) => {
     if (window.confirm("Do you want to delete this post?")) {
       try {
-        const res = await Axios.delete(`/api/trips/getaway/${id}`, {
+        const res = await Axios.delete(`/api/trips/getaway/${encodeURIComponent(id)}`, {  // Encoding trip ID
           headers: { Authorization: token }
         });
         alert(res.data.msg);

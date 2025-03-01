@@ -32,7 +32,7 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
       const fetchWishlists = async () => {
         try {
           const response = await Axios.get('/api/wishlist/getlists', {
-            params: { email: email }
+            params: { email: encodeURIComponent(email) }
           });
           setWishlists(response.data);
           console.log(response.data);
@@ -49,10 +49,10 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
     try {
       if (selectedWishlist) {
         // Add trip to selected wishlist
-        await Axios.post(`/api/wishlist/addtrip/${selectedWishlist}`, trip);
+        await Axios.post(`/api/wishlist/addtrip/${encodeURIComponent(selectedWishlist)}`, trip);
         // Call onSave function to handle any additional logic after saving
         onSave();
-        console.log(selectedWishlistName)
+        console.log(selectedWishlistName);
         alert('Trip has been added to ' + selectedWishlistName);
       } else if (newWishlistName) {
         // Create new wishlist and add trip

@@ -15,12 +15,12 @@ function PreviousTrips() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
-//fetches new and current trips associated to the user with the email 
+  // Fetches new and current trips associated with the user email
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await Axios.get('/api/trips/getaway-trip', {
-          params: { email: email }
+          params: { email: encodeURIComponent(email) }  // Encoding email parameter
         });
         if (res.status !== 200) {
           throw new Error('Network response was not ok');
@@ -37,7 +37,7 @@ function PreviousTrips() {
     fetchData();
   }, [email]);
 
-//delete trip 
+  // Delete trip
   const removePost = async (id) => {
     if (window.confirm("Do you want to delete this post?")) {
       try {
@@ -53,7 +53,7 @@ function PreviousTrips() {
     }
   };
 
-// Previous trip component
+  // Previous trip component
   const renderPreviousTrip = (trip, index) => {
     const startDate = new Date(trip.trip_start);
     const endDate = new Date(trip.trip_end);
@@ -71,7 +71,7 @@ function PreviousTrips() {
           </div>
           <div className="trip-location">{trip.location_address}</div>
           <div className='button-container'>
-            <Link to={{ pathname: `/trips/${trip._id}`, state: { trip } }} className="view-button-previous">View</Link>
+            <Link to={{ pathname: `/trips/${encodeURIComponent(trip._id)}`, state: { trip } }} className="view-button-previous">View</Link>  {/* Encoding trip ID */}
             <button onClick={() => removePost(trip._id)} className="view-button-previous" id='delete-button'>Delete</button>
           </div>
         </div>
@@ -85,7 +85,7 @@ function PreviousTrips() {
 
   const currentDate = new Date();
 
-  //previous trip logic to not include trips that end on current day
+  // Previous trip logic to not include trips that end on the current day
   const previousTrips = trips.filter(trip => {
     const tripEndDate = new Date(trip.trip_end);
     
@@ -96,17 +96,17 @@ function PreviousTrips() {
     // Check if the adjusted end date is less than the current date
     return tripEndDatePlusOneDay < currentDate;
   });
-  console.log(trips.length)
-  //if no previous trips, message will display
-if (previousTrips.length === 0) {
+
+  // If no previous trips, message will display
+  if (previousTrips.length === 0) {
     return (
       <div className="home-container">
-          <p className='dont-have'>You dont have Previous Trips.</p>
+        <p className='dont-have'>You don't have Previous Trips.</p>
       </div>
     );
   }
 
-  // Group current trips by year
+  // Group previous trips by year
   const groupedPreviousTrips = previousTrips.reduce((acc, trip) => {
     const tripYear = new Date(trip.trip_end).getFullYear();
     if (!acc[tripYear]) {
@@ -118,7 +118,7 @@ if (previousTrips.length === 0) {
 
   return (
     <div className="home-container">
-      {/* Render current trips and organizes by year when trip is */}
+      {/* Render previous trips grouped by year */}
       {Object.keys(groupedPreviousTrips).map(year => (
         <div key={year} className="year-trips">
           <h2 className='year-text'>{year}</h2>
