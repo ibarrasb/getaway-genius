@@ -18,7 +18,7 @@ const Landing = () => {
         <div className="hero-content">
           <h1 className="hero-title">Plan Smarter, Travel Further.</h1>
           <p className="hero-subtitle">
-            Find, plan, and save your perfect trip—affordable adventures await!
+            Find, plan, and save your perfect trip—affordable adventures await!!
           </p>
           <div className="cta-buttons">
           <Link to="/login">
