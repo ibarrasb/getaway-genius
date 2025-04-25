@@ -2,11 +2,13 @@ import React, { useContext, useState, useEffect } from 'react';
 import { GlobalState } from '../../../GlobalState';
 import Axios from 'axios';
 import Slider from 'react-slick';
-import Trips from './Trips'; // Your Trips component
+import Trips from './IndividualTripComponent'; // Your Trips component
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 import './styles.css';
 
+
+//MyTrips Tab
 function Home() {
   const state = useContext(GlobalState);
   const [email] = state.UserAPI.email;
@@ -55,7 +57,7 @@ function Home() {
 
   const settings = {
     dots: false,
-    infinite: true,
+    infinite: false,
     speed: 500,
     slidesToShow: 1,
     slidesToScroll: 1,

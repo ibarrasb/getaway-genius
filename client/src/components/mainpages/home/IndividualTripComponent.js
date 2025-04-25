@@ -6,7 +6,7 @@ import Axios from 'axios'; // Import Axios for making HTTP requests
 import './Trips.css'; // Import CSS file for styling
 import WishlistModal from './WishlistModal'; // Import the WishlistModal component
 
-const Trips = ({ trip, onRemove }) => {
+const IndividualTripComponent = ({ trip, onRemove }) => {
   const state = useContext(GlobalState);
   const [email] = state.UserAPI.email;
   const [isFavorite, setIsFavorite] = useState(trip.isFavorite); // State to manage the favorite status
@@ -130,4 +130,4 @@ const Trips = ({ trip, onRemove }) => {
   );
 };
 
-export default Trips;
+export default IndividualTripComponent;

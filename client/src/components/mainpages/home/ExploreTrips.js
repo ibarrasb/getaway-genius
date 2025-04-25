@@ -16,7 +16,7 @@ import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
-import Home from './Home';
+import Home from './MyTrips';
 import './styles.css'; // Assuming this CSS file contains your styles
 
 // Define custom theme
@@ -28,7 +28,7 @@ const theme = createTheme({
   },
 });
 
-function FavoriteTrips() {
+function ExploreTrips() {
   const state = useContext(GlobalState);
   const [email] = state.UserAPI.email;
   const [isLogged] = state.UserAPI.isLogged;
@@ -210,4 +210,4 @@ function FavoriteTrips() {
   );
 }
 
-export default FavoriteTrips;
+export default ExploreTrips;
