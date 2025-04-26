@@ -53,7 +53,7 @@ function Header() {
         navigate('/home');
         break;
       case 1:
-        navigate('/favorites');
+        navigate('/explore');
         break;
       case 2: 
       navigate('/previous-trips');
@@ -72,7 +72,7 @@ function Header() {
       case '/home':
         setValue(0);
         break;
-      case '/favorites':
+      case '/explore':
         setValue(1);
         break;
       case '/previous-trips':

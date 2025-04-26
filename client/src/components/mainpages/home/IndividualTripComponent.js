@@ -51,6 +51,7 @@ const IndividualTripComponent = ({ trip, onRemove }) => {
       await Axios.put(`/api/trips/getaway/${trip._id}`, { isFavorite: true });
 
       setShowWishlistModal(false);
+      window.location.reload();
     } catch (error) {
       console.error('Error updating trip details:', error);
     }
@@ -86,6 +87,7 @@ const IndividualTripComponent = ({ trip, onRemove }) => {
       // Update the state if both API calls are successful
       setIsFavorite(false);
       alert('Trip has been removed from ' + wishlistWithTrip.list_name);
+      window.location.reload();
     } catch (error) {
       // Log the full error response
       console.error('Error removing trip from favorites and wishlist:', error);

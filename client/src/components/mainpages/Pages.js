@@ -32,7 +32,7 @@ function Pages() {
             <Route path='/profile/:id' element={<Profile/>}/>
             <Route path='/wishlist-detail/:id' element={<DetailedWishlist/>}/>
             <Route path='/search' element={<Search/>} />
-            <Route path='/favorites' element={<FavoriteTrips/>} />
+            <Route path='/explore' element={<FavoriteTrips/>} />
             <Route path='/login' element={<Login/>} />
             <Route path="/register" element={<Register />} />
             <Route path='*' element={<NotFound/>} />

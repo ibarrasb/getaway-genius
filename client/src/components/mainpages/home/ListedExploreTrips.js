@@ -9,7 +9,7 @@ import './styles.css';
 
 
 //MyTrips Tab
-function MyTrips() {
+function ListedExploreTrips() {
   const state = useContext(GlobalState);
   const [email] = state.UserAPI.email;
   const [token] = state.token;
@@ -40,21 +40,22 @@ function MyTrips() {
   const removePost = async (id) => {
     if (window.confirm("Do you want to delete this post?")) {
       try {
-             //Removes Trip from wishlist first before deleting trip
-              const wishlistsResponse = await Axios.get('/api/wishlist/getlists', {
-                params: { email: email }
-              });
-              const wishlists = wishlistsResponse.data;
-          
-              // Find the wishlist containing the trip
-              const wishlistWithTrip = wishlists.find(wishlist => 
-                wishlist.trips.some(t => t._id === id)
-              );
-        
-              if (wishlistWithTrip) {
-                // Remove the trip from the found wishlist
-                await Axios.delete(`/api/wishlist/${wishlistWithTrip._id}/remove-trip/${id}`);
-              }
+
+     //Removes Trip from wishlist first before deleting trip
+      const wishlistsResponse = await Axios.get('/api/wishlist/getlists', {
+        params: { email: email }
+      });
+      const wishlists = wishlistsResponse.data;
+  
+      // Find the wishlist containing the trip
+      const wishlistWithTrip = wishlists.find(wishlist => 
+        wishlist.trips.some(t => t._id === id)
+      );
+
+      if (wishlistWithTrip) {
+        // Remove the trip from the found wishlist
+        await Axios.delete(`/api/wishlist/${wishlistWithTrip._id}/remove-trip/${id}`);
+      }
 
         const res = await Axios.delete(`/api/trips/getaway/${id}`, {
           headers: { Authorization: token }
@@ -88,8 +89,10 @@ function MyTrips() {
 
   return (
     <div className="home-container">
-      <h2>Active</h2>
-
+     <h2>In Progress</h2>
+     <p>Swipe to view trips in progress</p>
+     <p>Remember to ❤️ to add to a plan</p>
+     
       <Slider {...settings}>
         {trips.map((trip) => (
           <div key={trip._id}>
@@ -97,9 +100,9 @@ function MyTrips() {
           </div>
         ))}
       </Slider>
-      
+
     </div>
   );
 }
 
-export default MyTrips;
+export default ListedExploreTrips;
