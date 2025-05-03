@@ -23,6 +23,16 @@
   font-size: calc(10px + 2vmin);
   color: white;
 }
+.page-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Full screen height */
+}
+
+.content-wrap {
+  flex: 1; /* Take up all space except footer */
+}
+
 
 .App-link {
   color: #61dafb;

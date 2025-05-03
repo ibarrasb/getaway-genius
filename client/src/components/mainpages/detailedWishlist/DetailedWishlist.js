@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Button from '@mui/material/Button';
 import axios from 'axios';
-import Trip from '../home/Trips'; // Import the Trip component
+import Trip from '../home/IndividualTripComponent'; // Import the Trip component
 
 const DetailedWishlist = () => {
   const { id } = useParams(); // Get the wishlist ID from the URL

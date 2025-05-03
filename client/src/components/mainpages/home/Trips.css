@@ -1,6 +1,6 @@
 .trip-box {
 
-  flex-direction: row;
+  /* flex-direction: row; */
   border: 1px solid #ccc;
   border-radius: 8px;
   overflow: hidden;
@@ -8,6 +8,9 @@
 
 .trip-image-container {
   position: relative;
+}
+.button-container{
+  margin: 10px;
 }
 
 .favorite-icon {
@@ -23,7 +26,7 @@
   height: auto; /* Maintain aspect ratio */
 }
 .needs-attention {
-  color: red; /* Example: make the text red */
+  color: orange; /* Example: make the text red */
   font-weight: bold; /* Example: make the text bold */
   /* Add any other styles you want */
 }

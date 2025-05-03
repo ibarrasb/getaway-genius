@@ -44,6 +44,10 @@ const tripSchema = new mongoose.Schema({
     activities: {
         type: Array, 
         default: []
+    },
+    isTripCommited: {
+        type: Boolean,
+        default: false // Default value is false
     }
 }, {
     timestamps: true
