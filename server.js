@@ -10,6 +10,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
+  
 
 // Import routes
 const externalRoutes = require('./routes/externalRoutes');
@@ -44,7 +45,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Start the server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
     console.log('Server is running on port', PORT);
 });
