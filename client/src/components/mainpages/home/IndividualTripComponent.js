@@ -6,7 +6,7 @@ import Axios from 'axios'; // Import Axios for making HTTP requests
 import './Trips.css'; // Import CSS file for styling
 import WishlistModal from './WishlistModal'; // Import the WishlistModal component
 
-const Trips = ({ trip, onRemove }) => {
+const IndividualTripComponent = ({ trip, onRemove }) => {
   const state = useContext(GlobalState);
   const [email] = state.UserAPI.email;
   const [isFavorite, setIsFavorite] = useState(trip.isFavorite); // State to manage the favorite status
@@ -51,6 +51,7 @@ const Trips = ({ trip, onRemove }) => {
       await Axios.put(`/api/trips/getaway/${trip._id}`, { isFavorite: true });
 
       setShowWishlistModal(false);
+      window.location.reload();
     } catch (error) {
       console.error('Error updating trip details:', error);
     }
@@ -86,6 +87,7 @@ const Trips = ({ trip, onRemove }) => {
       // Update the state if both API calls are successful
       setIsFavorite(false);
       alert('Trip has been removed from ' + wishlistWithTrip.list_name);
+      window.location.reload();
     } catch (error) {
       // Log the full error response
       console.error('Error removing trip from favorites and wishlist:', error);
@@ -109,23 +111,7 @@ const Trips = ({ trip, onRemove }) => {
         <img className="trip-image" src={trip.image_url} alt={trip.trip_location} />
       </div>
       <div className="trip-details-box">
-        
-        <div className="trip-location">
-          {
-            (
-              (Number(trip.stay_expense) || 0) +
-              (Number(trip.car_expense) || 0) +
-              (Number(trip.travel_expense) || 0)
-            ).toFixed(2) === "0.00"
-              ? <span className="needs-attention">Needs Attention</span>
-              : `$${(
-                (Number(trip.stay_expense) || 0) +
-                (Number(trip.car_expense) || 0) +
-                (Number(trip.travel_expense) || 0)
-              ).toFixed(2)}`
-          }
-        </div>
-        
+                
         <div className="button-container">
           <Link to={{ pathname: `/trips/${trip._id}`, state: { trip } }} className="view-button">View</Link>
           <button onClick={handleRemove} className="view-button" id="delete-button">Delete</button>
@@ -146,4 +132,4 @@ const Trips = ({ trip, onRemove }) => {
   );
 };
 
-export default Trips;
+export default IndividualTripComponent;
