@@ -8,6 +8,8 @@ import { Link } from 'react-router-dom';
 import Axios from 'axios';
 import './styles.css';
 
+
+//ONLY TRIPS THAT HAVE BEEN COMMITED AND COMPLETED
 function PreviousTrips() {
   const state = useContext(GlobalState);
   const [email] = state.UserAPI.email;
@@ -41,12 +43,30 @@ function PreviousTrips() {
   const removePost = async (id) => {
     if (window.confirm("Do you want to delete this post?")) {
       try {
+
+          //Removes Trip from wishlist first before deleting trip
+              const wishlistsResponse = await Axios.get('/api/wishlist/getlists', {
+                params: { email: email }
+              });
+              const wishlists = wishlistsResponse.data;
+          
+              // Find the wishlist containing the trip
+              const wishlistWithTrip = wishlists.find(wishlist => 
+                wishlist.trips.some(t => t._id === id)
+              );
+        
+              if (wishlistWithTrip) {
+                // Remove the trip from the found wishlist
+                await Axios.delete(`/api/wishlist/${wishlistWithTrip._id}/remove-trip/${id}`);
+              }
         const res = await Axios.delete(`/api/trips/getaway/${id}`, {
           headers: { Authorization: token }
         });
         alert(res.data.msg);
         // Remove the deleted trip from the trips state
         setTrips(prevTrips => prevTrips.filter(trip => trip._id !== id));
+        window.location.reload();
+
       } catch (error) {
         console.error('Error:', error);
       }
