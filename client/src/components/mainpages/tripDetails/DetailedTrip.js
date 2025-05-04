@@ -8,6 +8,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Button from '@mui/material/Button';
 import './detailed.css';
 
+//Specfic details for selected trip
 function DetailedTrip() {
     const { id } = useParams();
     const [tripDetails, setTripDetails] = useState(null);

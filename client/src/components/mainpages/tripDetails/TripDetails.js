@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { WiDaySunny, WiCloud, WiRain, WiSnow, WiThunderstorm } from 'react-icons/wi';
-import { Typography, Box, CircularProgress, Button } from '@mui/material';
+import { Typography, Box, CircularProgress } from '@mui/material';
 
+//Trip Details for location, dates, weather, places 
 function TripDetails({ tripDetails, formData }) {
     const [weatherData, setWeatherData] = useState(null);
     const [weatherLoading, setWeatherLoading] = useState(false);

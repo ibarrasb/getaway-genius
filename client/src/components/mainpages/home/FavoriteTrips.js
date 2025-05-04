@@ -1,9 +1,9 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { GlobalState } from '../../../GlobalState';
-import { Link, useNavigate } from 'react-router-dom';
-import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
+// import Button from '@mui/material/Button';
+// import Stack from '@mui/material/Stack';
+// import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Axios from 'axios';
 import Card from '@mui/material/Card';
 import CardMedia from '@mui/material/CardMedia';

@@ -113,6 +113,7 @@ function Add({ selectedPlace, photoURL }) {
 }, [location]);
 
   console.log(suggestions)
+  console.log(suggestionLoading)
  
   return (
     <div className="add-form-container">

@@ -5,8 +5,9 @@ import DirectionsCarFilledSharpIcon from '@mui/icons-material/DirectionsCarFille
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import Divider from '@mui/material/Divider';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import { Typography, Box, CircularProgress, Button } from '@mui/material';
+// import { Typography, Box, CircularProgress, Button } from '@mui/material';
 
+//Trip details for expenses
 function TripDetailedExpenses({ formData, editMode, handleExpenseChange, handleDateChange, handleSubmit, calculateTotalExpenses, numberOfPeople, handlePeopleChange, calculateCostPerPerson }) {
     return (
 <div className='expense-container'>
