@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { WiDaySunny, WiCloud, WiRain, WiSnow, WiThunderstorm } from 'react-icons/wi';
-import { Typography, Box, CircularProgress, Button } from '@mui/material';
+import { Typography, Box, CircularProgress } from '@mui/material';
+import TripSuggestions from './TripSuggestions';
 
+// Trip Details for location, dates, weather, places
 function TripDetails({ tripDetails, formData }) {
     const [weatherData, setWeatherData] = useState(null);
     const [weatherLoading, setWeatherLoading] = useState(false);
     const [weatherError, setWeatherError] = useState(null);
-    const [funPlaces, setFunPlaces] = useState(null);
-    const [funPlacesLoading, setFunPlacesLoading] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
+    function parseLocationAddress(address) {
+        const parts = address.split(',').map(part => part.trim());
+        const city = parts[0] || '';
+        const state = parts[1] || '';
+        const country = parts[2] || '';
+        return { city, state, country };
+    }
+
+    const { city, state, country } = parseLocationAddress(tripDetails.location_address || '');
 
     const formatModernDate = (startDate, endDate) => {
         const start = new Date(startDate);
@@ -26,19 +37,10 @@ function TripDetails({ tripDetails, formData }) {
         }
     };
 
-    const parseLocationAddress = (address) => {
-        const parts = address.split(',').map(part => part.trim());
-        const city = parts[0] || '';
-        const state = parts[1] || '';
-        const country = parts[2] || '';
-        return { city, state, country };
-    };
-
     useEffect(() => {
         if (tripDetails.location_address) {
             const { city, state, country } = parseLocationAddress(tripDetails.location_address);
 
-            // Fetch weather data
             setWeatherLoading(true);
             const queryParams = new URLSearchParams();
             if (city) queryParams.append('city', city);
@@ -54,21 +56,6 @@ function TripDetails({ tripDetails, formData }) {
                     setWeatherError('Failed to fetch weather data');
                 })
                 .finally(() => setWeatherLoading(false));
-
-            // Fetch fun places using OpenAI API
-            setFunPlacesLoading(true);
-            const location = `${city}, ${state}, ${country}`;
-            fetch(`/api/chatgpt/fun-places`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ location }),
-            })
-                .then(response => response.ok ? response.json() : Promise.reject('Fun places fetch failed'))
-                .then(data => setFunPlaces(data.funPlaces))
-                .catch(error => console.error('Error fetching fun places:', error))
-                .finally(() => setFunPlacesLoading(false));
         }
     }, [tripDetails.location_address]);
 
@@ -96,6 +83,7 @@ function TripDetails({ tripDetails, formData }) {
                     <img src={tripDetails.image_url} alt="TripPic" className="trip-image-detailed" />
                 </div>
             </div>
+
             <div className="details-right">
                 {/* Weather Section */}
                 <Box className="weather-info">
@@ -109,8 +97,8 @@ function TripDetails({ tripDetails, formData }) {
                         <>
                             {getWeatherIcon(weatherData.weather[0].description)}
                             <Typography variant="h4" className='w-description'>
-                                {(weatherData.weather[0].description).split(' ') 
-                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1)) 
+                                {weatherData.weather[0].description.split(' ')
+                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                                     .join(' ')}
                             </Typography>
                             <Typography variant="h5" className='degrees'>
@@ -120,41 +108,17 @@ function TripDetails({ tripDetails, formData }) {
                     ) : null}
                 </Box>
 
-            {/* Fun Places Section */}
-            <button>Suggestions</button>
-            <Box className="fun-places">
-            {funPlacesLoading ? (
-                <CircularProgress />
-            ) : funPlaces ? (
-                <>
-                    <Typography variant="h6">Fun Places to Visit:</Typography>
-                    <ul>
-                        {funPlaces.split('\n').map((place, index) => (
-                            <div key={index}>{place}</div>
-                        ))}
-                    </ul>
-                </>
-            ) : null}
-            </Box>
+                {/* Fun Places Section */}
+                <button onClick={() => setShowSuggestions(prev => !prev)}>
+                    {showSuggestions ? 'Hide Suggestions' : 'Show Suggestions'}
+                </button>
+
+                {showSuggestions && (
+                    <TripSuggestions city={city} state={state} country={country} />
+                )}
             </div>
         </div>
     );
 }
 
 export default TripDetails;
-
-
-// <Box className="fun-places">
-// {funPlacesLoading ? (
-//     <CircularProgress />
-// ) : funPlaces ? (
-//     <>
-//         <Typography variant="h6">Fun Places to Visit:</Typography>
-//         <ul>
-//             {funPlaces.split('\n').map((place, index) => (
-//                 <div key={index}>{place}</div>
-//             ))}
-//         </ul>
-//     </>
-// ) : null}
-// </Box>

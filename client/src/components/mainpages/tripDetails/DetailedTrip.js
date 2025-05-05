@@ -6,12 +6,15 @@ import TripDetailedExpenses from './TripDetailedExpenses';
 import AddActivity from './AddActivities'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Button from '@mui/material/Button';
+import Switch from '@mui/material/Switch';
 import './detailed.css';
 
+//Specfic details for selected trip
 function DetailedTrip() {
     const { id } = useParams();
     const [tripDetails, setTripDetails] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [checked, setChecked] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [formData, setFormData] = useState({
         trip_start: new Date().toISOString().slice(0, 10),
@@ -161,12 +164,26 @@ function DetailedTrip() {
         return <div className="not-found">Trip not found</div>;
     }
 
+    const handleChange = (event) => {
+        setChecked(event.target.checked);
+      };
+
     return (
         <div className="detailed-container">
+
             <div className="detailed-button-container">
                 <div className="back-button-container">
                     <Link to="/home"> <Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>Back</Button></Link>
                 </div>
+                <div>
+                <p>Commit</p>
+             <Switch
+                checked={checked}
+                onChange={handleChange}
+                inputProps={{ 'aria-label': 'controlled' }}
+             />
+                </div>
+     
                 {tripDetails.trip_end && new Date(tripDetails.trip_end) >= new Date() && ( // Check if trip_end is not in the past
                     <div className="edit-button-container">
                         <button className="editbutton-txt" onClick={handleEditToggle}>{editMode ? 'Cancel' : 'Edit'}</button>
