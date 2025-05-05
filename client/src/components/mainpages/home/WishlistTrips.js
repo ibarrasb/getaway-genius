@@ -1,9 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { GlobalState } from '../../../GlobalState';
 import { useNavigate } from 'react-router-dom';
-// import Button from '@mui/material/Button';
-// import Stack from '@mui/material/Stack';
-// import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Axios from 'axios';
 import Card from '@mui/material/Card';
 import CardMedia from '@mui/material/CardMedia';
@@ -14,7 +11,8 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
-import './styles.css'; // Assuming this CSS file contains your styles
+import Button from '@mui/material/Button';
+import './styles.css';
 
 function FavoriteTrips() {
   const state = useContext(GlobalState);
@@ -23,7 +21,7 @@ function FavoriteTrips() {
   const [wishlists, setWishlists] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate(); // Hook for programmatic navigation
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,8 +31,6 @@ function FavoriteTrips() {
         });
         if (wishlistsResponse.status === 200) {
           setWishlists(wishlistsResponse.data);
-        } else {
-          throw new Error('Network response was not ok');
         }
         setLoading(false);
       } catch (error) {
@@ -52,48 +48,30 @@ function FavoriteTrips() {
 
   const handleDelete = async (wishlistId) => {
     try {
-      // Fetch the specific wishlist to get its trips
       const response = await Axios.get(`/api/wishlist/spec-wishlist/${wishlistId}`);
-      const { trips } = response.data; // Assuming the response contains a trips array
-   console.log(response)
-      // Update the isFavorite status for each trip in the wishlist to false
+      const { trips } = response.data;
+
       const updatePromises = trips.map(trip =>
         Axios.put(`/api/trips/getaway/${trip._id}`, { isFavorite: false })
       );
-  
-      // Wait for all the updates to complete
+
       await Promise.all(updatePromises);
-  
-      // Delete the wishlist after updating all trips
       await Axios.delete(`/api/wishlist/removewishlist/${wishlistId}`);
-  
-      // Update state to remove the wishlist from the list
-      setWishlists(prevWishlists => prevWishlists.filter(wishlist => wishlist._id !== wishlistId));
+
+      setWishlists(prev => prev.filter(w => w._id !== wishlistId));
     } catch (error) {
       console.error('Error deleting wishlist:', error);
     }
   };
-  
 
-  if (!isLogged) {
-    return (
-      <div>
-        <p>Please log in to view your trips.</p>
-      </div>
-    );
-  }
+  if (!isLogged) return <p>Please log in to view your trips.</p>;
+  if (loading) return <div>Loading...</div>;
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  // Separate wishlists into those with trips and those without
-  const wishlistsWithTrips = wishlists.filter(wishlist => wishlist.trips.length > 0);
-  const wishlistsWithoutTrips = wishlists.filter(wishlist => wishlist.trips.length === 0);
+  const wishlistsWithTrips = wishlists.filter(w => w.trips.length > 0);
+  const wishlistsWithoutTrips = wishlists.filter(w => w.trips.length === 0);
 
   return (
     <div className="home-container">
-     
       <div className="wishlists-container">
         {wishlistsWithTrips.length > 0 && (
           <div className="wishlists-with-trips">
@@ -101,43 +79,31 @@ function FavoriteTrips() {
               <Card
                 key={wishlist._id}
                 className="wishlist-card"
-                onClick={() => handleClick(wishlist._id)} // Handle card click
-                sx={{ cursor: 'pointer', mb: 2 }} // Add margin-bottom for spacing
+                onClick={() => handleClick(wishlist._id)}
+                sx={{ cursor: 'pointer', mb: 2 }}
               >
-                {wishlist.trips.length > 0 && wishlist.trips[0].image_url ? (
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={wishlist.trips[0].image_url}
-                    alt="Trip Image"
-                  />
-                ) : (
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image="https://source.unsplash.com/random/1600x900/?nature,water" // Creative fallback image
-                    alt="Creative Fallback Image"
-                  />
-                )}
+                <CardMedia
+                  component="img"
+                  height="140"
+                  image={wishlist.trips[0]?.image_url || "https://source.unsplash.com/random/1600x900/?nature,water"}
+                  alt="Trip Image"
+                />
                 <CardContent className='card-content-wishlist'>
-                <div>
-                <Typography variant="h6" component="div">
-                    {wishlist.list_name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {wishlist.trips.length} trips
-                  </Typography>
-                </div>
-                  
-                
-                    <DeleteIcon edge="end"
-                    aria-label="delete"
+                  <div>
+                    <Typography variant="h6">{wishlist.list_name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {wishlist.trips.length} trips
+                    </Typography>
+                  </div>
+                  <IconButton
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent click event from bubbling up to the card
+                      e.stopPropagation();
                       handleDelete(wishlist._id);
                     }}
-                    className="delete-button-wishlist"/>
-                  
+                    className="delete-button-wishlist"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
                 </CardContent>
               </Card>
             ))}
@@ -148,7 +114,7 @@ function FavoriteTrips() {
           <div className="wishlists-without-trips">
             {wishlistsWithoutTrips.map(wishlist => (
               <List key={wishlist._id} className="wishlist-list">
-                <ListItem ListItemButton onClick={() => handleClick(wishlist._id)}>
+                <ListItem onClick={() => handleClick(wishlist._id)} button>
                   <ListItemText
                     primary={wishlist.list_name}
                     secondary="No trips available"
@@ -157,7 +123,7 @@ function FavoriteTrips() {
                     edge="end"
                     aria-label="delete"
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent click event from bubbling up to the list item
+                      e.stopPropagation();
                       handleDelete(wishlist._id);
                     }}
                     className="delete-button"

@@ -111,6 +111,7 @@
   color: black;
   padding: 10px 20px;
   font-size: 16px;
+  text-decoration: none;
   margin-top: 10px;
   margin-bottom: 10px; /* Space below each button */
   margin-right: 15px; /* Space to the right for horizontal separation */

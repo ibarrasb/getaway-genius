@@ -92,7 +92,8 @@ const DetailedWishlist = () => {
           {tripsData.length > 0 ? (
             <div className="wishlist-trips">
               {tripsData.map(trip => (
-                <Trip key={trip._id} trip={trip} onRemove={removePost} />
+                <Trip key={trip._id} trip={trip} onRemove={removePost} customClass="wishlisted-trip" />
+
               ))}
             </div>
           ) : (

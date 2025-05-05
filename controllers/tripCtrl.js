@@ -22,7 +22,6 @@ getFavoriteTrips: async (req, res) => {
         // Use await to wait for the result of the find() query
         const trips = await Trips.find({ user_email: user_email, isFavorite: true });
         res.json(trips);
-        console.log(trips)
     } catch (err) {
         return res.status(500).json({ msg: err.message });
     }

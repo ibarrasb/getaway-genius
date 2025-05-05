@@ -118,7 +118,6 @@ removeWishlist: async (req, res) => {
 fetchWishlist: async (req, res) => {
   try {
     const detailedWishlist = await Wishlist.findById(req.params.id)
-    console.log(detailedWishlist)
     res.json(detailedWishlist)
     
 } catch (err) {
