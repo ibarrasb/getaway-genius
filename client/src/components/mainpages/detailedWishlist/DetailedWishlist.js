@@ -76,7 +76,7 @@ const DetailedWishlist = () => {
     <div>
       <div className="profile-button-container">
         <div className="back-button-container">
-          <Link to="/favorites">
+          <Link to="/explore">
             <Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>
               Back
             </Button>
