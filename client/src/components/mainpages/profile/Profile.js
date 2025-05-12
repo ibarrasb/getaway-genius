@@ -101,7 +101,7 @@ function Profile() {
         <div className="profile-container">
             <div className="profile-button-container">
                 <div className="back-button-container">
-                    <Link to="/home"><Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>Back</Button></Link>
+                    <Link to="/my-trip"><Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>Back</Button></Link>
                 </div>
                 <div className="edit-button-container">
                     <button className="editbutton-txt" onClick={handleEditToggle}>{editMode ? 'Cancel' : 'Edit'}</button>

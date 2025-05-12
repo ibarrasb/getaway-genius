@@ -43,7 +43,7 @@ function Register() {
             await axios.post('/api/user/register', { ...user });
 
             localStorage.setItem('firstLogin', true);
-            window.location.href = '/home';
+            window.location.href = '/my-trip';
         } catch (err) {
             alert(err.response.data.msg);
         }
@@ -59,7 +59,7 @@ function Register() {
         }
 
         if (isLogged) {
-            window.location.href = "/home";
+            window.location.href = "/my-trip";
         } else {
             return (
                 <div className="login-page">

@@ -50,7 +50,7 @@ function Header() {
       //   navigate('/discover');
       //   break;
       case 0:
-        navigate('/home');
+        navigate('/my-trip');
         break;
       case 1:
         navigate('/explore');
@@ -59,7 +59,7 @@ function Header() {
       navigate('/previous-trips');
         break;
       default:
-        navigate('/home');
+        navigate('/my-trip');
     }
   };
 
@@ -69,7 +69,7 @@ function Header() {
       // case '/discover':
       //   setValue(0);
       //   break;
-      case '/home':
+      case '/my-trip':
         setValue(0);
         break;
       case '/explore':
@@ -87,7 +87,7 @@ function Header() {
     return (
       <div>
         <div className="container">
-          <button className="dv1" onClick={() => navigate('/home')}>
+          <button className="dv1" onClick={() => navigate('/my-trip')}>
             <span className="getaway">Getaway</span>
             <span className="genius">Genius</span>
           </button>
@@ -141,7 +141,7 @@ function Header() {
   return (
     <div>
       <div>
-        {!( location.pathname.startsWith('/search') || location.pathname.startsWith('/trips') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/about') || location.pathname.startsWith('/wishlist-detail')) &&
+        {!( location.pathname.startsWith('/search') || location.pathname.startsWith('/trips') || location.pathname.startsWith('/profile') || location.pathname.startsWith('/about') || location.pathname.startsWith('/wishlist-detail')  || location.pathname.startsWith('/view-all')) &&
         isLogged
           ? loggedRouter()
           : ''}

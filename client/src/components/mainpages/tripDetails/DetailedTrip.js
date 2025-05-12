@@ -173,7 +173,7 @@ function DetailedTrip() {
 
             <div className="detailed-button-container">
                 <div className="back-button-container">
-                    <Link to="/home"> <Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>Back</Button></Link>
+                    <Link to="/my-trip"> <Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>Back</Button></Link>
                 </div>
                 <div>
                 <p>Commit</p>

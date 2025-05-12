@@ -24,7 +24,7 @@ function Login() {
 
             localStorage.setItem('firstLogin', true)
             
-            window.location.href = "/home";
+            window.location.href = "/my-trip";
         } catch (err) {
             alert(err.response.data.msg)
         }
@@ -39,7 +39,7 @@ function Login() {
             return <h1>Loading...</h1>; // Show loading indicator until isLogged is initialized
         }
         if (isLogged) {
-            window.location.href = "/home";
+            window.location.href = "/my-trip";
         } else {
             return (
                 <div className="login-page">
