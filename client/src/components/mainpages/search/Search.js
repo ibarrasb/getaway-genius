@@ -82,7 +82,7 @@ const Search = () => {
 
   return (
     <div className='search-container-search'>
-      <Link to="/home">
+      <Link to="/my-trip">
         <Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>Back</Button>
       </Link>
 

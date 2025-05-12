@@ -2,10 +2,12 @@ import React, { useContext, useState, useEffect } from 'react';
 import { GlobalState } from '../../../GlobalState';
 import Axios from 'axios';
 import Slider from 'react-slick';
+import { Link } from 'react-router-dom';
 import Trips from './IndividualTripComponent'; // Your Trips component
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 import './styles.css';
+
 
 
 //MyTrips Tab
@@ -93,6 +95,7 @@ function ListedExploreTrips() {
      <p>Swipe to view trips in progress</p>
      <p>Remember to ❤️ to add to a plan</p>
      
+  <Link to={'/view-all'}><button>View All</button></Link>
       <Slider {...settings}>
         {trips.map((trip) => (
           <div key={trip._id}>

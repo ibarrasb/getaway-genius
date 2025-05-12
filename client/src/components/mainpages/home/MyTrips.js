@@ -90,13 +90,13 @@ function MyTrips() {
     <div className="home-container">
       <h2>Active</h2>
 
-      <Slider {...settings}>
+      {/* <Slider {...settings}>
         {trips.map((trip) => (
           <div key={trip._id}>
             <Trips trip={trip} onRemove={removePost} />
           </div>
         ))}
-      </Slider>
+      </Slider> */}
       
     </div>
   );
