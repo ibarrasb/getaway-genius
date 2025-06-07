@@ -99,9 +99,9 @@ const IndividualTripComponent = ({ trip, onRemove }) => {
   return (
     <div className="trip-box">
     <div className="trip-location">{trip.location_address}</div>
-    <div className="trip-duration">
+    {/* <div className="trip-duration">
           {startMonth} {startDay + 1} - {endMonth} {endDay + 1}
-        </div>
+        </div> */}
       <div className="trip-image-container">
       
         <div className="favorite-icon" onClick={handleFavoriteToggle}>

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { WiDaySunny, WiCloud, WiRain, WiSnow, WiThunderstorm } from 'react-icons/wi';
-import { Typography, Box, CircularProgress } from '@mui/material';
+import { Typography, Box, CircularProgress, Button } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import TripSuggestions from './TripSuggestions';
 
-// Trip Details for location, dates, weather, places
 function TripDetails({ tripDetails, formData }) {
     const [weatherData, setWeatherData] = useState(null);
     const [weatherLoading, setWeatherLoading] = useState(false);
@@ -19,23 +19,6 @@ function TripDetails({ tripDetails, formData }) {
     }
 
     const { city, state, country } = parseLocationAddress(tripDetails.location_address || '');
-
-    const formatModernDate = (startDate, endDate) => {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-
-        const startMonth = start.toLocaleString('en-US', { month: 'short' });
-        const startDay = start.getDate();
-        const endDay = end.getDate();
-        const endYear = end.getFullYear();
-
-        if (start.getMonth() === end.getMonth()) {
-            return `${startMonth} ${startDay + 1} - ${endDay + 1}, ${endYear}`;
-        } else {
-            const endMonth = end.toLocaleString('en-US', { month: 'short' });
-            return `${startMonth} ${startDay + 1} - ${endMonth} ${endDay + 1}, ${endYear}`;
-        }
-    };
 
     useEffect(() => {
         if (tripDetails.location_address) {
@@ -71,21 +54,27 @@ function TripDetails({ tripDetails, formData }) {
     return (
         <div className="trip-details-container">
             <div className="details-left">
+{/* 
+                <div className="back-button-container">
+                    <Button
+                        variant="text"
+                        className="back-button"
+                        startIcon={<ArrowBackIcon fontSize="small" />}
+                        onClick={() => window.history.back()}
+                    >
+                        Back
+                    </Button>
+                </div> */}
+
                 <div className="trip-image-container">
                     <div className="destination-overlay">
                         <p className="location">{tripDetails.location_address}</p>
-                        <div className="trip-dates-modern">
-                            <p className="date-range">
-                                {formatModernDate(formData.trip_start, formData.trip_end)}
-                            </p>
-                        </div>
                     </div>
                     <img src={tripDetails.image_url} alt="TripPic" className="trip-image-detailed" />
                 </div>
             </div>
 
             <div className="details-right">
-                {/* Weather Section */}
                 <Box className="weather-info">
                     {weatherLoading ? (
                         <CircularProgress />
@@ -94,28 +83,38 @@ function TripDetails({ tripDetails, formData }) {
                             {weatherError}
                         </Typography>
                     ) : weatherData ? (
-                        <>
+                        <div className="weather-display">
                             {getWeatherIcon(weatherData.weather[0].description)}
-                            <Typography variant="h4" className='w-description'>
-                                {weatherData.weather[0].description.split(' ')
-                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                    .join(' ')}
-                            </Typography>
-                            <Typography variant="h5" className='degrees'>
-                                {weatherData.main.temp.toFixed(1)}°C
-                            </Typography>
-                        </>
+                            <div className="weather-text">
+                                <Typography variant="h5" className="w-description">
+                                    {weatherData.weather[0].description
+                                        .split(' ')
+                                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                        .join(' ')}
+                                </Typography>
+                                <Typography variant="h6" className="degrees">
+                                    {weatherData.main.temp.toFixed(1)}°C
+                                </Typography>
+                            </div>
+                        </div>
                     ) : null}
                 </Box>
 
-                {/* Fun Places Section */}
-                <button onClick={() => setShowSuggestions(prev => !prev)}>
-                    {showSuggestions ? 'Hide Suggestions' : 'Show Suggestions'}
-                </button>
+                <div className="suggestions-box">
+                    <Button
+                        variant="outlined"
+                        className="suggestions-button"
+                        onClick={() => setShowSuggestions(prev => !prev)}
+                    >
+                        {showSuggestions ? 'Hide Suggestions' : 'Show Suggestions'}
+                    </Button>
 
-                {showSuggestions && (
-                    <TripSuggestions city={city} state={state} country={country} />
-                )}
+                    {showSuggestions && (
+                        <div className="suggestions-container">
+                            <TripSuggestions city={city} state={state} country={country} />
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

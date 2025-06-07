@@ -15,6 +15,7 @@ app.use(cors());
 // Import routes
 const externalRoutes = require('./routes/externalRoutes');
 const tripsRouter = require('./routes/tripsRoutes');
+const withinRouter = require('./routes/withinTripRoutes')
 const usersRouter = require('./routes/userRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 
@@ -22,6 +23,7 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 app.use('/api', externalRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/trips', tripsRouter);
+app.use('api/within', withinRouter);
 app.use('/api/user', usersRouter);
 
 // Connect to MongoDB
