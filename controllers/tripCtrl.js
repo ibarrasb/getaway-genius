@@ -78,6 +78,16 @@ getSpecificTrip: async (req, res) => {
     } catch (err) {
         return res.status(500).json({msg: err.message})
     }
+},
+getCommitedTrips: async (req, res) => {
+    try {
+        const user_email = req.query.email; // Extract email from req.query
+        // Use await to wait for the result of the find() query
+        const trips = await Trips.find({ user_email: user_email, isTripCommited: true });
+        res.json(trips);
+    } catch (err) {
+        return res.status(500).json({ msg: err.message });
+    }
 }
 }
 module.exports = tripCtrl

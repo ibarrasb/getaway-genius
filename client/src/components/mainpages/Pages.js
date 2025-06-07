@@ -15,6 +15,7 @@ import About from './auth/About.js'
 import Discover from './discover/Discover.js'
 import Landing from './landing/Landing.js'
 import ViewAll from './home/ViewAll.js';
+import TripLocation from './tripLocation/TripLocation.js'
 
 
 function Pages() {
@@ -29,7 +30,7 @@ function Pages() {
             <Route path="/my-trip" element={<MyTrips />} />
             <Route path="/previous-trips" element={<PreviousTrips/>} />
             <Route path='/add' element={<Add/>} />
-            <Route path='/trips/:id' element={<DetailedTrip/>}/>
+            <Route path='/trips/:id' element={<TripLocation/>}/>
             <Route path='/profile/:id' element={<Profile/>}/>
             <Route path='/wishlist-detail/:id' element={<DetailedWishlist/>}/>
             <Route path='/search' element={<Search/>} />

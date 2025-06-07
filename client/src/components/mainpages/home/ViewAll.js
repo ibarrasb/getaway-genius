@@ -94,7 +94,7 @@ function ViewAll() {
   return (
     <div className="home-container">
      <div className="back-button-container">
-                    <Link to="/my-trip"><Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>Back</Button></Link>
+                    <Link to="/explore"><Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>Back</Button></Link>
                 </div>
       {Object.keys(groupedCurrentTrips).length > 0 ? (
         Object.keys(groupedCurrentTrips).map(year => (
@@ -112,26 +112,6 @@ function ViewAll() {
           <p className="notrips">Start planning your trips!</p>
         </div>
       )}
-
-      {/* Floating Action Button */}
-      <ThemeProvider theme={theme}>
-        <div className="fab-container">
-          <Link to="/search" style={{ textDecoration: 'none' }}>
-          <Fab
-              color="primary"
-              aria-label="add"
-              variant="extended"
-              sx={{
-                color: '#FFFFFF', // Set text color to white
-              }}
-            >
-            <AddIcon style={{ marginRight: 8 }} />
-            Create
-          </Fab>
-
-          </Link>
-        </div>
-      </ThemeProvider>
     </div>
   );
 }

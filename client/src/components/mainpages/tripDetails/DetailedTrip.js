@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Axios from 'axios';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import TripDetails from './TripDetails';
 import TripDetailedExpenses from './TripDetailedExpenses';
 import AddActivity from './AddActivities'
@@ -11,6 +11,7 @@ import './detailed.css';
 
 //Specfic details for selected trip
 function DetailedTrip() {
+    const navigate = useNavigate();
     const { id } = useParams();
     const [tripDetails, setTripDetails] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -172,9 +173,16 @@ function DetailedTrip() {
         <div className="detailed-container">
 
             <div className="detailed-button-container">
-                <div className="back-button-container">
-                    <Link to="/my-trip"> <Button variant="text" className="back-button" startIcon={<ArrowBackIcon />}>Back</Button></Link>
-                </div>
+            <div className="back-button-container">
+      <Button
+        variant="text"
+        className="back-button"
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate(-1)} // 👈 Go back to previous page
+      >
+        Back
+      </Button>
+    </div>
                 <div>
                 <p>Commit</p>
              <Switch

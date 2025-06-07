@@ -9,43 +9,11 @@ const tripSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    trip_start: {
-        type: String,
-        required: true,
-    },
-    trip_end: {
-        type: String,
-        required: true,
-    },
-    stay_expense: {
-        type: String,
-        required: true,
-    },
-    travel_expense: {
-        type: String,
-        required: true,
-    },
-    car_expense: {
-        type: String,
-        required: true,
-    },
-    other_expense: {
-        type: String, 
-        required: true
-    },
     image_url: {
         type: String,
         required: true
     },
     isFavorite: {
-        type: Boolean,
-        default: false // Default value is false
-    },
-    activities: {
-        type: Array, 
-        default: []
-    },
-    isTripCommited: {
         type: Boolean,
         default: false // Default value is false
     }
