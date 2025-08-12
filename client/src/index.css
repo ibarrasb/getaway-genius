@@ -1,3 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* src/index.css */
+@import "tailwindcss";
+
+@layer base {
+  html, body { @apply antialiased bg-white text-slate-900; }
+}
