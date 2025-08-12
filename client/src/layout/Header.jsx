@@ -41,7 +41,9 @@ const Header = () => {
   const [isLogged, setIsLogged] = api?.isLogged ?? [false, () => {}]
   const [userID] = api?.userID ?? [""]
   const [token] = state?.token ?? [null]
-  const isAuthed = Boolean(token) || isLogged
+  const isAuthed = Boolean(token) && isLogged
+  // if (!isAuthed || shouldHide) return null
+  
 
   const [open, setOpen] = useState(false)
   const location = useLocation()
@@ -54,16 +56,22 @@ const Header = () => {
   hideExact.includes(location.pathname) ||
   hideStartsWith.some((p) => location.pathname.startsWith(p))
   if (!isAuthed || shouldHide) return null
+// Header.jsx
+const logoutUser = async () => {
+  try {
+    // drop auth in memory first so routes re-evaluate immediately
+    const setIsLogged = (state?.userAPI ?? state?.UserAPI)?.isLogged?.[1]
+    setIsLogged?.(false)
+    state?.setToken?.(null)            // <-- ensure GlobalState exposes setToken
 
-  const logoutUser = async () => {
-    try {
-      setIsLogged(false)
-      await axios.get("/api/user/logout", { withCredentials: true })
-    } catch {}
-    localStorage.clear()
-    navigate("/", { replace: true })
-  }
+    await axios.get("/api/user/logout", { withCredentials: true })
+  } catch {}
+  localStorage.clear()
+  navigate("/login", { replace: true }) // send to login to avoid race with other pages
+}
 
+
+  
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* glowing gradient bar */}

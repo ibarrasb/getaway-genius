@@ -47,17 +47,18 @@ const Register = () => {
   const onSubmit = async (e) => {
     e.preventDefault()
     setError(null)
-
+  
     if (form.zip.length !== 5) {
       setError("Zip code must be exactly 5 digits.")
       return
     }
-
+  
     try {
       setSubmitting(true)
       await axios.post("/api/user/register", form)
-      localStorage.setItem("firstLogin", "true")
-      navigate("/mytrips", { replace: true })
+  
+      // optional: let login page know they just created an account
+      navigate("/login?created=1", { replace: true })
     } catch (err) {
       const msg = err?.response?.data?.msg || "Registration failed. Please try again."
       setError(msg)
@@ -65,6 +66,7 @@ const Register = () => {
       setSubmitting(false)
     }
   }
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-50">

@@ -1,42 +1,45 @@
-import { Routes, Route } from 'react-router-dom'
-import Login from './auth/Login'
-import Register from './auth/Register'
-// import About from './auth/About'
-import MyTrips from './mytrips/MyTrips'
-// import PreviousTrips from './home/PreviousTrips'
-import ExplorePage from './explore/ExplorePage'
-// import Add from './add/Add'
-// import Search from './search/Search'
-// import Profile from './profile/Profile'
-// import DetailedTrip from './tripDetails/DetailedTrip'
-// import DetailedWishlist from './detailedWishlist/'
-// import Discover from './discover/Discover'
-import Landing from './landing/Landing'
-// import NotFound from './utils/not_found/NotFound'
+import { Routes, Route } from "react-router-dom"
+import { useContext } from "react"
+import Login from "./auth/Login"
+import Register from "./auth/Register"
+import MyTrips from "./mytrips/MyTrips"
+import ExplorePage from "./explore/ExplorePage"
+import Landing from "./landing/Landing"
+import PrivateRoute from "@/components/routing/PrivateRoute"
+import NotLoggedIn from "./utils/NotLoggedIn"
+import NotFound from "./utils/not_found/NotFound"
+import { GlobalState } from "@/context/GlobalState.jsx"
 
 const MainPages = () => {
+  const state = useContext(GlobalState)
+  const api = state?.userAPI ?? state?.UserAPI
+  const [isLogged] = api?.isLogged ?? [false]
+  const [token] = state?.token ?? [null]
+  const isAuthed = Boolean(token) || isLogged
+
   return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/mytrips" element={<MyTrips />} />
-     <Route path="/explore" element={<ExplorePage />} />
-      {/* <Route path="/discover" element={<Discover />} />
-      <Route path="/about" element={<About />} />
-          
-      <Route path="/previous-trips" element={<PreviousTrips />} />
-      <Route path="/add" element={<Add />} />
-      <Route path="/trips/:id" element={<DetailedTrip />} />
-      <Route path="/profile/:id" element={<Profile />} />
-      <Route path="/wishlist-detail/:id" element={<DetailedWishlist />} />
-      <Route path="/search" element={<Search />} />
-   
-  
-   
-      <Route path="*" element={<NotFound />} /> */}
-    </Routes>
+// unchanged structure
+<Routes>
+  {/* public */}
+  <Route path="/" element={<Landing />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/register" element={<Register />} />
+  <Route path="/not-logged-in" element={<NotLoggedIn />} />
+
+  {/* protected */}
+  <Route element={<PrivateRoute />}>
+    <Route path="/mytrips" element={<MyTrips />} />
+    <Route path="/explore" element={<ExplorePage />} />
+    {/* e.g. <Route path="/discover" element={<Discover />} /> */}
+    {/* add other protected routes here */}
+  </Route>
+
+  {/* fallback */}
+  <Route path="*" element={isAuthed ? <NotFound /> : <NotLoggedIn />} />
+</Routes>
+
   )
 }
 
 export default MainPages
+
