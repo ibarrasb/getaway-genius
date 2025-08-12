@@ -2,9 +2,9 @@ import { Routes, Route } from 'react-router-dom'
 import Login from './auth/Login'
 import Register from './auth/Register'
 // import About from './auth/About'
-import Home from './home/Home'
+import MyTrips from './mytrips/MyTrips'
 // import PreviousTrips from './home/PreviousTrips'
-import FavoriteTrips from './favorites/FavoriteTrips'
+import ExplorePage from './explore/ExplorePage'
 // import Add from './add/Add'
 // import Search from './search/Search'
 // import Profile from './profile/Profile'
@@ -20,8 +20,8 @@ const MainPages = () => {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-        <Route path="/home" element={<Home />} />
-     <Route path="/explore" element={<FavoriteTrips />} />
+      <Route path="/mytrips" element={<MyTrips />} />
+     <Route path="/explore" element={<ExplorePage />} />
       {/* <Route path="/discover" element={<Discover />} />
       <Route path="/about" element={<About />} />
           

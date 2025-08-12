@@ -25,7 +25,7 @@ const Register = () => {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (isLogged) navigate("/home", { replace: true })
+    if (isLogged) navigate("/mytrips", { replace: true })
   }, [isLogged, navigate])
 
   const US_STATES = useMemo(
@@ -57,7 +57,7 @@ const Register = () => {
       setSubmitting(true)
       await axios.post("/api/user/register", form)
       localStorage.setItem("firstLogin", "true")
-      navigate("/home", { replace: true })
+      navigate("/mytrips", { replace: true })
     } catch (err) {
       const msg = err?.response?.data?.msg || "Registration failed. Please try again."
       setError(msg)

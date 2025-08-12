@@ -1,5 +1,6 @@
 // src/components/modals/WishlistModal.jsx
 import { useContext, useEffect, useMemo, useState, useCallback } from "react"
+import { createPortal } from "react-dom"
 import axios from "axios"
 import { GlobalState } from "@/context/GlobalState.jsx"
 
@@ -19,13 +20,23 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // prevent background scroll when open
+  // lock body scroll when open
   useEffect(() => {
     if (!show) return
     const prev = document.body.style.overflow
     document.body.style.overflow = "hidden"
-    return () => { document.body.style.overflow = prev }
+    return () => {
+      document.body.style.overflow = prev
+    }
   }, [show])
+
+  // global ESC to close
+  useEffect(() => {
+    if (!show) return
+    const onKey = (e) => e.key === "Escape" && onClose?.()
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [show, onClose])
 
   // load wishlists when opening
   useEffect(() => {
@@ -112,15 +123,14 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
     }
   }, [trip, selectedWishlistId, selectedWishlistName, newWishlistName, token, email, onSave, onClose])
 
-  // close on ESC / backdrop
+  // mount nothing when hidden
   if (!show) return null
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      className="fixed inset-0 z-[9999] flex items-end justify-center sm:items-center"
       aria-modal="true"
       role="dialog"
-      onKeyDown={(e) => e.key === "Escape" && onClose?.()}
     >
       {/* backdrop */}
       <div
@@ -128,7 +138,7 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
         onClick={onClose}
       />
 
-      {/* modal */}
+      {/* panel */}
       <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-200 sm:mx-4">
         <h2 className="text-xl font-semibold text-slate-900">Add to wishlist</h2>
         <p className="mt-1 text-sm text-slate-600">
@@ -228,6 +238,8 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }
 
 export default WishlistModal

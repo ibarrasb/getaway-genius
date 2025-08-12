@@ -3,7 +3,7 @@ import ExploreGrid from "@/components/grids/ExploreGrid"
 import WishlistGrid from "@/components/grids/WishlistGrid"
 import FloatingCreateButton from "@/components/FloatingCreateButton"
 
-const FavoriteTrips = () => {
+const ExplorePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-8 space-y-10">
@@ -30,4 +30,4 @@ const FavoriteTrips = () => {
   )
 }
 
-export default FavoriteTrips
+export default ExplorePage

@@ -6,7 +6,7 @@ import { GlobalState } from "@/context/GlobalState.jsx"
 const NAV = [
   {
     label: "My Trips",
-    to: "/home",
+    to: "/mytrips",
     icon: (
       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M3 7h18M3 12h18M3 17h18" strokeWidth="2" strokeLinecap="round" />
@@ -48,8 +48,11 @@ const Header = () => {
   const navigate = useNavigate()
 
   // hide on these routes
-  const hideOn = ["/search", "/trips", "/profile", "/about", "/wishlist-detail", "/view-all"]
-  const shouldHide = hideOn.some((p) => location.pathname.startsWith(p))
+  const hideExact = ["/"]
+  const hideStartsWith = ["/search", "/trips", "/profile", "/about", "/wishlist-detail", "/view-all",]
+  const shouldHide =
+  hideExact.includes(location.pathname) ||
+  hideStartsWith.some((p) => location.pathname.startsWith(p))
   if (!isAuthed || shouldHide) return null
 
   const logoutUser = async () => {
@@ -71,7 +74,7 @@ const Header = () => {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           {/* brand */}
           <Link
-            to="/home"
+            to="/mytrips"
             className="group relative inline-flex items-center gap-2 rounded-2xl px-2 py-1"
           >
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md ring-1 ring-black/5 transition-transform duration-300 group-hover:rotate-6 group-active:scale-95">
@@ -136,7 +139,7 @@ const Header = () => {
               <li key={to}>
                 <NavLink
                   to={to}
-                  end={to === "/home"}
+                  end={to === "/mytrips"}
                   className={({ isActive }) =>
                     [
                       "group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition",
@@ -168,7 +171,7 @@ const Header = () => {
               <NavLink
                 key={to}
                 to={to}
-                end={to === "/home"}
+                end={to === "/mytrips"}
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
                   [

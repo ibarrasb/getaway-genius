@@ -18,7 +18,7 @@ const Login = () => {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (isLogged) navigate("/home", { replace: true })
+    if (isLogged) navigate("/mytrips", { replace: true })
   }, [isLogged, navigate])
 
   const onChange = (e) => {
@@ -41,7 +41,7 @@ const Login = () => {
       api?.refresh?.()
 
       // Go to your home page
-      navigate("/home", { replace: true })
+      navigate("/mytrips", { replace: true })
     } catch (err) {
       const msg = err?.response?.data?.msg || "Login failed. Please try again."
       setError(msg)

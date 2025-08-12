@@ -8,7 +8,7 @@ import { MOCK_TRIPS } from "@/mocks/trips"
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
 
-const Home = () => {
+const MyTrips = () => {
   const navigate = useNavigate()
   const state = useContext(GlobalState)
   const api = state?.userAPI ?? state?.UserAPI
@@ -217,9 +217,9 @@ const Home = () => {
         )}
       </div>
 
-      <FloatingCreateButton to="/search" label="Create" />
+      {/* <FloatingCreateButton to="/search" label="Create" /> */}
     </div>
   )
 }
 
-export default Home
+export default MyTrips
