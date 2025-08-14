@@ -5,6 +5,7 @@ import Register from "./auth/Register"
 import MyTrips from "./mytrips/MyTrips"
 import About from "./about/About"
 import ExplorePage from "./explore/ExplorePage"
+import Search from "./search/Search"
 import Landing from "./landing/Landing"
 import PrivateRoute from "@/components/routing/PrivateRoute"
 import NotLoggedIn from "./utils/NotLoggedIn"
@@ -34,6 +35,7 @@ const MainPages = () => {
     <Route path="/mytrips" element={<MyTrips />} />
     <Route path="/explore" element={<ExplorePage />} />
     <Route path="/profile/:id" element={<Profile/>} />
+    <Route path="/search" element={<Search/>} />
     {/* e.g. <Route path="/discover" element={<Discover />} /> */}
     {/* add other protected routes here */}
   </Route>

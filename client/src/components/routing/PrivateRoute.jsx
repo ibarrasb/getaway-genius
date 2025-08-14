@@ -1,4 +1,3 @@
-// src/components/routing/PrivateRoute.jsx
 import { useContext } from "react"
 import { Navigate, Outlet } from "react-router-dom"
 import { GlobalState } from "@/context/GlobalState.jsx"
