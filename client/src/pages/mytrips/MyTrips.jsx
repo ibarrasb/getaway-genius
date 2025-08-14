@@ -1,9 +1,10 @@
+// src/pages/mytrips/MyTrips.jsx
 import { useContext, useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import axios from "axios"
 import { GlobalState } from "@/context/GlobalState.jsx"
 import TripCard from "@/components/cards/TripCard.jsx"
-import FloatingCreateButton from "@/components/FloatingCreateButton.jsx"
+// import FloatingCreateButton from "@/components/FloatingCreateButton.jsx"
 import { MOCK_TRIPS } from "@/mocks/trips"
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
@@ -81,6 +82,35 @@ const MyTrips = () => {
   const totalCost = (t) =>
     (Number(t.stay_expense) || 0) + (Number(t.car_expense) || 0) + (Number(t.travel_expense) || 0)
 
+  // countdown helper
+  const nextTripCountdown = (start, end) => {
+    const now = new Date()
+    const s = new Date(start)
+    const e = new Date(end)
+
+    if (Number.isNaN(s) || Number.isNaN(e)) return null
+
+    if (now >= s && now <= e) {
+      return { label: "Happening now", tone: "emerald" }
+    }
+
+    const ms = s - now
+    const oneHour = 1000 * 60 * 60
+    const oneDay = oneHour * 24
+
+    if (ms > 0 && ms < oneDay) {
+      const hours = Math.max(1, Math.ceil(ms / oneHour))
+      return { label: `In ${hours} hour${hours === 1 ? "" : "s"}`, tone: "indigo" }
+    }
+
+    const days = Math.ceil(ms / oneDay)
+    if (days === 0) return { label: "Today", tone: "indigo" }
+    if (days === 1) return { label: "Tomorrow", tone: "indigo" }
+    if (days > 1) return { label: `${days} days until your next trip`, tone: "indigo" }
+
+    return { label: "Starts soon", tone: "indigo" }
+  }
+
   // compute featured (soonest upcoming by start date), and the rest grouped by year
   const { featured, groups, orderedYears } = useMemo(() => {
     const now = new Date()
@@ -108,6 +138,7 @@ const MyTrips = () => {
     return { featured: f, groups: byYear, orderedYears: years }
   }, [trips])
 
+  // if not logged in (and not using mocks), show prompt
   if (!isLogged && !USE_MOCKS) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-16">
@@ -129,6 +160,7 @@ const MyTrips = () => {
   }
 
   const showEmpty = !featured && orderedYears.length === 0
+  const countdown = featured ? nextTripCountdown(featured.trip_start, featured.trip_end) : null
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50">
@@ -136,6 +168,26 @@ const MyTrips = () => {
         {error && (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
+          </div>
+        )}
+
+        {/* Countdown above featured */}
+        {featured && countdown && (
+          <div className="mb-3 flex items-center gap-2">
+            <span
+              className={
+                "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ring-1 " +
+                (countdown.tone === "emerald"
+                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                  : "bg-indigo-50 text-indigo-700 ring-indigo-200")
+              }
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" strokeLinecap="round" />
+              </svg>
+              {countdown.label}
+            </span>
           </div>
         )}
 
@@ -216,8 +268,6 @@ const MyTrips = () => {
           </div>
         )}
       </div>
-
-      {/* <FloatingCreateButton to="/search" label="Create" /> */}
     </div>
   )
 }

@@ -52,7 +52,7 @@ const Landing = () => {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <CTA to="/login">Get Started</CTA>
-              <CTA to="/discover" variant="secondary">Explore Destinations</CTA>
+              <CTA to="/about" variant="secondary">About us</CTA>
             </div>
 
             {/* mini trust row */}
