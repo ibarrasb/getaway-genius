@@ -1,54 +1,64 @@
+// server.js (CommonJS)
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+
 const app = express();
 
-// Middleware
+// ----- Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_ORIGIN || true,
+  credentials: true
+}));
 
-// Import routes
+// Helpful on Heroku if you ever read req.ip or use secure cookies behind the proxy
+app.set('trust proxy', 1);
+
+// ----- Routes (API first)
 const externalRoutes = require('./routes/externalRoutes');
 const tripsRouter = require('./routes/tripsRoutes');
 const usersRouter = require('./routes/userRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 
-// Use routes
 app.use('/api', externalRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/trips', tripsRouter);
 app.use('/api/user', usersRouter);
 
-// Connect to MongoDB
-const URI = process.env.MONGODB_URL;
+// Simple healthcheck
+app.get('/health', (_req, res) => res.status(200).send('ok'));
 
-async function connectToMongo() {
-    try {
-        await mongoose.connect(URI);
-        console.log('Connected to MongoDB');
-    } catch (error) {
-        console.error('Error connecting to MongoDB:', error);
-    }
-}
-
-// Serve static files in production
+// ----- Static (Vite build) LAST, only in production
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, 'client', 'dist')));
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
-    });
+  const clientDist = path.join(__dirname, 'client', 'dist');
+  app.use(express.static(clientDist));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
 }
 
-
-// Start the server
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-    console.log('Server is running on port', PORT);
-});
 
-// Connect to MongoDB
-connectToMongo();
+// ----- Start only after Mongo connects (fail fast if URI missing)
+const URI = process.env.MONGODB_URL;
+(async () => {
+  try {
+    if (!URI) {
+      throw new Error('MONGODB_URL not set');
+    }
+    await mongoose.connect(URI);
+    console.log('Connected to MongoDB');
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('Startup error:', err.message);
+    process.exit(1);
+  }
+})();
