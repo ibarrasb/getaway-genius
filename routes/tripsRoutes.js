@@ -17,8 +17,4 @@ router.route('/getaway/:id')
     .delete(auth, tripCtrl.deleteTrip)
     .put(tripCtrl.updateTrip)
 
-//gets commited trips
-router.route('/getaway/commited')
-    .get(tripCtrl.getCommitedTrips)
-
 module.exports = router

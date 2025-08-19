@@ -143,7 +143,7 @@ router.get('/weather', async (req, res) => {
 
 // ChatGPT Fun Places
 router.post('/chatgpt/fun-places', async (req, res) => {
-
+    console.log('FUN Received request body:', req.body);
     const { location } = req.body;
 
     try {
@@ -170,7 +170,7 @@ router.post('/chatgpt/fun-places', async (req, res) => {
 });
 
 router.post('/chatgpt/trip-suggestion', async (req, res) => {
-  
+    console.log('Received request body:', req.body);
     const { location } = req.body;
 
     try {

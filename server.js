@@ -10,12 +10,10 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors());
-  
 
 // Import routes
 const externalRoutes = require('./routes/externalRoutes');
 const tripsRouter = require('./routes/tripsRoutes');
-const withinRouter = require('./routes/withinTripRoutes')
 const usersRouter = require('./routes/userRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 
@@ -23,7 +21,6 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 app.use('/api', externalRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/trips', tripsRouter);
-app.use('api/within', withinRouter);
 app.use('/api/user', usersRouter);
 
 // Connect to MongoDB
@@ -40,11 +37,12 @@ async function connectToMongo() {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static('client/build'));
+    app.use(express.static(path.join(__dirname, 'client', 'dist')));
     app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, 'client', 'build', 'index.html'));
+        res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
     });
 }
+
 
 // Start the server
 const PORT = process.env.PORT || 5001;

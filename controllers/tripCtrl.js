@@ -22,6 +22,7 @@ getFavoriteTrips: async (req, res) => {
         // Use await to wait for the result of the find() query
         const trips = await Trips.find({ user_email: user_email, isFavorite: true });
         res.json(trips);
+        console.log(trips)
     } catch (err) {
         return res.status(500).json({ msg: err.message });
     }
@@ -40,7 +41,7 @@ createTrips: async (req, res) => {
         })
 
         await newVacation.save()
-        res.json({ msg: "Created a planned trip", tripId: newVacation._id });
+        res.json({msg: "Created a planned trip"})
 
     } catch (err) {
         return res.status(500).json({msg: err.message})
@@ -77,16 +78,6 @@ getSpecificTrip: async (req, res) => {
         
     } catch (err) {
         return res.status(500).json({msg: err.message})
-    }
-},
-getCommitedTrips: async (req, res) => {
-    try {
-        const user_email = req.query.email; // Extract email from req.query
-        // Use await to wait for the result of the find() query
-        const trips = await Trips.find({ user_email: user_email, isTripCommited: true });
-        res.json(trips);
-    } catch (err) {
-        return res.status(500).json({ msg: err.message });
     }
 }
 }
