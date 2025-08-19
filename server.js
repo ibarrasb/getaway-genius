@@ -55,12 +55,11 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const PORT = process.env.PORT || 5001;
-const MONGO_URI = process.env.MONGODB_URI || process.env.MONGODB_URL;
+const MONGO_URI = process.env.MONGODB_URL;
 
-//Start only after Mongo connects (fail fast if URI missing)
 (async () => {
   try {
-    if (!MONGO_URI) throw new Error('Missing MONGODB_URI (or MONGODB_URL)');
+    if (!MONGO_URI) throw new Error('MONGODB_URL not set');
     await mongoose.connect(MONGO_URI);
     console.log('Connected to MongoDB');
 
