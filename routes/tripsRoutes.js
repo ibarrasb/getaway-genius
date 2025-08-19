@@ -1,20 +1,23 @@
-const router = require('express').Router()
-const tripCtrl = require('../controllers/tripCtrl')
-const auth = require('../middleware/auth')
+import { Router } from 'express';
+import * as tripCtrl from '../controllers/tripCtrl.js';
+import auth from '../middleware/auth.js';
 
-//gets and posts trips made from users
-router.route('/getaway-trip')
-    .get(tripCtrl.getTrips)
-    .post(auth, tripCtrl.createTrips)
+const router = Router();
 
-//get favorite trips
-router.route('/favorites')
-    .get(tripCtrl.getFavoriteTrips)
+// gets and posts trips made from users
+router
+  .route('/getaway-trip')
+  .get(tripCtrl.getTrips)
+  .post(auth, tripCtrl.createTrips);
 
-//deletes and updates specific posts
-router.route('/getaway/:id')
-    .get(tripCtrl.getSpecificTrip)
-    .delete(auth, tripCtrl.deleteTrip)
-    .put(tripCtrl.updateTrip)
+// get favorite trips
+router.route('/favorites').get(tripCtrl.getFavoriteTrips);
 
-module.exports = router
+// deletes and updates specific posts
+router
+  .route('/getaway/:id')
+  .get(tripCtrl.getSpecificTrip)
+  .delete(auth, tripCtrl.deleteTrip)
+  .put(tripCtrl.updateTrip); // add `auth` here too if you want edits protected
+
+export default router;

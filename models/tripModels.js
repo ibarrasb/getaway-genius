@@ -1,24 +1,31 @@
-const mongoose = require('mongoose');
+// models/tripModels.js (ESM)
 
-const tripSchema = new mongoose.Schema({
+import mongoose from 'mongoose';
+
+const tripSchema = new mongoose.Schema(
+  {
     user_email: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     location_address: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     image_url: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     isFavorite: {
-        type: Boolean,
-        default: false // Default value is false
-    }
-}, {
-    timestamps: true
-});
+      type: Boolean,
+      default: false, // Default value is false
+    },
+  },
+  {
+    timestamps: true, // adds createdAt & updatedAt
+  }
+);
 
-module.exports = mongoose.model('Trip', tripSchema);
+const Trip = mongoose.model('Trip', tripSchema);
+
+export default Trip;

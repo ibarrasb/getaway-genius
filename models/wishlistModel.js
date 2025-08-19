@@ -1,20 +1,27 @@
-const mongoose = require('mongoose');
+// models/wishlistModel.js (ESM)
 
-const wishlistSchema = new mongoose.Schema({
-  list_name: {
-    type: String,
-    required: true,
-  },
-  trips: {
-    type: [Object], // Defines the trips field as an array of objects
-    default: [],    // Sets the default value to an empty array
-  },
-  email: {
-    type: String,
-    required: true,
-  },
-}, {
-  timestamps: true,
-});
+import mongoose from 'mongoose';
 
-module.exports = mongoose.model('Wishlist', wishlistSchema);
+const wishlistSchema = new mongoose.Schema(
+  {
+    list_name: {
+      type: String,
+      required: true,
+    },
+    trips: {
+      type: [Object], // array of arbitrary objects
+      default: [],
+    },
+    email: {
+      type: String,
+      required: true,
+    },
+  },
+  {
+    timestamps: true, // auto adds createdAt & updatedAt
+  }
+);
+
+const Wishlist = mongoose.model('Wishlist', wishlistSchema);
+
+export default Wishlist;
