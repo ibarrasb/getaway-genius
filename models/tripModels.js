@@ -1,5 +1,3 @@
-// models/tripModels.js (ESM)
-
 import mongoose from 'mongoose';
 
 const tripSchema = new mongoose.Schema(

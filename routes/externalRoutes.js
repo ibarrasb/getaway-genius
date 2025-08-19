@@ -5,15 +5,12 @@ import OpenAI from 'openai';
 
 const router = Router();
 
-// ---------- OpenAI client (one-time init)
+// OpenAI client (one-time init)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  // Optional: move these to env vars if you actually need them
-  organization: process.env.OPENAI_ORG || 'org-zhk7ZnWbeRQ2l5XQZ5Zjt14E',
-  project: process.env.OPENAI_PROJECT || 'proj_bhGgO8C8Iw6Df4XXimaHkOoq',
 });
 
-// ---------- Google Places: Place Details
+// Google Places: Place Details
 router.get('/places-details', async (req, res) => {
   try {
     const apiKey = process.env.GOOGLEAPIKEY;
@@ -45,20 +42,18 @@ router.get('/places-details', async (req, res) => {
   }
 });
 
-// ---------- Google Places: Photo bytes
+// Google Places: Photo bytes
 router.get('/places-pics', async (req, res) => {
   try {
     const apiKey = process.env.GOOGLEAPIKEY;
-    const photoreference = req.query.photoreference; // e.g. "places/XYZ/photos/ABC"
+    const photoreference = req.query.photoreference; 
     if (!apiKey || !photoreference) {
       return res.status(400).json({ error: 'Missing GOOGLEAPIKEY or photoreference' });
     }
 
- // keep the path structure; only encode if you need to, but preserve slashes
+ 
 const url = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
-// or, if you want minimal safety without breaking slashes:
 // const url = `https://places.googleapis.com/v1/${encodeURI(photoreference)}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
-
 
     const resp = await fetch(url);
     const buf = Buffer.from(await resp.arrayBuffer());
@@ -79,7 +74,7 @@ const url = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiK
   }
 });
 
-// ---------- OpenWeather current conditions
+// OpenWeather current conditions
 router.get('/weather', async (req, res) => {
   try {
     const { city, state, country } = req.query;
@@ -116,7 +111,7 @@ router.get('/weather', async (req, res) => {
   }
 });
 
-// ---------- ChatGPT: Fun places
+//  ChatGPT: Fun places
 router.post('/chatgpt/fun-places', async (req, res) => {
   try {
     const { location } = req.body || {};
@@ -139,7 +134,7 @@ router.post('/chatgpt/fun-places', async (req, res) => {
   }
 });
 
-// ---------- ChatGPT: Trip suggestion windows
+//ChatGPT: Trip suggestion windows
 router.post('/chatgpt/trip-suggestion', async (req, res) => {
   try {
     const { location } = req.body || {};

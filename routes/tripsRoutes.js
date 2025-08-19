@@ -11,7 +11,8 @@ router
   .post(auth, tripCtrl.createTrips);
 
 // get favorite trips
-router.route('/favorites').get(tripCtrl.getFavoriteTrips);
+router.route('/favorites')
+  .get(tripCtrl.getFavoriteTrips);
 
 // deletes and updates specific posts
 router
