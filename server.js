@@ -1,29 +1,36 @@
-// server.js (CommonJS)
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const path = require('path');
+import dotenv from 'dotenv';
+dotenv.config();
+
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// ----- Middleware
+//Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: process.env.CLIENT_ORIGIN || true,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_ORIGIN || true,
+    credentials: true,
+  })
+);
 
-// Helpful on Heroku if you ever read req.ip or use secure cookies behind the proxy
+// Helpful on Heroku/Render if you read req.ip or use secure cookies behind a proxy
 app.set('trust proxy', 1);
 
-// ----- Routes (API first)
-const externalRoutes = require('./routes/externalRoutes');
-const tripsRouter = require('./routes/tripsRoutes');
-const usersRouter = require('./routes/userRoutes');
-const wishlistRoutes = require('./routes/wishlistRoutes');
+//Routes (API first)
+import externalRoutes from './routes/externalRoutes.js';
+import tripsRouter from './routes/tripsRoutes.js';
+import usersRouter from './routes/userRoutes.js';
+import wishlistRoutes from './routes/wishlistRoutes.js';
 
 app.use('/api', externalRoutes);
 app.use('/api/wishlist', wishlistRoutes);
@@ -33,7 +40,7 @@ app.use('/api/user', usersRouter);
 // Simple healthcheck
 app.get('/health', (_req, res) => res.status(200).send('ok'));
 
-// ----- Static (Vite build) LAST, only in production
+// Static (Vite build) LAST, only in production
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(__dirname, 'client', 'dist');
   app.use(express.static(clientDist));
@@ -44,13 +51,12 @@ if (process.env.NODE_ENV === 'production') {
 
 const PORT = process.env.PORT || 5001;
 
-// ----- Start only after Mongo connects (fail fast if URI missing)
+// Start only after Mongo connects (fail fast if URI missing)
 const URI = process.env.MONGODB_URL;
+
 (async () => {
   try {
-    if (!URI) {
-      throw new Error('MONGODB_URL not set');
-    }
+    if (!URI) throw new Error('MONGODB_URL not set');
     await mongoose.connect(URI);
     console.log('Connected to MongoDB');
 

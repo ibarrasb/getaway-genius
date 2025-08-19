@@ -10,8 +10,8 @@ const ExplorePage = () => {
         <section>
           <header className="mb-4 flex items-end justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Favorites</h1>
-              <p className="text-sm text-slate-600">Your favorited trips and saved lists.</p>
+              <h1 className="text-2xl font-bold text-slate-900">Planning</h1>
+              <p className="text-sm text-slate-600">Your workbench trips and saved lists.</p>
             </div>
           </header>
           <ExploreGrid />

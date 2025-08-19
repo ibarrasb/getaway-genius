@@ -1,7 +1,7 @@
-import { useContext, useState } from "react"
-import { NavLink, Link, useLocation, useNavigate } from "react-router-dom"
-import axios from "axios"
-import { GlobalState } from "@/context/GlobalState.jsx"
+import { useContext, useState, useEffect } from "react";
+import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { GlobalState } from "@/context/GlobalState.jsx";
 
 const NAV = [
   {
@@ -33,45 +33,44 @@ const NAV = [
       </svg>
     ),
   },
-]
+];
 
 const Header = () => {
-  const state = useContext(GlobalState)
-  const api = state?.userAPI ?? state?.UserAPI
-  const [isLogged, setIsLogged] = api?.isLogged ?? [false, () => {}]
-  const [userID] = api?.userID ?? [""]
-  const [token] = state?.token ?? [null]
-  const isAuthed = Boolean(token) && isLogged
-  // if (!isAuthed || shouldHide) return null
-  
+  const state = useContext(GlobalState);
+  const api = state?.userAPI ?? state?.UserAPI;
+  const [isLogged, setIsLogged] = api?.isLogged ?? [false, () => {}];
+  const [userID] = api?.userID ?? [""];
+  const [token] = state?.token ?? [null];
+  const isAuthed = Boolean(token) && isLogged;
 
-  const [open, setOpen] = useState(false)
-  const location = useLocation()
-  const navigate = useNavigate()
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // hide on these routes
-  const hideExact = ["/"]
-  const hideStartsWith = ["/search", "/trips", "/profile", "/about", "/wishlist-detail", "/view-all",]
+  const hideExact = ["/"];
+  const hideStartsWith = ["/search", "/trips", "/profile", "/about", "/wishlist-detail", "/view-all"];
   const shouldHide =
-  hideExact.includes(location.pathname) ||
-  hideStartsWith.some((p) => location.pathname.startsWith(p))
-  if (!isAuthed || shouldHide) return null
-// Header.jsx
-const logoutUser = async () => {
-  try {
-    // drop auth in memory first so routes re-evaluate immediately
-    const setIsLogged = (state?.userAPI ?? state?.UserAPI)?.isLogged?.[1]
-    setIsLogged?.(false)
-    state?.setToken?.(null)            // <-- ensure GlobalState exposes setToken
+    hideExact.includes(location.pathname) ||
+    hideStartsWith.some((p) => location.pathname.startsWith(p));
 
-    await axios.get("/api/user/logout", { withCredentials: true })
-  } catch {}
-  localStorage.clear()
-  navigate("/login", { replace: true }) // send to login to avoid race with other pages
-}
+  // close drawer when route changes
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
 
+  if (!isAuthed || shouldHide) return null;
 
-  
+  const logoutUser = async () => {
+    try {
+      setIsLogged?.(false);
+      state?.setToken?.(null);
+      await axios.get("/api/user/logout", { withCredentials: true });
+    } catch {}
+    localStorage.clear();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* glowing gradient bar */}
@@ -86,7 +85,6 @@ const logoutUser = async () => {
             className="group relative inline-flex items-center gap-2 rounded-2xl px-2 py-1"
           >
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md ring-1 ring-black/5 transition-transform duration-300 group-hover:rotate-6 group-active:scale-95">
-              {/* compass-ish mark */}
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M12 3v3M12 18v3M3 12h3M18 12h3" strokeWidth="2" strokeLinecap="round" />
                 <circle cx="12" cy="12" r="5" strokeWidth="2" />
@@ -98,11 +96,10 @@ const logoutUser = async () => {
               </span>
               <span className="text-lg font-extrabold text-slate-900">Genius</span>
             </div>
-            {/* subtle glow */}
             <span className="pointer-events-none absolute inset-0 -z-10 rounded-2xl bg-gradient-to-br from-indigo-600/0 via-indigo-600/0 to-fuchsia-600/0 blur-xl transition-opacity duration-300 group-hover:from-indigo-600/20 group-hover:to-fuchsia-600/20" />
           </Link>
 
-          {/* right actions (desktop) */}
+          {/* right actions (desktop only) */}
           <nav className="hidden items-center gap-2 sm:flex">
             <Link
               to="/about"
@@ -129,6 +126,7 @@ const logoutUser = async () => {
             className="sm:hidden rounded-xl p-2 text-slate-700 ring-1 ring-slate-200/60 transition hover:bg-slate-50"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle menu"
+            aria-expanded={open}
           >
             <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="round" />
@@ -137,11 +135,10 @@ const logoutUser = async () => {
         </div>
       </div>
 
-      {/* nav strip with animated active pill */}
-      <div className="border-b border-slate-200/60 bg-white/60 backdrop-blur-xl">
+      {/* tab strip — desktop/tablet only */}
+      <div className="hidden sm:block border-b border-slate-200/60 bg-white/60 backdrop-blur-xl">
         <div className="mx-auto max-w-6xl px-4">
           <ul className="relative flex items-center gap-1 py-2">
-            {/* gradient underline across strip */}
             <li className="pointer-events-none absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-slate-300/80 to-transparent" />
             {NAV.map(({ to, label, icon }) => (
               <li key={to}>
@@ -171,7 +168,7 @@ const logoutUser = async () => {
         </div>
       </div>
 
-      {/* mobile drawer */}
+      {/* mobile drawer — mobile only */}
       {open && (
         <div className="sm:hidden border-b border-slate-200/60 bg-white/90 backdrop-blur-xl">
           <div className="mx-auto max-w-6xl px-4 py-4 space-y-2">
@@ -210,8 +207,8 @@ const logoutUser = async () => {
               </Link>
               <button
                 onClick={() => {
-                  setOpen(false)
-                  logoutUser()
+                  setOpen(false);
+                  logoutUser();
                 }}
                 className="flex-1 rounded-2xl px-4 py-3 text-center text-sm font-semibold text-rose-600 ring-1 ring-rose-200 transition hover:bg-rose-50"
               >
@@ -222,7 +219,7 @@ const logoutUser = async () => {
         </div>
       )}
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

@@ -1,199 +1,165 @@
-const express = require('express');
-const https = require('https');
-const router = express.Router();
+// routes/externalRoutes.js (ESM)
 
-// Place Details
+import { Router } from 'express';
+import OpenAI from 'openai';
+
+const router = Router();
+
+// OpenAI client (one-time init)
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Google Places: Place Details
 router.get('/places-details', async (req, res) => {
-    try {
-        const apiKey = process.env.GOOGLEAPIKEY;
-        const placeid = req.query.placeid;
-
-        const options = {
-            hostname: 'places.googleapis.com',
-            path: `/v1/places/${placeid}?fields=id,displayName,photos&key=${apiKey}`,
-            method: 'GET'
-        };
-
-        const request = https.request(options, response => {
-            let data = '';
-
-            response.on('data', chunk => {
-                data += chunk;
-            });
-
-            response.on('end', () => {
-                try {
-                    const parsedData = JSON.parse(data);
-                    res.json(parsedData);
-                } catch (error) {
-                    console.error('Error parsing JSON:', error);
-                    res.status(500).json({ error: 'Failed to parse response data' });
-                }
-            });
-        });
-
-        request.on('error', error => {
-            console.error('Error:', error);
-            res.status(500).json({ error: 'Failed to fetch data' });
-        });
-
-        request.end();
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Failed to fetch data' });
+  try {
+    const apiKey = process.env.GOOGLEAPIKEY;
+    const placeid = req.query.placeid;
+    if (!apiKey || !placeid) {
+      return res.status(400).json({ error: 'Missing GOOGLEAPIKEY or placeid' });
     }
+
+    const url = `https://places.googleapis.com/v1/places/${encodeURIComponent(
+      placeid
+    )}?fields=id,displayName,photos&key=${apiKey}`;
+
+    const resp = await fetch(url);
+    const text = await resp.text(); // handle non-JSON errors gracefully
+
+    if (!resp.ok) {
+      return res.status(resp.status).json({ error: 'Places API error', details: text });
+    }
+
+    try {
+      const json = JSON.parse(text);
+      return res.json(json);
+    } catch {
+      return res.status(500).json({ error: 'Failed to parse response data' });
+    }
+  } catch (error) {
+    console.error('Places details error:', error);
+    return res.status(500).json({ error: 'Failed to fetch data' });
+  }
 });
 
-// Photos API
+// Google Places: Photo bytes
 router.get('/places-pics', async (req, res) => {
-    try {
-        const apiKey = process.env.GOOGLEAPIKEY;
-        const photoreference = req.query.photoreference;
-
-        const options = {
-            hostname: 'places.googleapis.com',
-            path: `/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`,
-            method: 'GET'
-        };
-
-        const request = https.request(options, response => {
-            let data = '';
-            response.on('data', chunk => {
-                data += chunk;
-            });
-
-            response.on('end', () => {
-                if (response.headers['content-encoding']) {
-                    res.set('Content-Encoding', response.headers['content-encoding']);
-                }
-                res.send(Buffer.from(data, 'binary'));
-            });
-        });
-
-        request.on('error', error => {
-            console.error('Error:', error);
-            res.status(500).json({ error: 'Failed to fetch data' });
-        });
-
-        request.end();
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Failed to fetch data' });
+  try {
+    const apiKey = process.env.GOOGLEAPIKEY;
+    const photoreference = req.query.photoreference; 
+    if (!apiKey || !photoreference) {
+      return res.status(400).json({ error: 'Missing GOOGLEAPIKEY or photoreference' });
     }
+
+ 
+const url = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
+// const url = `https://places.googleapis.com/v1/${encodeURI(photoreference)}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
+
+    const resp = await fetch(url);
+    const buf = Buffer.from(await resp.arrayBuffer());
+
+    if (!resp.ok) {
+      return res
+        .status(resp.status)
+        .json({ error: 'Places media error', details: buf.toString('utf-8') });
+    }
+
+    // Pass through content-type if provided
+    const ct = resp.headers.get('content-type') || 'image/jpeg';
+    res.set('Content-Type', ct);
+    return res.send(buf);
+  } catch (error) {
+    console.error('Places pics error:', error);
+    return res.status(500).json({ error: 'Failed to fetch data' });
+  }
 });
 
-// Weather API
+// OpenWeather current conditions
 router.get('/weather', async (req, res) => {
-    try {
-        const { city, state, country } = req.query;
-        const apiKey = process.env.OPENWEATHERAPIKEY;
+  try {
+    const { city, state, country } = req.query;
+    const apiKey = process.env.OPENWEATHERAPIKEY;
 
-        if (!apiKey) {
-            return res.status(500).json({ error: 'API key is not set' });
-        }
+    if (!apiKey) return res.status(500).json({ error: 'OPENWEATHERAPIKEY not set' });
+    if (!city) return res.status(400).json({ error: 'city is required' });
 
-        // Construct the query based on the provided parameters
-        let url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}`;
-        if (state) url += `,${encodeURIComponent(state)}`;
-        if (country) url += `,${encodeURIComponent(country)}`;
-        url += `&appid=${apiKey}&units=metric`;
+    const q =
+      encodeURIComponent(city) +
+      (state ? `,${encodeURIComponent(state)}` : '') +
+      (country ? `,${encodeURIComponent(country)}` : '');
 
-        const options = {
-            hostname: 'api.openweathermap.org',
-            path: `/data/2.5/weather?q=${encodeURIComponent(city)}${state ? `,${encodeURIComponent(state)}` : ''}${country ? `,${encodeURIComponent(country)}` : ''}&appid=${apiKey}&units=metric`,
-            method: 'GET'
-        };
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${q}&appid=${apiKey}&units=metric`;
 
-        const request = https.request(options, response => {
-            let data = '';
+    const resp = await fetch(url);
+    const text = await resp.text();
 
-            response.on('data', chunk => {
-                data += chunk;
-            });
-
-            response.on('end', () => {
-                if (response.statusCode === 200) {
-                    try {
-                        const parsedData = JSON.parse(data);
-                        res.json(parsedData);
-                    } catch (error) {
-                        console.error('Error parsing JSON:', error);
-                        res.status(500).json({ error: 'Failed to parse response data' });
-                    }
-                } else if (response.statusCode === 401) {
-                    res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
-                } else {
-                    console.error('Error fetching weather data:', data);
-                    res.status(response.statusCode).json({ error: 'Failed to fetch weather data' });
-                }
-            });
-        });
-
-        request.on('error', error => {
-            console.error('Error:', error);
-            res.status(500).json({ error: 'Failed to fetch weather data' });
-        });
-
-        request.end();
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Failed to fetch weather data' });
+    if (resp.status === 200) {
+      try {
+        return res.json(JSON.parse(text));
+      } catch {
+        return res.status(500).json({ error: 'Failed to parse response data' });
+      }
+    } else if (resp.status === 401) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
+    } else {
+      console.error('Weather API error:', text);
+      return res.status(resp.status).json({ error: 'Failed to fetch weather data' });
     }
+  } catch (error) {
+    console.error('Weather error:', error);
+    return res.status(500).json({ error: 'Failed to fetch weather data' });
+  }
 });
 
-// ChatGPT Fun Places
+//  ChatGPT: Fun places
 router.post('/chatgpt/fun-places', async (req, res) => {
-    console.log('FUN Received request body:', req.body);
-    const { location } = req.body;
+  try {
+    const { location } = req.body || {};
+    if (!openai.apiKey) return res.status(500).json({ error: 'OPENAI_API_KEY not set' });
+    if (!location) return res.status(400).json({ error: 'location is required' });
 
-    try {
-        // Dynamically import OpenAI directly in the route
-        const { default: OpenAI } = await import('openai');  // Dynamically import OpenAI
+    const response = await openai.chat.completions.create({
+      // Consider upgrading to a newer model if available in your account
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'user', content: `List 5 popular and must see places to visit in ${location}.` },
+      ],
+    });
 
-        const openai = new OpenAI({
-            organization: 'org-zhk7ZnWbeRQ2l5XQZ5Zjt14E',
-            project: 'proj_bhGgO8C8Iw6Df4XXimaHkOoq',
-            apiKey: process.env.OPENAI_API_KEY,
-        });
-
-        const response = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: 'user', content: `List 5 popular and must see places to visit in ${location}.` }],
-        });
-
-        const list = response.choices[0].message.content.trim();
-        res.json({ funPlaces: list });
-    } catch (error) {
-        console.error('Error with ChatGPT API:', error);
-        res.status(500).json({ error: 'Failed to fetch data from ChatGPT' });
-    }
+    const list = response.choices?.[0]?.message?.content?.trim() ?? '';
+    return res.json({ funPlaces: list });
+  } catch (error) {
+    console.error('ChatGPT fun-places error:', error);
+    return res.status(500).json({ error: 'Failed to fetch data from ChatGPT' });
+  }
 });
 
+//ChatGPT: Trip suggestion windows
 router.post('/chatgpt/trip-suggestion', async (req, res) => {
-    console.log('Received request body:', req.body);
-    const { location } = req.body;
+  try {
+    const { location } = req.body || {};
+    if (!openai.apiKey) return res.status(500).json({ error: 'OPENAI_API_KEY not set' });
+    if (!location) return res.status(400).json({ error: 'location is required' });
 
-    try {
-        // Dynamically import OpenAI directly in the route
-        const { default: OpenAI } = await import('openai');  // Dynamically import OpenAI
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'user',
+          content:
+            `Please list the 3 best time to travel to ${location}, based on cost, experience (events/seasonality), and popularity. ` +
+            `Return JSON with keys: reason, season, monthIntervals, description.`,
+        },
+      ],
+      temperature: 0.2,
+    });
 
-        const openai = new OpenAI({
-            organization: 'org-zhk7ZnWbeRQ2l5XQZ5Zjt14E',
-            project: 'proj_bhGgO8C8Iw6Df4XXimaHkOoq',
-            apiKey: process.env.OPENAI_API_KEY,
-        });
-
-        const response = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: 'user', content: `Please list the 3 best time to travel to ${location}, Based on cost, experience( maybe events that happen at that place during a certain time), and time where it seems to be more popular. List the response as json ( reason, season, month intervals, and description)` }],
-        });
-
-        const resp = response.choices[0].message.content.trim();
-        res.json({ tripSuggestions: resp });
-    } catch (error) {
-        console.error('Error with ChatGPT API:', error);
-        res.status(500).json({ error: 'Failed to fetch data from ChatGPT' });
-    }
+    const content = response.choices?.[0]?.message?.content?.trim() ?? '';
+    return res.json({ tripSuggestions: content });
+  } catch (error) {
+    console.error('ChatGPT trip-suggestion error:', error);
+    return res.status(500).json({ error: 'Failed to fetch data from ChatGPT' });
+  }
 });
 
-module.exports = router;
+export default router;

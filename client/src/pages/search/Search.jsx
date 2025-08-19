@@ -1,173 +1,132 @@
 // src/pages/search/Search.jsx
-import { useState, useEffect, useCallback, useContext } from "react"
-import { useNavigate } from "react-router-dom"
-import Autocomplete from "react-google-autocomplete"
-import axios from "axios"
-import { GlobalState } from "@/context/GlobalState.jsx"
+import { useState, useEffect, useCallback, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import Autocomplete from "react-google-autocomplete";
+import axios from "axios";
+import { GlobalState } from "@/context/GlobalState.jsx";
 
 const PLACEHOLDER =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='675'><rect width='100%' height='100%' fill='#e5e7eb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial' font-size='32' fill='#6b7280'>No photo available</text></svg>`
-  )
+  );
 
 const Search = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   // auth / global
-  const state = useContext(GlobalState)
-  const api = state?.userAPI ?? state?.UserAPI
-  const [email] = api?.email ?? [""]
-  const [token] = state?.token ?? [null]
-  const [setCallback] = api?.callback?.slice(1) ?? [() => {}]
+  const state = useContext(GlobalState);
+  const api = state?.userAPI ?? state?.UserAPI;
+  const [email] = api?.email ?? [""];
+  const [token] = state?.token ?? [null];
+  const [setCallback] = api?.callback?.slice(1) ?? [() => {}];
 
   // ui state
-  const [selectedPlace, setSelectedPlace] = useState(null)
-  const [photoURL, setPhotoURL] = useState("")
-  const [searchValue, setSearchValue] = useState("")
-  const [loadingPhoto, setLoadingPhoto] = useState(false)
-  const [error, setError] = useState(null)
-  const [creating, setCreating] = useState(false)
-  const [createMsg, setCreateMsg] = useState(null)
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [photoURL, setPhotoURL] = useState(""); // <-- this will be a stable backend URL
+  const [searchValue, setSearchValue] = useState("");
+  const [loadingPhoto, setLoadingPhoto] = useState(false);
+  const [error, setError] = useState(null);
+  const [creating, setCreating] = useState(false);
+  const [createMsg, setCreateMsg] = useState(null);
 
-  // suggestions state
-  const [suggestions, setSuggestions] = useState([])
-  const [suggestionLoading, setSuggestionLoading] = useState(false)
-  const [suggestionError, setSuggestionError] = useState(null)
+  // ---- photo helpers (return a URL, not bytes) ----
+  const buildPhotoProxyURL = (photoreference) =>
+    `/api/places-pics?photoreference=${encodeURIComponent(photoreference)}`;
 
-  // ---- photo fetching helpers ----
-  const getPhoto = useCallback(async (photoreference, signal) => {
+  // Returns a stable URL string for a random photo of the place
+  const getPlacePhotoURL = useCallback(async (placeid, signal) => {
     const res = await fetch(
-      `/api/places-pics?photoreference=${encodeURIComponent(photoreference)}`,
+      `/api/places-details?placeid=${encodeURIComponent(placeid)}`,
       { signal }
-    )
-    if (!res.ok) throw new Error("Failed to fetch photo")
-    const data = await res.json()
-    return data?.photoUri ?? ""
-  }, [])
+    );
+    if (!res.ok) throw new Error("Failed to fetch place details");
+    const data = await res.json();
 
-  const getPlacePhotos = useCallback(
-    async (placeid, signal) => {
-      const res = await fetch(
-        `/api/places-details?placeid=${encodeURIComponent(placeid)}`,
-        { signal }
-      )
-      if (!res.ok) throw new Error("Failed to fetch place details")
-      const data = await res.json()
-      const photos = data?.photos || []
-      if (!photos.length) return ""
-      const random = photos[Math.floor(Math.random() * photos.length)]
-      const randomRef = random?.name
-      if (!randomRef) return ""
-      return await getPhoto(randomRef, signal)
-    },
-    [getPhoto]
-  )
+    const photos = data?.photos || [];
+    if (!photos.length) return "";
 
-  // load a preview photo when the place changes (same trigger logic you had before)
+    const random = photos[Math.floor(Math.random() * photos.length)];
+    const randomRef = random?.name; // e.g. "places/XXX/photos/YYY"
+    if (!randomRef) return "";
+
+    // ✅ return a URL that always serves this exact photo via your backend
+    return buildPhotoProxyURL(randomRef);
+  }, []);
+
+  // load a preview photo when the place changes
   useEffect(() => {
-    if (!selectedPlace?.place_id) return
-    const controller = new AbortController()
-    const { signal } = controller
-    ;(async () => {
+    if (!selectedPlace?.place_id) return;
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    (async () => {
       try {
-        setLoadingPhoto(true)
-        setError(null)
-        const uri = await getPlacePhotos(selectedPlace.place_id, signal)
-        setPhotoURL(uri || PLACEHOLDER)
+        setLoadingPhoto(true);
+        setError(null);
+        const url = await getPlacePhotoURL(selectedPlace.place_id, signal);
+        setPhotoURL(url || PLACEHOLDER);
       } catch (e) {
         if (e.name !== "AbortError") {
-          console.error(e)
-          setError("Couldn’t load photos for this place.")
-          setPhotoURL(PLACEHOLDER)
+          console.error(e);
+          setError("Couldn’t load photos for this place.");
+          setPhotoURL(PLACEHOLDER);
         }
       } finally {
-        setLoadingPhoto(false)
+        setLoadingPhoto(false);
       }
-    })()
-    return () => controller.abort()
-  }, [selectedPlace?.place_id, getPlacePhotos])
+    })();
 
-  // selection handler (simple & reliable)
+    return () => controller.abort();
+  }, [selectedPlace?.place_id, getPlacePhotoURL]);
+
+  // selection handler
   const handlePlaceSelected = (place) => {
-    setSelectedPlace(place || null)
-    setSearchValue("")
-    setError(null)
-    setCreateMsg(null)
-  }
+    setSelectedPlace(place || null);
+    setSearchValue("");
+    setError(null);
+    setCreateMsg(null);
+  };
 
   // display name for selected city
   const locationName =
     selectedPlace?.formatted_address ||
     selectedPlace?.name ||
     selectedPlace?.vicinity ||
-    ""
+    "";
 
   // ---- create trip directly from Search ----
   const handleCreateTrip = async () => {
-    if (!selectedPlace) return
+    if (!selectedPlace) return;
     if (!email) {
-      setCreateMsg("Please log in to create a trip.")
-      return
+      setCreateMsg("Please log in to create a trip.");
+      return;
     }
     try {
-      setCreating(true)
-      setCreateMsg(null)
+      setCreating(true);
+      setCreateMsg(null);
+
+      // ✅ save the exact URL we used for the preview
       const payload = {
         user_email: email,
         location_address: locationName,
-        within_trips: [],
-        image_url: photoURL || "",
+        image_url: photoURL || "", // <-- stable backend URL
         isFavorite: false,
-      }
+      };
+
       await axios.post("/api/trips/getaway-trip", payload, {
         ...(token ? { headers: { Authorization: token } } : {}),
-      })
-      setCallback?.((v) => !v) // notify listeners if any
-      navigate("/explore", { replace: true })
-    } catch (err) {
-      console.error(err)
-      setCreateMsg(err?.response?.data?.msg || "Error creating trip")
-    } finally {
-      setCreating(false)
-    }
-  }
+      });
 
-  // ---- optional: AI suggestions for the selected city ----
-  useEffect(() => {
-    const city = (locationName || "").trim()
-    if (!city) {
-      setSuggestions([])
-      setSuggestionError(null)
-      return
+      setCallback?.((v) => !v);
+      navigate("/explore", { replace: true });
+    } catch (err) {
+      console.error(err);
+      setCreateMsg(err?.response?.data?.msg || "Error creating trip");
+    } finally {
+      setCreating(false);
     }
-    const controller = new AbortController()
-    const { signal } = controller
-    ;(async () => {
-      try {
-        setSuggestionLoading(true)
-        setSuggestionError(null)
-        const res = await fetch("/api/chatgpt/trip-suggestion", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ location: city }),
-          signal,
-        })
-        if (!res.ok) throw new Error("Failed to fetch suggestions")
-        const data = await res.json()
-        setSuggestions(Array.isArray(data?.tripSuggestions) ? data.tripSuggestions : [])
-      } catch (e) {
-        if (e.name !== "AbortError") {
-          console.error(e)
-          setSuggestionError("Couldn’t load ideas right now.")
-          setSuggestions([])
-        }
-      } finally {
-        setSuggestionLoading(false)
-      }
-    })()
-    return () => controller.abort()
-  }, [locationName])
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-50">
@@ -218,8 +177,6 @@ const Search = () => {
                   onChange={(e) => setSearchValue(e.target.value)}
                   options={{ types: ["(cities)"] }} // hint cities in the dropdown
                 />
-                <p className="mt-2 text-xs text-slate-500">Pick a city from the dropdown suggestions.</p>
-
                 {error && (
                   <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     {error}
@@ -272,32 +229,6 @@ const Search = () => {
               {createMsg}
             </div>
           )}
-
-          {/* Optional: Ideas for this trip */}
-          {selectedPlace && (
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-900">Ideas for this trip</h3>
-                {suggestionLoading && <span className="text-xs text-slate-500">Loading…</span>}
-              </div>
-
-              {suggestionError && (
-                <p className="mt-2 text-sm text-rose-600">{suggestionError}</p>
-              )}
-
-              {!suggestionLoading && !suggestionError && suggestions?.length > 0 && (
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                  {suggestions.slice(0, 6).map((s, i) => (
-                    <li key={i}>{s}</li>
-                  ))}
-                </ul>
-              )}
-
-              {!suggestionLoading && !suggestionError && (!suggestions || suggestions.length === 0) && (
-                <p className="mt-2 text-sm text-slate-500">We’ll show ideas for {locationName} here.</p>
-              )}
-            </div>
-          )}
         </div>
       </section>
 
@@ -310,7 +241,7 @@ const Search = () => {
         </div>
       </section>
     </div>
-  )
-}
+  );
+};
 
-export default Search
+export default Search;
