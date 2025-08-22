@@ -108,14 +108,7 @@ const userCtrl = {
             // Remove password from being shown in response
             const user = await Users.findById(req.user.id).select('-password');
             if (!user) return res.status(400).json({ msg: "User does not exist." });
-
-            res.json(user);
-        } catch (error) {
-            res.status(500).json({ msg: error.message });
-        }
-    },
-
-    getLoggedUser: async (req, res) => {
+s) => {
         try {
             const detailedUser = await Users.findById(req.params.id);
             res.json(detailedUser);
