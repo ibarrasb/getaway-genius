@@ -1,27 +1,29 @@
-const router = require('express').Router();
-const wishCtrl = require('../controllers/wishCtrl');
-const auth = require('../middleware/auth');
+import { Router } from 'express';
+import * as wishCtrl from '../controllers/wishCtrl.js';
+import auth from '../middleware/auth.js';
+
+const router = Router();
 
 // Routes for managing wishlists
 router.route('/createlist')
-    .post(wishCtrl.createWishlist); // Protected route to create a new wishlist
+  .post(wishCtrl.createWishlist);
 
 router.route('/getlists')
-    .get(wishCtrl.fetchLists);   // Protected route to get all wishlists
-   
+  .get(wishCtrl.fetchLists);
+
 router.route('/spec-wishlist/:id')
-    .get(wishCtrl.fetchWishlist)
+  .get(wishCtrl.fetchWishlist);
 
 router.route('/editlist/:id')
-    .put(wishCtrl.updateList); // Protected route to update a specific wishlist
+  .put(wishCtrl.updateList);
 
-router.route('/addtrip/:id') // New route for adding trips to a wishlist
-    .post(wishCtrl.addTripToWishlist);
+router.route('/addtrip/:id')
+  .post(wishCtrl.addTripToWishlist);
 
 router.route('/:wishlistId/remove-trip/:tripId')
-    .delete(wishCtrl.removeTripFromWishlist); // Protected route to delete a specific wishlist
+  .delete(wishCtrl.removeTripFromWishlist);
 
 router.route('/removewishlist/:id')
-    .delete(wishCtrl.removeWishlist)
+  .delete(wishCtrl.removeWishlist);
 
-module.exports = router;
+export default router;

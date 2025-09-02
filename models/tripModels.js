@@ -1,52 +1,29 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
-const tripSchema = new mongoose.Schema({
+const tripSchema = new mongoose.Schema(
+  {
     user_email: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     location_address: {
-        type: String,
-        required: true,
-    },
-    trip_start: {
-        type: String,
-        required: true,
-    },
-    trip_end: {
-        type: String,
-        required: true,
-    },
-    stay_expense: {
-        type: String,
-        required: true,
-    },
-    travel_expense: {
-        type: String,
-        required: true,
-    },
-    car_expense: {
-        type: String,
-        required: true,
-    },
-    other_expense: {
-        type: String, 
-        required: true
+      type: String,
+      required: true,
     },
     image_url: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     isFavorite: {
-        type: Boolean,
-        default: false // Default value is false
+      type: Boolean,
+      default: false, // Default value is false
     },
-    activities: {
-        type: Array, 
-        default: []
-    }
-}, {
-    timestamps: true
-});
+  },
+  {
+    timestamps: true, // adds createdAt & updatedAt
+  }
+);
 
-module.exports = mongoose.model('Trip', tripSchema);
+const Trip = mongoose.model('Trip', tripSchema);
+
+export default Trip;

@@ -1,60 +1,57 @@
-import {useState, useEffect} from 'react';
+import { useCallback, useEffect, useState } from 'react'
 import axios from 'axios'
 
-function UserAPI(token) {
-    const [isLogged, setIsLogged] = useState(false)
-    const [isAdmin, setIsAdmin] = useState(false)
-    const [callback, setCallback] = useState(false)
-    const [fname, setfName] = useState([])
-    // const [name, setlName] = useState([])
-    const [email, setEmail] = useState([])
-    const [iD, setID] = useState([])
-    const [data, setData] = useState([])
-    
+const useUserAPI = (token) => {
+  const [isLogged, setIsLogged] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [fname, setFname] = useState('')
+  const [email, setEmail] = useState('')
+  const [userID, setUserID] = useState('')
+  const [userData, setUserData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-    useEffect(() =>{
-        if(token){
-            const getUser = async () =>{
-                try {
-                    const res = await axios.get('/api/user/infor', {
-                        headers: {Authorization: token}
-                    })
-                    setData(res.data)
-                    setID(res.data._id.split(' ')[0])
-                    setfName(res.data.fname.split(' ')[0])
-                    setEmail(res.data.email.split(' ')[0])
-                    setIsLogged(true)
-                    res.data.role === 1 ? setIsAdmin(true) : setIsAdmin(false)
-                    
-                } catch (err) {
-                    alert(err.response.data.msg)
-                    
-                }
-            }
-            getUser()
-        }
-
-    },[token])
-
-    // const addTrip = async (posts) => {
-    //     if(!isLogged) return alert("Please login")
-
-    //         setTrip([...vacation, {...trip}])
-
-    //         await axios.patch('/user/addpost', {trip: [...vacation, {...trip}]}, {
-    //             headers: {Authorization: token}
-    //         })
-    // }
-
-    return {
-        isLogged: [isLogged, setIsLogged],
-        isAdmin: [isAdmin, setIsAdmin],
-        callback: [callback, setCallback],
-        fname: [fname, setfName],
-        email: [email, setEmail],
-        userID: [iD, setID],
-        userData: [data, setData]
+  const fetchUser = useCallback(async (signal) => {
+    if (!token) return
+    try {
+      setLoading(true); setError(null)
+      // IMPORTANT: your middleware expects raw token, not "Bearer ..."
+      const res = await axios.get('/api/user/infor', {
+        headers: { Authorization: token },
+        signal,
+      })
+      const data = res.data ?? {}
+      setUserData(data)
+      setUserID(data._id ?? '')
+      setFname((data.fname ?? '').split(' ')[0])
+      setEmail(data.email ?? '')
+      setIsLogged(true)
+      setIsAdmin(data.role === 1)
+    } catch (err) {
+      if (err.name !== 'CanceledError') {
+        console.error('User fetch failed:', err)
+        setError(err.response?.data ?? 'Failed to load user')
+        setIsLogged(false)
+        setIsAdmin(false)
+      }
+    } finally {
+      setLoading(false)
     }
+  }, [token])
+
+  useEffect(() => {
+    if (!token) {
+      setIsLogged(false); setIsAdmin(false)
+      setUserData(null); setUserID(''); setFname(''); setEmail('')
+      setLoading(false); setError(null)
+      return
+    }
+    const ctrl = new AbortController()
+    fetchUser(ctrl.signal)
+    return () => ctrl.abort()
+  }, [token, fetchUser])
+
+  return { isLogged: [isLogged, setIsLogged], isAdmin: [isAdmin, setIsAdmin], fname: [fname, setFname], email: [email, setEmail], userID: [userID, setUserID], userData: [userData, setUserData], loading: [loading, setLoading], error: [error, setError], refresh: fetchUser }
 }
 
-export default UserAPI
+export default useUserAPI
