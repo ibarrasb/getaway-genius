@@ -1,5 +1,8 @@
-import dotenv from 'dotenv';
-dotenv.config();
+//Load .env only in development (Heroku/Render use config vars)
+if (process.env.NODE_ENV !== 'production') {
+  const { default: dotenv } = await import('dotenv');
+  dotenv.config();
+}
 
 import express from 'express';
 import mongoose from 'mongoose';
@@ -18,29 +21,31 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
+    // In prod, consider setting a specific origin via CLIENT_ORIGIN
     origin: process.env.CLIENT_ORIGIN || true,
     credentials: true,
   })
 );
 
-// Helpful on Heroku/Render if you read req.ip or use secure cookies behind a proxy
+// Helpful behind proxies (Heroku/Render) for secure cookies, req.ip, etc.
 app.set('trust proxy', 1);
 
-//Routes (API first)
-import externalRoutes from './routes/externalRoutes.js';
-import tripsRouter from './routes/tripsRoutes.js';
-import usersRouter from './routes/userRoutes.js';
-import wishlistRoutes from './routes/wishlistRoutes.js';
+//Import routes AFTER dotenv has populated process.env
+const externalRoutes = (await import('./routes/externalRoutes.js')).default;
+const tripsRouter    = (await import('./routes/tripsRoutes.js')).default;
+const usersRouter    = (await import('./routes/userRoutes.js')).default;
+const wishlistRoutes = (await import('./routes/wishlistRoutes.js')).default;
 
+//Routes (API first)
 app.use('/api', externalRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/trips', tripsRouter);
 app.use('/api/user', usersRouter);
 
-// Simple healthcheck
+// Healthcheck
 app.get('/health', (_req, res) => res.status(200).send('ok'));
 
-// Static (Vite build) LAST, only in production
+//Static (Vite build) LAST, only in production
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(__dirname, 'client', 'dist');
   app.use(express.static(clientDist));
@@ -50,21 +55,19 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const PORT = process.env.PORT || 5001;
-
-// Start only after Mongo connects (fail fast if URI missing)
-const URI = process.env.MONGODB_URL;
+const MONGO_URI = process.env.MONGODB_URL;
 
 (async () => {
   try {
-    if (!URI) throw new Error('MONGODB_URL not set');
-    await mongoose.connect(URI);
+    if (!MONGO_URI) throw new Error('MONGODB_URL not set');
+    await mongoose.connect(MONGO_URI);
     console.log('Connected to MongoDB');
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (err) {
-    console.error('Startup error:', err.message);
+    console.error('Startup error:', err?.message || err);
     process.exit(1);
   }
 })();
