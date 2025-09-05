@@ -1,0 +1,261 @@
+/* styles.css */
+
+.open-trips-container h1 {
+  font-family: 'Crimson Text', serif;
+}
+
+.open-trips-container {
+  /* flex-wrap: wrap;
+  justify-content: flex-start; */
+ 
+  padding-left: 10%;
+}
+
+.notrips {
+  text-align: center;
+}
+.home-button-container {
+    justify-content: flex-end;
+}
+.fab-container {
+  position: fixed;
+  bottom: 20px; /* Adjust based on your preference */
+  right: 20px;  /* Adjust based on your preference */
+  z-index: 1000; /* Ensure it floats above other content */
+}
+
+
+.trip-image {
+  width: 100%;
+  max-height: 150px;
+  border-radius: 7%;
+  object-fit: cover;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.wishlists-with-trips{
+  display: block;
+  padding-left: 20%;
+  padding-right: 20%;
+}
+
+.trip-details-box{
+  margin: 10px;
+}
+
+.trip-duration {
+
+  align-items: center;
+}
+.dont-have{
+  text-align: center;
+  font-size: xx-large;
+  margin-top: 10%;
+  margin-bottom: 100%;
+}
+.card-content-wishlist{
+  display: block;
+}
+.delete-button-wishlist{
+  justify-content: flex-end;
+    padding-left: 50%;
+}
+.trip-location {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  padding: 5px;
+}
+.button-container{
+  display: grid;
+}
+
+.trip-box {
+  display: flex;
+  border-radius: 7%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 10px;
+  margin: 15px;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+  display: inline-block;
+  background-color: #E5E5E5;
+  font-family: 'Crimson Text', serif;
+  /* width: 300px; */
+}
+.trip-box-previous {
+  display: flex;
+  border-radius: 7%;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 10px;
+  margin: 10px;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+  display: inline-block;
+  background-color: gray;
+  font-family: 'Crimson Text', serif;
+  width: 300px;
+}
+.view-button {
+  background-color: #C5CBD3;
+  border: none;
+  color: black;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+  margin-top: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-family: 'Crimson Text', serif;
+  transition: background-color 0.3s ease;
+}
+.view-button-previous {
+  background-color: black;
+  border: none;
+  color: grey;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+  margin-top: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-family: 'Crimson Text', serif;
+  transition: background-color 0.3s ease;
+}
+.year-text{
+  text-align: center;
+  font-family: 'Crimson Text', serif;
+}
+#delete-button{
+  display: block;
+}
+
+.home-message{
+  font-family: 'Crimson Text', serif;
+}
+
+.view-button:hover {
+  background-color: #a8dadc;
+}
+.linkbutton {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #cce3de;
+  color: #fff;
+  text-decoration: none;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+}
+
+.linkbutton:hover {
+  background-color: #a8dadc;
+}
+
+.center-button {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 5%;
+}
+
+.create-button {
+  background-color: #cce3de;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+  margin-top: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.create-button:hover {
+  background-color: #a8dadc;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.search-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  flex: 1;
+}
+
+.add-button {
+  padding: 10px 20px;
+  background-color: #cce3de;
+  color: #fff;
+  border: none;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  cursor: pointer;
+}
+
+.add-button:hover {
+  background-color: #a8dadc;
+}
+
+@media (max-width: 570px){
+  .open-trips-container {
+    padding-left: 8%;
+  }
+  .trip-image{
+    max-height: 100%;
+  }
+  .wishlists-with-trips{
+    display: block;
+    padding-left: 0%;
+    padding-right: 0%;
+  }
+} 
+
+@media (max-width: 414px){
+ 
+  .open-trips-container {
+    padding-left: 3%;
+  }
+
+}
+
+@media (max-width: 390px){
+ 
+  .open-trips-container {
+    padding-left: 2%;
+  }
+
+}
+
+@media (max-width: 375px){
+ 
+  .open-trips-container {
+    padding-left: 2%;
+  }
+
+}
