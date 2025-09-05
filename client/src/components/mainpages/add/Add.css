@@ -1,0 +1,61 @@
+/* Add.css */
+
+.add-form-container {
+  margin: 20px;
+  border-radius: 8px;
+  padding: 10px;
+  border: solid;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
+  }
+
+  .add-form-container img {
+    text-align: center;
+    max-width: 100%;
+}
+  
+  
+  .add-form-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .add-form label {
+    display: block;
+    margin-bottom: 15px;
+    color: #555;
+  }
+  
+  .add-form input[type="text"],
+  .add-form input[type="date"],
+  .add-form input[type="number"] {
+    width: calc(100% - 20px);
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  
+  .add-form input[type="text"]:focus,
+  .add-form input[type="date"]:focus,
+  .add-form input[type="number"]:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+  
+  .add-form button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .add-form button:hover {
+ 
+  }
+  

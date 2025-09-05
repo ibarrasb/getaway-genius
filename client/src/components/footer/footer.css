@@ -1,0 +1,37 @@
+/* Make the page container take up the full height of the viewport */
+.page-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensure the container takes the full height of the viewport */
+}
+
+/* Content wrapper grows to fill the space between header and footer */
+.content-wrap {
+    flex: 1; /* Makes this element grow to fill available space */
+}
+
+/* Footer styles */
+footer {
+   /* Example background color */
+    padding: 10px 20px; /* Example padding */
+    text-align: center;
+}
+
+.footer {
+    /* Example background color */
+    padding: 10px 20px; /* Example padding */
+    text-align: center;
+    color: #333; /* Example text color */
+}
+
+.copyright-box {
+    padding: 10px 0;
+    font-size: 14px; /* Example font size */
+}
+
+/* Optional: Style adjustments to ensure the footer text is centered and looks neat */
+.footer .row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
