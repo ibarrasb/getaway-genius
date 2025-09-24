@@ -4,6 +4,7 @@ import axios from "axios"
 import { Link } from "react-router-dom"
 import { GlobalState } from "@/context/GlobalState"
 import EmptyState from "@/components/empty/EmptyState"
+import { Trash2 } from "lucide-react"
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
 
@@ -32,6 +33,7 @@ const WishlistGrid = () => {
   const [lists, setLists] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -64,6 +66,32 @@ const WishlistGrid = () => {
     run()
     return () => controller.abort()
   }, [email])
+
+  const handleDelete = async (wishlistId) => {
+    if (!confirm("Delete this wishlist? All trips in this wishlist will be unfavorited.")) return
+    
+    try {
+      setDeletingId(wishlistId)
+      
+      const response = await axios.get(`/api/wishlist/spec-wishlist/${wishlistId}`)
+      const { trips } = response.data
+      
+      const updatePromises = trips.map(trip =>
+        axios.put(`/api/trips/getaway/${trip._id}`, { isFavorite: false })
+      )
+      
+      await Promise.all(updatePromises)
+      
+      await axios.delete(`/api/wishlist/removewishlist/${wishlistId}`)
+      
+      setLists(prevLists => prevLists.filter(wishlist => wishlist._id !== wishlistId))
+    } catch (error) {
+      console.error('Error deleting wishlist:', error)
+      setError('Failed to delete wishlist. Please try again.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -123,7 +151,24 @@ const WishlistGrid = () => {
             >
               View
             </Link>
-            <span className="text-xs text-slate-500">Updated just now</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleDelete(wl._id)
+                }}
+                disabled={deletingId === wl._id}
+                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Delete wishlist"
+              >
+                {deletingId === wl._id ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </button>
+              <span className="text-xs text-slate-500">Updated just now</span>
+            </div>
           </div>
         </div>
       ))}
