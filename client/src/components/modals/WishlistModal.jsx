@@ -3,6 +3,8 @@ import { useContext, useEffect, useMemo, useState, useCallback } from "react"
 import { createPortal } from "react-dom"
 import axios from "axios"
 import { GlobalState } from "@/context/GlobalState.jsx"
+import { useDataRefresh } from "@/hooks/useDataRefresh.js"
+import { useToast } from "@/context/ToastContext.jsx"
 
 const initialState = { list_name: "", trips: [], email: "" }
 
@@ -11,6 +13,8 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
   const api = state?.userAPI ?? state?.UserAPI
   const [email] = api?.email ?? [""]
   const [token] = state?.token ?? [null]
+  const { refetchTrips, refetchWishlists } = useDataRefresh()
+  const { success, error: showError } = useToast()
 
   const [wishlists, setWishlists] = useState([])
   const [newWishlistName, setNewWishlistName] = useState("")
@@ -19,6 +23,7 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
   const [sentObject, setSentObject] = useState(initialState)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [saving, setSaving] = useState(false)
 
   // lock body scroll when open
   useEffect(() => {
@@ -88,7 +93,10 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
   }
 
   const handleSave = useCallback(async () => {
-    if (!trip?._id) return
+    if (!trip?._id || saving) return
+    
+    setSaving(true)
+    
     try {
       setError(null)
       if (selectedWishlistId) {
@@ -98,8 +106,11 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
           trip,
           token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
         )
+        
+        await Promise.all([refetchTrips(), refetchWishlists()])
+        
         onSave?.()
-        alert(`Trip has been added to ${selectedWishlistName}`)
+        success(`Trip has been added to ${selectedWishlistName}`)
       } else if (newWishlistName.trim()) {
         // create list then add trip
         const setObj = {
@@ -113,15 +124,21 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
           setObj,
           token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
         )
+        
+        await Promise.all([refetchTrips(), refetchWishlists()])
+        
         onSave?.()
-        alert(`Trip has been added to ${newWishlistName.trim()}`)
+        success(`Trip has been added to ${newWishlistName.trim()}`)
       }
       onClose?.()
     } catch (err) {
       console.error("Error handling wishlist operation:", err)
       setError("Could not save to wishlist. Please try again.")
+      showError("Could not save to wishlist. Please try again.")
+    } finally {
+      setSaving(false)
     }
-  }, [trip, selectedWishlistId, selectedWishlistName, newWishlistName, token, email, onSave, onClose])
+  }, [trip, selectedWishlistId, selectedWishlistName, newWishlistName, token, email, onSave, onClose, saving, refetchTrips, refetchWishlists, success, showError])
 
   // mount nothing when hidden
   if (!show) return null
@@ -215,10 +232,20 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
           <button
             type="button"
             onClick={handleSave}
-            disabled={!canSave}
-            className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+            disabled={!canSave || saving}
+            className={`inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50 ${saving ? 'cursor-not-allowed' : ''}`}
           >
-            Save
+            {saving ? (
+              <>
+                <svg className="h-4 w-4 animate-spin mr-2" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Saving...
+              </>
+            ) : (
+              'Save'
+            )}
           </button>
           <button
             type="button"

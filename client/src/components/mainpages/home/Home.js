@@ -1,12 +1,14 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { GlobalState } from '@/context/GlobalState';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Axios from 'axios';
 import Trip from './Trips'; // Import the Trip component
 import './styles.css';
+import { useDataRefresh } from '@/hooks/useDataRefresh.js';
+import { useToast } from '@/context/ToastContext.jsx';
 
 // Define custom theme
 const theme = createTheme({
@@ -22,8 +24,14 @@ function Home() {
   const [email] = state.UserAPI.email;
   const [token] = state.token;
   const [isLogged] = state.UserAPI.isLogged;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { refetchTrips, refetchWishlists } = useDataRefresh();
+  const { success, error } = useToast();
+  
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingIds, setDeletingIds] = useState(new Set());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,16 +55,42 @@ function Home() {
   }, [email]);
 
   const removePost = async (id) => {
-    if (window.confirm("Do you want to delete this post?")) {
-      try {
-        const res = await Axios.delete(`/api/trips/getaway/${id}`, {
-          headers: { Authorization: token }
-        });
-        alert(res.data.msg);
-        setTrips(prevTrips => prevTrips.filter(trip => trip._id !== id));
-      } catch (error) {
-        console.error('Error:', error);
+    if (deletingIds.has(id)) return;
+    
+    if (!window.confirm("Do you want to delete this trip?")) return;
+    
+    setDeletingIds(prev => new Set([...prev, id]));
+    
+    try {
+      setTrips(prevTrips => prevTrips.filter(trip => trip._id !== id));
+      
+      const headers = token ? { Authorization: token } : undefined;
+      await Axios.delete(`/api/trips/getaway/${id}`, { headers });
+      
+      if (location.pathname === `/trips/${id}`) {
+        navigate('/explore');
       }
+      
+      await Promise.all([refetchTrips(), refetchWishlists()]);
+      
+      success("Trip deleted successfully");
+    } catch (err) {
+      console.error("Delete failed:", err);
+      try {
+        const response = await Axios.get('/api/trips/getaway-trip', {
+          params: { email: email }
+        });
+        setTrips(response.data);
+      } catch (refetchError) {
+        console.error('Error refetching trips:', refetchError);
+      }
+      error("Failed to delete trip. Please try again.");
+    } finally {
+      setDeletingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
     }
   };
 
