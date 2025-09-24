@@ -127,6 +127,56 @@ export const updateTrip = async (req, res) => {
   }
 };
 
+import mongoose from 'mongoose';
+
+// POST /getaway/:id/instances
+// POST /getaway/:id/instances
+export const addTripInstance = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Debug (TEMP): verify what's arriving
+    // console.log('addTripInstance body:', req.body);
+
+    const parseDate = (v) => {
+      if (!v) return null;
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d; // guard against "Invalid Date"
+    };
+
+    const num = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const instance = {
+      _id: new mongoose.Types.ObjectId(),
+      trip_start: parseDate(req.body.trip_start),
+      trip_end: parseDate(req.body.trip_end),
+      stay_expense: num(req.body.stay_expense),
+      travel_expense: num(req.body.travel_expense),
+      car_expense: num(req.body.car_expense),
+      other_expense: num(req.body.other_expense),
+      createdAt: new Date(),
+      isCommitted: false,
+    };
+
+    const updated = await Trips.findByIdAndUpdate(
+      id,
+      { $push: { instances: instance } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) return res.status(404).json({ msg: 'Trip not found' });
+
+    return res.status(201).json(instance);
+  } catch (err) {
+    console.error('addTripInstance error:', err);
+    return res.status(400).json({ msg: err.message || 'Invalid instance payload' });
+  }
+};
+
+
 // GET /getaway/:id
 export const getSpecificTrip = async (req, res) => {
   try {

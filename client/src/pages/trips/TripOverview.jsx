@@ -133,19 +133,25 @@ const TripOverview = () => {
 
   const handleCreateInstance = async () => {
     try {
-      const updatedInstances = [...tripInstances, { 
-        ...newInstance, 
-        _id: Date.now().toString(),
-        createdAt: new Date().toISOString()
-      }]
-      
-      await axios.put(`/api/trips/getaway/${tripId}`, {
-        ...trip,
-        instances: updatedInstances
-      })
-      
-      setTripInstances(updatedInstances)
-      setShowCreateModal(false)
+      const payload = {
+        trip_start: newInstance.trip_start ? new Date(newInstance.trip_start).toISOString() : null,
+        trip_end: newInstance.trip_end ? new Date(newInstance.trip_end).toISOString() : null,
+        stay_expense: Number(newInstance.stay_expense || 0),
+        travel_expense: Number(newInstance.travel_expense || 0),
+        car_expense: Number(newInstance.car_expense || 0),
+        other_expense: Number(newInstance.other_expense || 0),
+      };
+  
+      const { data: createdInstance } = await axios.post(
+        `/api/trips/getaway/${tripId}/instances`,
+        payload,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+  
+      // Merge the new instance into local state
+      setTripInstances((prev) => [createdInstance, ...prev]);
+  
+      setShowCreateModal(false);
       setNewInstance({
         trip_start: '',
         trip_end: '',
@@ -153,11 +159,18 @@ const TripOverview = () => {
         travel_expense: 0,
         car_expense: 0,
         other_expense: 0
-      })
-    } catch (error) {
-      console.error('Error creating trip instance:', error)
+      });
+    } catch (err) {
+      console.error('Error creating trip instance:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url,
+        method: err.config?.method,
+        payload: err.config?.data,
+      });
     }
-  }
+  };
+  
 
   if (loading) {
     return (
