@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { GlobalState } from '../../../GlobalState';
+import { GlobalState } from '@/context/GlobalState';
 import { Link } from 'react-router-dom'; 
 // import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { createTheme, ThemeProvider } from '@mui/material/styles';

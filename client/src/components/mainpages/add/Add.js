@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { GlobalState } from '../../../GlobalState';
+import { GlobalState } from '@/context/GlobalState';
 import Axios from 'axios';
 import './Add.css';
 

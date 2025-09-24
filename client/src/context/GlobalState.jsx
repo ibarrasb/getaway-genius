@@ -10,26 +10,27 @@ export const DataProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const refreshToken = useCallback(async () => {
-    try {
-      setError(null)
-      const res = await axios.get('/api/user/refresh_token', { withCredentials: true })
-      const t = res.data?.accesstoken ?? null
-      setToken(t)
-    } catch (err) {
-      console.error('Refresh token failed:', err)
-      setError(err.response?.data ?? 'Failed to refresh token')
-      setToken(null)
-    } finally {
-      setLoading(false)
-    }
+  const refreshToken = useCallback(async () => {  
+    try {  
+      console.log('🔄 Refresh token starting...')  
+      setError(null)  
+      const res = await axios.get('/api/user/refresh_token', { withCredentials: true })  
+      const t = res.data?.accesstoken ?? null  
+      console.log('✅ Refresh token success:', !!t)  
+      setToken(t)  
+    } catch (err) {  
+      console.error('❌ Refresh token failed:', err)  
+      setError(err.response?.data ?? 'Failed to refresh token')  
+      setToken(null)  
+    } finally {  
+      setLoading(false)  
+    }  
   }, [])
 
-  useEffect(() => {
-    const firstLogin = localStorage.getItem('firstLogin')
-    if (firstLogin) refreshToken()
-    else setLoading(false)
-  }, [refreshToken])
+  useEffect(() => {  
+    console.log('🚀 GlobalState useEffect running')  
+    refreshToken()  
+}, [])
 
   const userAPI = useUserAPI(token)
 

@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { GlobalState } from '../../GlobalState';
+import { GlobalState } from '@/context/GlobalState';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
