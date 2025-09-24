@@ -1,4 +1,5 @@
-import Trips from '../models/tripModels.js';
+import Trips from '../models/tripModels.js';  
+import Wishlist from '../models/wishlistModel.js';
 
 // GET /getaway-trip?email=...
 export const getTrips = async (req, res) => {
@@ -63,13 +64,23 @@ export const createTrips = async (req, res) => {
 };
 
 // DELETE /getaway/:id
-export const deleteTrip = async (req, res) => {
-  try {
-    await Trips.findByIdAndDelete(req.params.id);
-    res.json({ msg: 'Deleted a Trip' });
-  } catch (err) {
-    return res.status(500).json({ msg: err.message });
-  }
+export const deleteTrip = async (req, res) => {  
+  try {  
+    const tripId = req.params.id;  
+      
+    // Remove trip from all wishlists that contain it  
+    await Wishlist.updateMany(  
+      { "trips._id": tripId },  
+      { $pull: { trips: { _id: tripId } } }  
+    );  
+      
+    // Delete the trip itself  
+    await Trips.findByIdAndDelete(tripId);  
+      
+    res.json({ msg: 'Deleted a Trip and removed from all wishlists' });  
+  } catch (err) {  
+    return res.status(500).json({ msg: err.message });  
+  }  
 };
 
 // PUT /getaway/:id
