@@ -1,5 +1,6 @@
 import Trips from '../models/tripModels.js';  
 import Wishlist from '../models/wishlistModel.js';
+import TripInstance from '../models/tripInstanceModels.js';
 
 // GET /getaway-trip?email=...
 export const getTrips = async (req, res) => {
@@ -69,6 +70,9 @@ export const createTrips = async (req, res) => {
 export const deleteTrip = async (req, res) => {  
   try {  
     const tripId = req.params.id;  
+      
+    // Delete all trip instances for this trip
+    await TripInstance.deleteMany({ tripId });
       
     // Remove trip from all wishlists that contain it  
     await Wishlist.updateMany(  

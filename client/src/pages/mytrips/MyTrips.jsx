@@ -41,7 +41,32 @@ const MyTrips = () => {
           params: { email },
           signal: controller.signal,
         })
-        setTrips(Array.isArray(res.data) ? res.data : [])
+        
+        const tripsWithCommittedInstances = []
+        for (const trip of Array.isArray(res.data) ? res.data : []) {
+          if (trip.committedInstanceId) {
+            try {
+              const instanceRes = await axios.get(`/api/instances/${trip.committedInstanceId}`)
+              const committedInstance = instanceRes.data
+              
+              tripsWithCommittedInstances.push({
+                ...trip,
+                trip_start: committedInstance.startDate,
+                trip_end: committedInstance.endDate,
+                stay_expense: committedInstance.costs.lodging || 0,
+                travel_expense: committedInstance.costs.travel || 0,
+                car_expense: committedInstance.costs.carRental || 0,
+                other_expense: (committedInstance.costs.other || []).reduce((sum, item) => sum + (item.amount || 0), 0) +
+                              (committedInstance.costs.activities || []).reduce((sum, item) => sum + (item.amount || 0), 0),
+                total: committedInstance.total
+              })
+            } catch (instanceErr) {
+              console.error('Error fetching committed instance:', instanceErr)
+            }
+          }
+        }
+        
+        setTrips(tripsWithCommittedInstances)
       } catch (err) {
         if (err.name !== "CanceledError") {
           console.error(err)
