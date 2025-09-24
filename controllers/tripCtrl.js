@@ -38,6 +38,7 @@ export const createTrips = async (req, res) => {
       image_url,
       isFavorite,
       activities,
+      instances,
     } = req.body;
 
     if (!image_url) return res.status(400).json({ msg: 'No image upload' });
@@ -54,6 +55,7 @@ export const createTrips = async (req, res) => {
       image_url,
       isFavorite,
       activities,
+      instances,
     });
 
     await newVacation.save();
@@ -98,6 +100,7 @@ export const updateTrip = async (req, res) => {
       image_url,
       isFavorite,
       activities,
+      instances,
     } = req.body;
 
     await Trips.findOneAndUpdate(
@@ -114,6 +117,7 @@ export const updateTrip = async (req, res) => {
         image_url,
         isFavorite,
         activities,
+        instances,
       }
     );
 

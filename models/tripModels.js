@@ -14,13 +14,49 @@ const tripSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    trip_start: {
+      type: Date,
+    },
+    trip_end: {
+      type: Date,
+    },
+    stay_expense: {
+      type: Number,
+      default: 0,
+    },
+    travel_expense: {
+      type: Number,
+      default: 0,
+    },
+    car_expense: {
+      type: Number,
+      default: 0,
+    },
+    other_expense: {
+      type: Number,
+      default: 0,
+    },
+    activities: {
+      type: [String],
+      default: [],
+    },
     isFavorite: {
       type: Boolean,
-      default: false, // Default value is false
+      default: false,
     },
+    instances: [{
+      trip_start: Date,
+      trip_end: Date,
+      stay_expense: { type: Number, default: 0 },
+      travel_expense: { type: Number, default: 0 },
+      car_expense: { type: Number, default: 0 },
+      other_expense: { type: Number, default: 0 },
+      activities: { type: [String], default: [] },
+      createdAt: { type: Date, default: Date.now }
+    }]
   },
   {
-    timestamps: true, // adds createdAt & updatedAt
+    timestamps: true,
   }
 );
 

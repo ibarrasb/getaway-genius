@@ -11,6 +11,8 @@ import PrivateRoute from "@/components/routing/PrivateRoute"
 import NotLoggedIn from "./utils/NotLoggedIn"
 import NotFound from "./utils/not_found/NotFound"
 import Profile from "./profile/Profile"
+import TripOverview from "./trips/TripOverview"
+import TripInstanceDetail from "./trips/TripInstanceDetail"
 import { GlobalState } from "@/context/GlobalState.jsx"
 
 const MainPages = () => {
@@ -36,6 +38,8 @@ const MainPages = () => {
     <Route path="/explore" element={<ExplorePage />} />
     <Route path="/profile/:id" element={<Profile/>} />
     <Route path="/search" element={<Search/>} />
+    <Route path="/trips/:tripId" element={<TripOverview />} />
+    <Route path="/trips/:tripId/instances/:instanceId" element={<TripInstanceDetail />} />
     {/* e.g. <Route path="/discover" element={<Discover />} /> */}
     {/* add other protected routes here */}
   </Route>
