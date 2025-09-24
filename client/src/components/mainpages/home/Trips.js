@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { GlobalState } from '../../../GlobalState';
+import { GlobalState } from '@/context/GlobalState';
 import { Link } from 'react-router-dom';
 import FavoriteIcon from '@mui/icons-material/Favorite'; // Import the Favorite icon
 import Axios from 'axios'; // Import Axios for making HTTP requests

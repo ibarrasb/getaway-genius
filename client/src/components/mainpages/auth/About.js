@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { GlobalState } from '../../../GlobalState';
+import { GlobalState } from '@/context/GlobalState';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Button, Grid } from '@mui/material'; // Import Grid for layout
 import './login.css';

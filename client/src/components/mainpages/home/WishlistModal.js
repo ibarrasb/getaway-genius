@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { GlobalState } from '../../../GlobalState';
+import { GlobalState } from '@/context/GlobalState';
 import Axios from 'axios';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
