@@ -1,67 +1,146 @@
-import { useState, useEffect } from 'react'
-import { useParams, useLocation, Link } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { useParams, useLocation, Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { ArrowLeft, Edit2, Save, X } from 'lucide-react'
+import { ArrowLeft, Edit2, Save, X, Calendar, DollarSign } from 'lucide-react'
 
 const TripInstanceDetail = () => {
   const { tripId, instanceId } = useParams()
-  const locationState = useLocation()
-  const { trip, instance } = locationState.state || {}
+  const location = useLocation()
+  const navigate = useNavigate()
   
-  const [editMode, setEditMode] = useState(false)
+  const [trip, setTrip] = useState(null)
+  const [instance, setInstance] = useState(null)
+  const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
-    trip_start: '',
-    trip_end: '',
-    stay_expense: 0,
-    travel_expense: 0,
-    car_expense: 0,
-    other_expense: 0,
-    activities: []
+    name: '',
+    startDate: '',
+    endDate: '',
+    costs: {
+      lodging: 0,
+      travel: 0,
+      carRental: 0,
+      activities: [],
+      other: []
+    }
   })
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (instance) {
+    if (location.state?.trip && location.state?.instance) {
+      setTrip(location.state.trip)
+      setInstance(location.state.instance)
       setFormData({
-        trip_start: instance.trip_start ? new Date(instance.trip_start).toISOString().slice(0, 10) : '',
-        trip_end: instance.trip_end ? new Date(instance.trip_end).toISOString().slice(0, 10) : '',
-        stay_expense: instance.stay_expense || 0,
-        travel_expense: instance.travel_expense || 0,
-        car_expense: instance.car_expense || 0,
-        other_expense: instance.other_expense || 0,
-        activities: instance.activities || []
+        name: location.state.instance.name || '',
+        startDate: location.state.instance.startDate || location.state.instance.trip_start || '',
+        endDate: location.state.instance.endDate || location.state.instance.trip_end || '',
+        costs: location.state.instance.costs || {
+          lodging: location.state.instance.stay_expense || 0,
+          travel: location.state.instance.travel_expense || 0,
+          carRental: location.state.instance.car_expense || 0,
+          activities: [],
+          other: []
+        }
       })
+      setLoading(false)
+    } else {
+      fetchTripAndInstance()
     }
-  }, [instance])
+  }, [tripId, instanceId, location.state?.trip, location.state?.instance, fetchTripAndInstance])
 
-  const calculateTotalExpenses = () => {
-    const { stay_expense, travel_expense, car_expense, other_expense } = formData
-    return (Number(stay_expense) || 0) + (Number(travel_expense) || 0) + 
-           (Number(car_expense) || 0) + (Number(other_expense) || 0)
+  const fetchTripAndInstance = useCallback(async () => {
+    try {
+      const tripRes = await axios.get(`/api/trips/getaway/${tripId}`)
+      setTrip(tripRes.data)
+      
+      const instanceRes = await axios.get(`/api/instances/${instanceId}`)
+      const foundInstance = instanceRes.data
+      
+      if (foundInstance) {
+        setInstance(foundInstance)
+        setFormData({
+          name: foundInstance.name || '',
+          startDate: foundInstance.startDate || '',
+          endDate: foundInstance.endDate || '',
+          costs: foundInstance.costs || {
+            lodging: 0,
+            travel: 0,
+            carRental: 0,
+            activities: [],
+            other: []
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching trip and instance:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [tripId, instanceId])
+
+  const calculateTotal = () => {
+    const costs = formData.costs || {}
+    const activitiesTotal = (costs.activities || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
+    const otherTotal = (costs.other || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
+    
+    return (Number(costs.lodging) || 0) + 
+           (Number(costs.travel) || 0) + 
+           (Number(costs.carRental) || 0) + 
+           activitiesTotal + 
+           otherTotal
   }
 
-  const formatExpense = (value) => {
-    if (value === null || value === undefined || isNaN(value)) {
-      return ''
-    }
-    const formattedValue = Math.abs(parseFloat(value)).toFixed(2)
-    return formattedValue.indexOf('.') === -1 ? `${formattedValue}.00` : formattedValue
+  const formatExpenseValue = (value) => {
+    return value === 0 ? '' : value.toString()
   }
 
-  const handleExpenseChange = (key, value) => {
-    if (!isNaN(value) || value === '') {
-      setFormData(prevState => ({
-        ...prevState,
-        [key]: value,
-      }))
-    }
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not set'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    })
   }
 
-  const handleDateChange = (key, value) => {
-    setFormData(prevState => ({
-      ...prevState,
-      [key]: value,
-    }))
+  const addActivityExpense = () => {
+    const newCosts = { ...formData.costs }
+    if (!newCosts.activities) newCosts.activities = []
+    newCosts.activities.push({ label: '', amount: 0 })
+    setFormData({ ...formData, costs: newCosts })
+  }
+
+  const removeActivityExpense = (index) => {
+    const newCosts = { ...formData.costs }
+    newCosts.activities.splice(index, 1)
+    setFormData({ ...formData, costs: newCosts })
+  }
+
+  const updateActivityExpense = (index, field, value) => {
+    const newCosts = { ...formData.costs }
+    if (!newCosts.activities) newCosts.activities = []
+    newCosts.activities[index] = { ...newCosts.activities[index], [field]: value }
+    setFormData({ ...formData, costs: newCosts })
+  }
+
+  const addOtherExpense = () => {
+    const newCosts = { ...formData.costs }
+    if (!newCosts.other) newCosts.other = []
+    newCosts.other.push({ label: '', amount: 0 })
+    setFormData({ ...formData, costs: newCosts })
+  }
+
+  const removeOtherExpense = (index) => {
+    const newCosts = { ...formData.costs }
+    newCosts.other.splice(index, 1)
+    setFormData({ ...formData, costs: newCosts })
+  }
+
+  const updateOtherExpense = (index, field, value) => {
+    const newCosts = { ...formData.costs }
+    if (!newCosts.other) newCosts.other = []
+    newCosts.other[index] = { ...newCosts.other[index], [field]: value }
+    setFormData({ ...formData, costs: newCosts })
   }
 
   const handleSubmit = async (e) => {
@@ -69,20 +148,8 @@ const TripInstanceDetail = () => {
     setLoading(true)
     
     try {
-      if (trip && trip.instances) {
-        const updatedInstances = trip.instances.map((inst, index) => 
-          (inst._id === instanceId || index.toString() === instanceId) ? formData : inst
-        )
-        
-        await axios.put(`/api/trips/getaway/${tripId}`, {
-          ...trip,
-          instances: updatedInstances
-        })
-      } else {
-        await axios.put(`/api/trips/getaway/${tripId}`, formData)
-      }
-      
-      setEditMode(false)
+      await axios.patch(`/api/trips/${tripId}/instances/${instanceId}`, formData)
+      navigate(`/trips/${tripId}`)
     } catch (error) {
       console.error('Error updating trip instance:', error)
     } finally {
@@ -90,11 +157,15 @@ const TripInstanceDetail = () => {
     }
   }
 
-  const formatDateWithExtraDay = (dateString) => {
-    if (!dateString) return 'Not set'
-    const date = new Date(dateString)
-    date.setDate(date.getDate())
-    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-slate-800">Loading trip instance...</h2>
+        </div>
+      </div>
+    )
   }
 
   if (!trip || !instance) {
@@ -134,15 +205,30 @@ const TripInstanceDetail = () => {
                 <h1 className="text-2xl font-bold">
                   {trip.location_address}
                 </h1>
-                <p className="text-sm opacity-90">
-                  {formatDateWithExtraDay(formData.trip_start)} - {formatDateWithExtraDay(formData.trip_end)}
-                </p>
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="h-4 w-4 text-slate-500" />
+                  <span className="text-sm text-slate-600">
+                    {formatDate(instance.startDate || instance.trip_start)} - {formatDate(instance.endDate || instance.trip_end)}
+                  </span>
+                  {instance.isCommitted && (
+                    <span className="text-xs bg-indigo-600 text-white px-2 py-1 rounded-full">
+                      Committed
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2 mb-4">
+                  <DollarSign className="h-4 w-4 text-green-600" />
+                  <span className="text-lg font-semibold text-slate-800">
+                    ${(instance.total || calculateTotal()).toFixed(2)}
+                  </span>
+                </div>
               </div>
               
               <div className="absolute top-4 right-4">
-                {!editMode ? (
+                {!isEditing ? (
                   <button
-                    onClick={() => setEditMode(true)}
+                    onClick={() => setIsEditing(true)}
                     className="bg-white/20 backdrop-blur-sm text-white p-2 rounded-lg hover:bg-white/30 transition-colors"
                   >
                     <Edit2 className="h-4 w-4" />
@@ -150,7 +236,7 @@ const TripInstanceDetail = () => {
                 ) : (
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setEditMode(false)}
+                      onClick={() => setIsEditing(false)}
                       className="bg-white/20 backdrop-blur-sm text-white p-2 rounded-lg hover:bg-white/30 transition-colors"
                     >
                       <X className="h-4 w-4" />
@@ -163,129 +249,194 @@ const TripInstanceDetail = () => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-slate-800 mb-6">Trip Details & Expenses</h2>
+          <h2 className="text-2xl font-bold text-slate-800 mb-6">Trip Instance Details</h2>
           
           <form onSubmit={handleSubmit}>
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 mb-4">Trip Dates</h3>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Instance Name</label>
+                <input
+                  type="text"
+                  value={formData.name || ''}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                  placeholder="Optional name for this trip instance"
+                  disabled={!isEditing}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Start Date</label>
+                <input
+                  type="date"
+                  value={formData.startDate || ''}
+                  onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                  disabled={!isEditing}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">End Date</label>
+                <input
+                  type="date"
+                  value={formData.endDate || ''}
+                  onChange={(e) => setFormData({...formData, endDate: e.target.value})}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                  disabled={!isEditing}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Lodging</label>
+                  <input
+                    type="number"
+                    value={formatExpenseValue(formData.costs?.lodging || 0)}
+                    onChange={(e) => setFormData({
+                      ...formData, 
+                      costs: { ...formData.costs, lodging: Number(e.target.value) || 0 }
+                    })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                    placeholder="0"
+                    disabled={!isEditing}
+                  />
+                </div>
                 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
-                    {editMode ? (
-                      <input
-                        type="date"
-                        value={formData.trip_start}
-                        onChange={(e) => handleDateChange('trip_start', e.target.value)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                      />
-                    ) : (
-                      <p className="text-slate-600 py-2">{formatDateWithExtraDay(formData.trip_start)}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
-                    {editMode ? (
-                      <input
-                        type="date"
-                        value={formData.trip_end}
-                        onChange={(e) => handleDateChange('trip_end', e.target.value)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                      />
-                    ) : (
-                      <p className="text-slate-600 py-2">{formatDateWithExtraDay(formData.trip_end)}</p>
-                    )}
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Travel</label>
+                  <input
+                    type="number"
+                    value={formatExpenseValue(formData.costs?.travel || 0)}
+                    onChange={(e) => setFormData({
+                      ...formData, 
+                      costs: { ...formData.costs, travel: Number(e.target.value) || 0 }
+                    })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                    placeholder="0"
+                    disabled={!isEditing}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Car Rental</label>
+                  <input
+                    type="number"
+                    value={formatExpenseValue(formData.costs?.carRental || 0)}
+                    onChange={(e) => setFormData({
+                      ...formData, 
+                      costs: { ...formData.costs, carRental: Number(e.target.value) || 0 }
+                    })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                    placeholder="0"
+                    disabled={!isEditing}
+                  />
                 </div>
               </div>
               
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 mb-4">Expense Breakdown</h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Stay (Lodging)</label>
-                    {editMode ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.stay_expense}
-                        onChange={(e) => handleExpenseChange('stay_expense', e.target.value)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="text-slate-600 py-2">${formatExpense(formData.stay_expense)}</p>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700">Activities</label>
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={addActivityExpense}
+                      className="text-sm text-indigo-600 hover:text-indigo-700"
+                    >
+                      + Add Activity
+                    </button>
+                  )}
+                </div>
+                {(formData.costs?.activities || []).map((activity, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={activity.label || ''}
+                      onChange={(e) => updateActivityExpense(index, 'label', e.target.value)}
+                      className="flex-1 border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="Activity name"
+                      disabled={!isEditing}
+                    />
+                    <input
+                      type="number"
+                      value={formatExpenseValue(activity.amount || 0)}
+                      onChange={(e) => updateActivityExpense(index, 'amount', Number(e.target.value) || 0)}
+                      className="w-24 border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="0"
+                      disabled={!isEditing}
+                    />
+                    {isEditing && (
+                      <button
+                        type="button"
+                        onClick={() => removeActivityExpense(index)}
+                        className="text-red-600 hover:text-red-700 px-2"
+                      >
+                        ×
+                      </button>
                     )}
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Travel Costs</label>
-                    {editMode ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.travel_expense}
-                        onChange={(e) => handleExpenseChange('travel_expense', e.target.value)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="text-slate-600 py-2">${formatExpense(formData.travel_expense)}</p>
+                ))}
+              </div>
+              
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700">Other Expenses</label>
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={addOtherExpense}
+                      className="text-sm text-indigo-600 hover:text-indigo-700"
+                    >
+                      + Add Other
+                    </button>
+                  )}
+                </div>
+                {(formData.costs?.other || []).map((other, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={other.label || ''}
+                      onChange={(e) => updateOtherExpense(index, 'label', e.target.value)}
+                      className="flex-1 border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="Expense name"
+                      disabled={!isEditing}
+                    />
+                    <input
+                      type="number"
+                      value={formatExpenseValue(other.amount || 0)}
+                      onChange={(e) => updateOtherExpense(index, 'amount', Number(e.target.value) || 0)}
+                      className="w-24 border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="0"
+                      disabled={!isEditing}
+                    />
+                    {isEditing && (
+                      <button
+                        type="button"
+                        onClick={() => removeOtherExpense(index)}
+                        className="text-red-600 hover:text-red-700 px-2"
+                      >
+                        ×
+                      </button>
                     )}
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Car Rental</label>
-                    {editMode ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.car_expense}
-                        onChange={(e) => handleExpenseChange('car_expense', e.target.value)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="text-slate-600 py-2">${formatExpense(formData.car_expense)}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Other Expenses</label>
-                    {editMode ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.other_expense}
-                        onChange={(e) => handleExpenseChange('other_expense', e.target.value)}
-                        className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="text-slate-600 py-2">${formatExpense(formData.other_expense)}</p>
-                    )}
-                  </div>
-                  
-                  <div className="border-t pt-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold text-slate-800">Total Cost:</span>
-                      <span className="text-2xl font-bold text-green-600">
-                        ${calculateTotalExpenses().toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
+                ))}
+              </div>
+              
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-slate-800">Total Cost:</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    ${(instance?.total || calculateTotal()).toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
             
-            {editMode && (
+            {isEditing && (
               <div className="flex gap-3 mt-8 pt-6 border-t">
                 <button
                   type="button"
-                  onClick={() => setEditMode(false)}
+                  onClick={() => setIsEditing(false)}
                   className="flex-1 border border-slate-300 text-slate-700 py-2 rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   Cancel

@@ -44,16 +44,11 @@ const tripSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    instances: [{
-      trip_start: Date,
-      trip_end: Date,
-      stay_expense: { type: Number, default: 0 },
-      travel_expense: { type: Number, default: 0 },
-      car_expense: { type: Number, default: 0 },
-      other_expense: { type: Number, default: 0 },
-      activities: { type: [String], default: [] },
-      createdAt: { type: Date, default: Date.now }
-    }]
+    committedInstanceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TripInstance',
+      default: null,
+    }
   },
   {
     timestamps: true,

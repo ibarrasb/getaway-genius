@@ -33,6 +33,7 @@ app.set('trust proxy', 1);
 //Import routes AFTER dotenv has populated process.env
 const externalRoutes = (await import('./routes/externalRoutes.js')).default;
 const tripsRouter    = (await import('./routes/tripsRoutes.js')).default;
+const tripInstanceRoutes = (await import('./routes/tripInstanceRoutes.js')).default;
 const usersRouter    = (await import('./routes/userRoutes.js')).default;
 const wishlistRoutes = (await import('./routes/wishlistRoutes.js')).default;
 
@@ -40,6 +41,7 @@ const wishlistRoutes = (await import('./routes/wishlistRoutes.js')).default;
 app.use('/api', externalRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/trips', tripsRouter);
+app.use('/api', tripInstanceRoutes);
 app.use('/api/user', usersRouter);
 
 // Healthcheck

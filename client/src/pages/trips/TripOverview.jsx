@@ -85,10 +85,8 @@ const TripOverview = () => {
         const tripRes = await axios.get(`/api/trips/getaway/${tripId}`)
         setTrip(tripRes.data)
         
-        const instances = tripRes.data.instances && tripRes.data.instances.length > 0 
-          ? tripRes.data.instances 
-          : [tripRes.data]
-        setTripInstances(instances)
+        const instancesRes = await axios.get(`/api/trips/${tripId}/instances`)
+        setTripInstances(instancesRes.data)
         
         if (tripRes.data.location_address) {
           fetchWeatherData(tripRes.data.location_address)
@@ -115,6 +113,9 @@ const TripOverview = () => {
   }
 
   const calculateTotalCost = (instance) => {
+    if (instance.total !== undefined) {
+      return instance.total
+    }
     return (Number(instance.stay_expense) || 0) + 
            (Number(instance.travel_expense) || 0) + 
            (Number(instance.car_expense) || 0) + 
@@ -131,22 +132,46 @@ const TripOverview = () => {
     })
   }
 
+  const handleCommitInstance = async (instanceId) => {
+    try {
+      await axios.post(`/api/trips/${tripId}/instances/${instanceId}/commit`)
+      const instancesRes = await axios.get(`/api/trips/${tripId}/instances`)
+      setTripInstances(instancesRes.data)
+    } catch (error) {
+      console.error('Error committing instance:', error)
+    }
+  }
+
+  const handleUncommitInstance = async (instanceId) => {
+    try {
+      await axios.post(`/api/trips/${tripId}/instances/${instanceId}/uncommit`)
+      const instancesRes = await axios.get(`/api/trips/${tripId}/instances`)
+      setTripInstances(instancesRes.data)
+    } catch (error) {
+      console.error('Error uncommitting instance:', error)
+    }
+  }
+
   const handleCreateInstance = async () => {
     try {
-      const updatedInstances = [...tripInstances, { 
-        ...newInstance, 
-        _id: Date.now().toString(),
-        createdAt: new Date().toISOString()
-      }]
-      
-      await axios.put(`/api/trips/getaway/${tripId}`, {
-        ...trip,
-        instances: updatedInstances
+      await axios.post(`/api/trips/${tripId}/instances`, {
+        name: newInstance.name || '',
+        startDate: newInstance.trip_start,
+        endDate: newInstance.trip_end,
+        costs: {
+          lodging: Number(newInstance.stay_expense) || 0,
+          travel: Number(newInstance.travel_expense) || 0,
+          carRental: Number(newInstance.car_expense) || 0,
+          activities: [],
+          other: []
+        }
       })
       
-      setTripInstances(updatedInstances)
+      const instancesRes = await axios.get(`/api/trips/${tripId}/instances`)
+      setTripInstances(instancesRes.data)
       setShowCreateModal(false)
       setNewInstance({
+        name: '',
         trip_start: '',
         trip_end: '',
         stay_expense: 0,
@@ -273,31 +298,70 @@ const TripOverview = () => {
           </div>
           
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {tripInstances.map((instance, index) => (
-              <div key={instance._id || index} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar className="h-4 w-4 text-slate-500" />
-                  <span className="text-sm text-slate-600">
-                    {formatDate(instance.trip_start)} - {formatDate(instance.trip_end)}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2 mb-4">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                  <span className="text-lg font-semibold text-slate-800">
-                    ${calculateTotalCost(instance).toFixed(2)}
-                  </span>
-                </div>
-                
-                <Link
-                  to={`/trips/${tripId}/instances/${instance._id || index}`}
-                  state={{ trip, instance }}
-                  className="block w-full text-center bg-slate-100 text-slate-700 py-2 rounded-lg hover:bg-slate-200 transition-colors"
+            {tripInstances.map((instance) => {
+              const isCommitted = instance.isCommitted
+              const hasCommittedInstance = tripInstances.some(inst => inst.isCommitted)
+              const isGreyedOut = hasCommittedInstance && !isCommitted
+              
+              return (
+                <div 
+                  key={instance._id} 
+                  className={`border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow ${
+                    isGreyedOut ? 'opacity-50 bg-slate-50' : ''
+                  } ${isCommitted ? 'ring-2 ring-indigo-500 bg-indigo-50' : ''}`}
                 >
-                  View Details
-                </Link>
-              </div>
-            ))}
+                  <div className="flex items-center gap-2 mb-3">
+                    <Calendar className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm text-slate-600">
+                      {formatDate(instance.startDate || instance.trip_start)} - {formatDate(instance.endDate || instance.trip_end)}
+                    </span>
+                    {isCommitted && (
+                      <span className="text-xs bg-indigo-600 text-white px-2 py-1 rounded-full">
+                        Committed
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-4">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                    <span className="text-lg font-semibold text-slate-800">
+                      ${calculateTotalCost(instance).toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Link
+                      to={`/trips/${tripId}/instances/${instance._id}`}
+                      state={{ trip, instance }}
+                      className="block w-full text-center bg-slate-100 text-slate-700 py-2 rounded-lg hover:bg-slate-200 transition-colors"
+                    >
+                      View Details
+                    </Link>
+                    
+                    {isCommitted ? (
+                      <button
+                        onClick={() => handleUncommitInstance(instance._id)}
+                        className="w-full bg-red-100 text-red-700 py-2 rounded-lg hover:bg-red-200 transition-colors"
+                      >
+                        Uncommit
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleCommitInstance(instance._id)}
+                        disabled={hasCommittedInstance}
+                        className={`w-full py-2 rounded-lg transition-colors ${
+                          hasCommittedInstance 
+                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                            : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                        }`}
+                      >
+                        Commit
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -308,6 +372,17 @@ const TripOverview = () => {
             <h3 className="text-lg font-semibold text-slate-800 mb-4">Create New Trip Instance</h3>
             
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Instance Name (Optional)</label>
+                <input
+                  type="text"
+                  value={newInstance.name}
+                  onChange={(e) => setNewInstance({...newInstance, name: e.target.value})}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                  placeholder="e.g., Weekend Trip #1"
+                />
+              </div>
+              
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
                 <input
