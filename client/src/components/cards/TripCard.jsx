@@ -1,9 +1,11 @@
 // src/components/cards/TripCard.jsx
 import { useContext, useEffect, useMemo, useState, useCallback } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate, useLocation } from "react-router-dom"
 import axios from "axios"
 import { GlobalState } from "@/context/GlobalState.jsx"
 import WishlistModal from "@/components/modals/WishlistModal"
+import { useDataRefresh } from "@/hooks/useDataRefresh.js"
+import { useToast } from "@/context/ToastContext.jsx"
 
 const PLACEHOLDER_IMG = "https://picsum.photos/seed/getaway/1200/800"
 
@@ -26,10 +28,16 @@ const TripCard = ({ trip, onRemove, onFavoriteAdded }) => {
   const api = state?.userAPI ?? state?.UserAPI
   const [email] = api?.email ?? [""]
   const [token] = state?.token ?? [null]
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { refetchTrips, refetchWishlists } = useDataRefresh()
+  const { success, error } = useToast()
 
   const [isFavorite, setIsFavorite] = useState(Boolean(trip.isFavorite))
   const [showWishlistModal, setShowWishlistModal] = useState(false)
   const [imgSrc, setImgSrc] = useState(trip?.image_url || PLACEHOLDER_IMG)
+  const [isToggling, setIsToggling] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     setIsFavorite(Boolean(trip.isFavorite))
@@ -52,36 +60,73 @@ const TripCard = ({ trip, onRemove, onFavoriteAdded }) => {
     )
   }, [trip])
 
-  const handleRemove = useCallback(() => {
-    if (!trip?._id) return
-    onRemove?.(trip._id)
-  }, [onRemove, trip?._id])
+  const handleRemove = useCallback(async () => {
+    if (!trip?._id || isDeleting) return
+    
+    if (!confirm("Do you want to delete this trip?")) return
+    
+    setIsDeleting(true)
+    
+    try {
+      const headers = token ? { Authorization: token } : undefined
+      await axios.delete(`/api/trips/getaway/${trip._id}`, { headers })
+      
+      if (location.pathname === `/trips/${trip._id}`) {
+        navigate('/explore')
+      }
+      
+      onRemove?.(trip._id)
+      
+      await Promise.all([refetchTrips(), refetchWishlists()])
+      
+      success("Trip deleted successfully")
+    } catch (err) {
+      console.error("Delete failed:", err)
+      error("Failed to delete trip. Please try again.")
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [trip?._id, isDeleting, token, location.pathname, navigate, onRemove, refetchTrips, refetchWishlists, success, error])
 
   const handleFavoriteToggle = useCallback(() => {
+    if (isToggling) return
     if (isFavorite) handleUnfavorite()
     else setShowWishlistModal(true)
-  }, [isFavorite])
+  }, [isFavorite, isToggling])
 
   const handleModalClose = () => setShowWishlistModal(false)
 
   const handleModalSave = async () => {
     try {
       setIsFavorite(true)
+      
       await axios.put(
         `/api/trips/getaway/${trip._id}`,
         { isFavorite: true },
         token ? { headers: { Authorization: token } } : undefined
       )
+      
       setShowWishlistModal(false)
+      
+      await Promise.all([refetchTrips(), refetchWishlists()])
       onFavoriteAdded?.()
+      
     } catch (err) {
       console.error("Error updating trip details:", err)
+      setIsFavorite(false)
+      error("Failed to add trip to wishlist. Please try again.")
     }
   }
 
   const handleUnfavorite = async () => {
-    if (!trip?._id) return
+    if (!trip?._id || isToggling) return
+    
+    setIsToggling(true)
+    const originalFavoriteState = isFavorite
+    
     try {
+      setIsFavorite(false)
+      
       const wishlistsRes = await axios.get("/api/wishlist/getlists", {
         params: { email },
         ...(token ? { headers: { Authorization: token } } : {}),
@@ -102,12 +147,21 @@ const TripCard = ({ trip, onRemove, onFavoriteAdded }) => {
         token ? { headers: { Authorization: token } } : undefined
       )
 
-      setIsFavorite(false)
-      if (target?.list_name) alert(`Trip removed from ${target.list_name}`)
+      await Promise.all([refetchTrips(), refetchWishlists()])
+      
+      if (target?.list_name) {
+        success(`Trip removed from ${target.list_name}`)
+      } else {
+        success("Trip removed from favorites")
+      }
+      
       onFavoriteAdded?.()
     } catch (err) {
       console.error("Unfavorite failed:", err)
-      alert("Failed to remove from favorites.")
+      setIsFavorite(originalFavoriteState)
+      error("Failed to remove from favorites. Please try again.")
+    } finally {
+      setIsToggling(false)
     }
   }
 
@@ -142,24 +196,32 @@ const TripCard = ({ trip, onRemove, onFavoriteAdded }) => {
         <button
           type="button"
           onClick={handleFavoriteToggle}
+          disabled={isToggling}
           aria-label={isFavorite ? "Unfavorite" : "Add to wishlist"}
           aria-pressed={isFavorite}
-          className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-slate-700 shadow-md ring-1 ring-black/5 transition hover:scale-105 hover:bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className={`absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-slate-700 shadow-md ring-1 ring-black/5 transition hover:scale-105 hover:bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isToggling ? 'opacity-50 cursor-not-allowed' : ''}`}
           title={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
         >
-          <svg
-            className={`h-5 w-5 transition ${isFavorite ? "fill-rose-500 stroke-rose-500" : "stroke-slate-700"}`}
-            viewBox="0 0 24 24"
-            fill={isFavorite ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 8.25c0-2.347-1.903-4.25-4.25-4.25-1.48 0-2.786.75-3.5 1.875A4.125 4.125 0 006.75 4C4.403 4 2.5 5.903 2.5 8.25c0 6.25 9.5 10 9.5 10s9.5-3.75 9.5-10z"
-            />
-          </svg>
+          {isToggling ? (
+            <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          ) : (
+            <svg
+              className={`h-5 w-5 transition ${isFavorite ? "fill-rose-500 stroke-rose-500" : "stroke-slate-700"}`}
+              viewBox="0 0 24 24"
+              fill={isFavorite ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 8.25c0-2.347-1.903-4.25-4.25-4.25-1.48 0-2.786.75-3.5 1.875A4.125 4.125 0 006.75 4C4.403 4 2.5 5.903 2.5 8.25c0 6.25 9.5 10 9.5 10s9.5-3.75 9.5-10z"
+              />
+            </svg>
+          )}
         </button>
 
         {/* corner chips */}
@@ -212,7 +274,7 @@ const TripCard = ({ trip, onRemove, onFavoriteAdded }) => {
                 <circle cx="12" cy="12" r="9" />
               </svg>
             )}
-            {priceLabel}
+            {`${trip.instances.length} instances`}
           </span>
         </div>
 
@@ -232,12 +294,25 @@ const TripCard = ({ trip, onRemove, onFavoriteAdded }) => {
           <button
             type="button"
             onClick={handleRemove}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            disabled={isDeleting}
+            className={`inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 6h18M8 6v12m8-12v12M5 6l1 14a2 2 0 002 2h8a2 2 0 002-2l1-14" strokeLinecap="round" />
-            </svg>
-            Delete
+            {isDeleting ? (
+              <>
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Deleting...
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18M8 6v12m8-12v12M5 6l1 14a2 2 0 002 2h8a2 2 0 002-2l1-14" strokeLinecap="round" />
+                </svg>
+                Delete
+              </>
+            )}
           </button>
         </div>
       </div>

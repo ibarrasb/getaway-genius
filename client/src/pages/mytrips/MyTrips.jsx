@@ -1,9 +1,11 @@
 // src/pages/mytrips/MyTrips.jsx
 import { useContext, useEffect, useMemo, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useLocation } from "react-router-dom"
 import axios from "axios"
 import { GlobalState } from "@/context/GlobalState.jsx"
 import TripCard from "@/components/cards/TripCard.jsx"
+import { useDataRefresh } from "@/hooks/useDataRefresh.js"
+import { useToast } from "@/context/ToastContext.jsx"
 // import FloatingCreateButton from "@/components/FloatingCreateButton.jsx"
 import { MOCK_TRIPS } from "@/mocks/trips"
 
@@ -11,14 +13,18 @@ const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
 
 const MyTrips = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const state = useContext(GlobalState)
   const api = state?.userAPI ?? state?.UserAPI
   const [email] = api?.email ?? [""]
   const [isLogged] = api?.isLogged ?? [false]
   const [token] = state?.token ?? [null]
+  const { refetchTrips, refetchWishlists } = useDataRefresh()
+  const { success, error: showError } = useToast()
 
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deletingIds, setDeletingIds] = useState(new Set())
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -57,16 +63,40 @@ const MyTrips = () => {
   }, [email])
 
   const removePost = async (id) => {
-    if (!id) return
-    if (!confirm("Do you want to delete this post?")) return
+    if (!id || deletingIds.has(id)) return
+    if (!confirm("Do you want to delete this trip?")) return
+    
+    setDeletingIds(prev => new Set([...prev, id]))
+    
     try {
-      const headers = token ? { Authorization: token } : undefined // raw token per your middleware
-      const res = await axios.delete(`/api/trips/getaway/${id}`, { headers })
-      alert(res.data?.msg ?? "Deleted")
       setTrips((prev) => prev.filter((t) => t._id !== id))
+      
+      const headers = token ? { Authorization: token } : undefined
+      await axios.delete(`/api/trips/getaway/${id}`, { headers })
+      
+      if (location.pathname === `/trips/${id}`) {
+        navigate('/explore')
+      }
+      
+      await Promise.all([refetchTrips(), refetchWishlists()])
+      
+      success("Trip deleted successfully")
     } catch (err) {
       console.error(err)
-      alert("Failed to delete trip.")
+      try {
+        const headers = token ? { Authorization: token } : undefined
+        const res = await axios.get("/api/trips/getaway-trip", { headers })
+        setTrips(res.data || [])
+      } catch (refetchError) {
+        console.error("Error refetching trips:", refetchError)
+      }
+      showError("Failed to delete trip. Please try again.")
+    } finally {
+      setDeletingIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(id)
+        return newSet
+      })
     }
   }
 
@@ -232,9 +262,10 @@ const MyTrips = () => {
                     </button>
                     <button
                       onClick={() => removePost(featured._id)}
-                      className="rounded-xl bg-rose-600/90 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-rose-600"
+                      disabled={deletingIds.has(featured._id)}
+                      className={`rounded-xl bg-rose-600/90 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-rose-600 ${deletingIds.has(featured._id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      Delete
+                      {deletingIds.has(featured._id) ? 'Deleting...' : 'Delete'}
                     </button>
                   </div>
                 </div>
@@ -258,13 +289,13 @@ const MyTrips = () => {
         ) : (
           <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
             <p className="text-lg font-semibold text-slate-900">Start planning your trips!</p>
-            <p className="mt-1 text-slate-600">You don&apos;t have any upcoming trips yet.</p>
-            <Link
+            <p className="mt-1 text-slate-600">You don&apos;t have any upcoming commited trips yet.</p>
+            {/* <Link
               to="/search"
               className="mt-6 inline-flex rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white shadow-md transition hover:bg-indigo-700"
             >
               Create your first trip
-            </Link>
+            </Link> */}
           </div>
         )}
       </div>
