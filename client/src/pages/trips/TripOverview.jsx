@@ -87,7 +87,7 @@ const TripOverview = () => {
         
         const instances = tripRes.data.instances && tripRes.data.instances.length > 0 
           ? tripRes.data.instances 
-          : [tripRes.data]
+          : []
         setTripInstances(instances)
         
         if (tripRes.data.location_address) {
@@ -131,6 +131,29 @@ const TripOverview = () => {
     })
   }
 
+  const handleDeleteInstance = async (instanceId) => {
+    if (!instanceId) return;
+    const ok = window.confirm('Delete this instance? This cannot be undone.');
+    if (!ok) return;
+  
+    try {
+      // optimistic UI
+      setTripInstances((prev) => prev.filter((i) => (i._id || '').toString() !== instanceId.toString()));
+  
+      await axios.delete(`/api/trips/getaway/${tripId}/instances/${instanceId}`);
+  
+      // if you prefer server source of truth, you could also:
+      // const { data } = await axios.delete(`/api/trips/getaway/${tripId}/instances/${instanceId}`);
+      // setTripInstances(data.instances);
+    } catch (err) {
+      console.error('Error deleting instance:', err?.response?.data || err.message);
+      // revert optimistic update on error (optional)
+      setTripInstances((prev) => [...prev]); // no-op keeps UI as-is; or refetch trip
+      alert('Failed to delete instance. Try again.');
+    }
+  };
+
+  
   const handleCreateInstance = async () => {
     try {
       const payload = {
@@ -287,29 +310,41 @@ const TripOverview = () => {
           
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {tripInstances.map((instance, index) => (
-              <div key={instance._id || index} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar className="h-4 w-4 text-slate-500" />
-                  <span className="text-sm text-slate-600">
-                    {formatDate(instance.trip_start)} - {formatDate(instance.trip_end)}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2 mb-4">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                  <span className="text-lg font-semibold text-slate-800">
-                    ${calculateTotalCost(instance).toFixed(2)}
-                  </span>
-                </div>
-                
-                <Link
-                  to={`/trips/${tripId}/instances/${instance._id || index}`}
-                  state={{ trip, instance }}
-                  className="block w-full text-center bg-slate-100 text-slate-700 py-2 rounded-lg hover:bg-slate-200 transition-colors"
-                >
-                  View Details
-                </Link>
-              </div>
+              // inside your map over tripInstances
+                  <div key={instance._id || index} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow relative">
+                    {/* top-right delete button */}
+                    <button
+                      onClick={() => handleDeleteInstance(instance._id || index)}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-red-600"
+                      aria-label="Delete instance"
+                      title="Delete instance"
+                    >
+                      ✕
+                    </button>
+
+                    <div className="flex items-center gap-2 mb-3">
+                      <Calendar className="h-4 w-4 text-slate-500" />
+                      <span className="text-sm text-slate-600">
+                        {formatDate(instance.trip_start)} - {formatDate(instance.trip_end)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-4">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <span className="text-lg font-semibold text-slate-800">
+                        ${calculateTotalCost(instance).toFixed(2)}
+                      </span>
+                    </div>
+
+                    <Link
+                      to={`/trips/${tripId}/instances/${instance._id || index}`}
+                      state={{ trip, instance }}
+                      className="block w-full text-center bg-slate-100 text-slate-700 py-2 rounded-lg hover:bg-slate-200 transition-colors"
+                    >
+                      View Details
+                    </Link>
+                  </div>
+
             ))}
           </div>
         </div>

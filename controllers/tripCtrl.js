@@ -1,5 +1,6 @@
 import Trips from '../models/tripModels.js';  
 import Wishlist from '../models/wishlistModel.js';
+import mongoose from 'mongoose';
 
 // GET /getaway-trip?email=...
 export const getTrips = async (req, res) => {
@@ -126,9 +127,6 @@ export const updateTrip = async (req, res) => {
     return res.status(500).json({ msg: err.message });
   }
 };
-
-import mongoose from 'mongoose';
-
 // POST /getaway/:id/instances
 // POST /getaway/:id/instances
 export const addTripInstance = async (req, res) => {
@@ -176,6 +174,30 @@ export const addTripInstance = async (req, res) => {
   }
 };
 
+export const deleteTripInstance = async (req, res) => {
+  try {
+    const { id, instanceId } = req.params;
+
+    if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(instanceId)) {
+      return res.status(400).json({ msg: 'Invalid trip or instance id' });
+    }
+
+    const updated = await Trips.findByIdAndUpdate(
+      id,
+      { $pull: { instances: { _id: new mongoose.Types.ObjectId(instanceId) } } },
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ msg: 'Trip not found' });
+
+    return res.status(200).json({
+      msg: 'Instance deleted',
+      instances: updated.instances,
+    });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
 
 // GET /getaway/:id
 export const getSpecificTrip = async (req, res) => {

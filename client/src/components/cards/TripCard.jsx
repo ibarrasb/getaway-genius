@@ -274,7 +274,7 @@ const TripCard = ({ trip, onRemove, onFavoriteAdded }) => {
                 <circle cx="12" cy="12" r="9" />
               </svg>
             )}
-            {priceLabel}
+            {`${trip.instances.length} instances`}
           </span>
         </div>
 
