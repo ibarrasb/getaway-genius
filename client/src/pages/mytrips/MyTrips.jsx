@@ -112,7 +112,7 @@ const MyTrips = () => {
       : `${mo(s)} ${s.getDate()} – ${mo(e)} ${e.getDate()}`
   }
   const totalCost = (t) =>
-    (Number(t.stay_expense) || 0) + (Number(t.car_expense) || 0) + (Number(t.travel_expense) || 0)
+    (Number(t.stay_expense) || 0) + (Number(t.car_expense) || 0) + (Number(t.travel_expense) || 0) + (Number(t.other_expense) || 0)
 
   // countdown helper
   const nextTripCountdown = (start, end) => {
@@ -261,17 +261,37 @@ const MyTrips = () => {
                     <div className="rounded-xl bg-indigo-50 px-4 py-2 text-indigo-700 ring-1 ring-indigo-200">
                       <span className="text-xs uppercase tracking-wide">Est. Total</span>
                       <div className="text-lg font-bold">
-                        {totalCost(featured) > 0 ? `$${totalCost(featured).toFixed(0)}` : "—"}
+                        {totalCost(featured.committedInstance) > 0 ? `$${totalCost(featured.committedInstance).toFixed(0)}` : "—"}
                       </div>
                     </div>
                     <button
-                      onClick={() => navigate(`/trips/${featured._id}`)}
+                      onClick={() => navigate(`/trips/${featured._id}/instances/${featured.committedInstance._id}`)}
                       className="rounded-xl bg-slate-900 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-slate-800"
                     >
                       View
                     </button>
                     <button
-                      onClick={() => removePost(featured._id)}
+                      onClick={async () => {
+                        if (!confirm("Do you want to delete this committed instance?")) return
+                        setDeletingIds(prev => new Set([...prev, featured._id]))
+                        try {
+                          const headers = token ? { Authorization: token } : undefined
+                          await axios.delete(`/api/trips/getaway/${featured._id}/instances/${featured.committedInstance._id}`, { headers })
+                          setTrips((prev) => prev.filter((t) => t._id !== featured._id))
+                          await Promise.all([refetchTrips(), refetchWishlists()])
+                          success("Instance deleted successfully")
+                          navigate('/mytrips')
+                        } catch (err) {
+                          console.error(err)
+                          showError("Failed to delete instance. Please try again.")
+                        } finally {
+                          setDeletingIds(prev => {
+                            const newSet = new Set(prev)
+                            newSet.delete(featured._id)
+                            return newSet
+                          })
+                        }
+                      }}
                       disabled={deletingIds.has(featured._id)}
                       className={`rounded-xl bg-rose-600/90 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-rose-600 ${deletingIds.has(featured._id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
@@ -291,7 +311,7 @@ const MyTrips = () => {
               <h3 className="mb-4 text-2xl font-bold text-slate-900">{year}</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {groups[year].map((trip) => (
-                  <TripCard key={trip._id} trip={trip} onRemove={removePost} />
+                  <TripCard key={trip._id} trip={trip} instance={trip.committedInstance} onRemove={removePost} />
                 ))}
               </div>
             </section>
