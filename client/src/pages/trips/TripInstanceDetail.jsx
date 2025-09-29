@@ -6,8 +6,10 @@ import { ArrowLeft, Edit2, Save, X } from 'lucide-react'
 const TripInstanceDetail = () => {
   const { tripId, instanceId } = useParams()
   const locationState = useLocation()
-  const { trip, instance } = locationState.state || {}
+  const stateData = locationState.state || {}
   
+  const [trip, setTrip] = useState(stateData.trip || null)
+  const [instance, setInstance] = useState(stateData.instance || null)
   const [editMode, setEditMode] = useState(false)
   const [formData, setFormData] = useState({
     trip_start: '',
@@ -19,6 +21,25 @@ const TripInstanceDetail = () => {
     activities: []
   })
   const [loading, setLoading] = useState(false)
+  const [fetchLoading, setFetchLoading] = useState(!stateData.trip || !stateData.instance)
+
+  useEffect(() => {
+    const fetchTripInstance = async () => {
+      if (!trip || !instance) {
+        try {
+          setFetchLoading(true)
+          const { data } = await axios.get(`/api/trips/getaway/${tripId}/instances/${instanceId}`)
+          setTrip(data.trip)
+          setInstance(data.instance)
+        } catch (err) {
+          console.error('Error fetching trip instance:', err)
+          setFetchLoading(false)
+        }
+      }
+    }
+    
+    fetchTripInstance()
+  }, [tripId, instanceId, trip, instance])
 
   useEffect(() => {
     if (instance) {
@@ -31,6 +52,7 @@ const TripInstanceDetail = () => {
         other_expense: instance.other_expense || 0,
         activities: instance.activities || []
       })
+      setFetchLoading(false)
     }
   }, [instance])
 
@@ -95,6 +117,17 @@ const TripInstanceDetail = () => {
     const date = new Date(dateString)
     date.setDate(date.getDate())
     return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${(date.getDate() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`
+  }
+
+  if (fetchLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading trip details...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!trip || !instance) {

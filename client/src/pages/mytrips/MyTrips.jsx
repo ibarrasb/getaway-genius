@@ -47,7 +47,9 @@ const MyTrips = () => {
           params: { email },
           signal: controller.signal,
         })
-        setTrips(Array.isArray(res.data) ? res.data : [])
+        const allTrips = Array.isArray(res.data) ? res.data : []
+        const committedTrips = allTrips.filter(t => t.committedInstanceId)
+        setTrips(committedTrips)
       } catch (err) {
         if (err.name !== "CanceledError") {
           console.error(err)
@@ -110,7 +112,7 @@ const MyTrips = () => {
       : `${mo(s)} ${s.getDate()} – ${mo(e)} ${e.getDate()}`
   }
   const totalCost = (t) =>
-    (Number(t.stay_expense) || 0) + (Number(t.car_expense) || 0) + (Number(t.travel_expense) || 0)
+    (Number(t.stay_expense) || 0) + (Number(t.car_expense) || 0) + (Number(t.travel_expense) || 0) + (Number(t.other_expense) || 0)
 
   // countdown helper
   const nextTripCountdown = (start, end) => {
@@ -144,24 +146,32 @@ const MyTrips = () => {
   // compute featured (soonest upcoming by start date), and the rest grouped by year
   const { featured, groups, orderedYears } = useMemo(() => {
     const now = new Date()
-    const upcoming = trips
-      .filter((t) => {
-        const end = new Date(t.trip_end); end.setDate(end.getDate() + 1)
-        return !Number.isNaN(end) && end >= now
+    const tripsWithCommittedInstance = trips
+      .map((t) => {
+        const committedInstance = t.instances.find(
+          (inst) => inst._id?.toString() === t.committedInstanceId?.toString()
+        )
+        return { ...t, committedInstance }
       })
-      .sort((a, b) => new Date(a.trip_start) - new Date(b.trip_start))
+      .filter((t) => t.committedInstance)
+      .sort((a, b) => new Date(a.committedInstance.trip_start) - new Date(b.committedInstance.trip_start))
+
+    const upcoming = tripsWithCommittedInstance.filter((t) => {
+      const end = new Date(t.committedInstance.trip_end); end.setDate(end.getDate() + 1)
+      return !Number.isNaN(end) && end >= now
+    })
 
     const f = upcoming[0] || null
     const rest = f ? upcoming.slice(1) : upcoming
 
     const byYear = rest.reduce((acc, t) => {
-      const y = new Date(t.trip_end).getFullYear()
+      const y = new Date(t.committedInstance.trip_end).getFullYear()
       ;(acc[y] ||= []).push(t)
       return acc
     }, {})
 
     Object.keys(byYear).forEach((y) =>
-      byYear[y].sort((a, b) => new Date(a.trip_start) - new Date(b.trip_start))
+      byYear[y].sort((a, b) => new Date(a.committedInstance.trip_start) - new Date(b.committedInstance.trip_start))
     )
 
     const years = Object.keys(byYear).map(Number).sort((a, b) => b - a)
@@ -190,7 +200,7 @@ const MyTrips = () => {
   }
 
   const showEmpty = !featured && orderedYears.length === 0
-  const countdown = featured ? nextTripCountdown(featured.trip_start, featured.trip_end) : null
+  const countdown = featured ? nextTripCountdown(featured.committedInstance.trip_start, featured.committedInstance.trip_end) : null
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50">
@@ -244,24 +254,44 @@ const MyTrips = () => {
                       {featured.location_address}
                     </h2>
                     <p className="text-sm text-slate-600">
-                      {fmtRange(featured.trip_start, featured.trip_end)}
+                      {fmtRange(featured.committedInstance.trip_start, featured.committedInstance.trip_end)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="rounded-xl bg-indigo-50 px-4 py-2 text-indigo-700 ring-1 ring-indigo-200">
                       <span className="text-xs uppercase tracking-wide">Est. Total</span>
                       <div className="text-lg font-bold">
-                        {totalCost(featured) > 0 ? `$${totalCost(featured).toFixed(0)}` : "—"}
+                        {totalCost(featured.committedInstance) > 0 ? `$${totalCost(featured.committedInstance).toFixed(0)}` : "—"}
                       </div>
                     </div>
                     <button
-                      onClick={() => navigate(`/trips/${featured._id}`)}
+                      onClick={() => navigate(`/trips/${featured._id}/instances/${featured.committedInstance._id}`)}
                       className="rounded-xl bg-slate-900 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-slate-800"
                     >
                       View
                     </button>
                     <button
-                      onClick={() => removePost(featured._id)}
+                      onClick={async () => {
+                        if (!confirm("Do you want to delete this committed instance?")) return
+                        setDeletingIds(prev => new Set([...prev, featured._id]))
+                        try {
+                          const headers = token ? { Authorization: token } : undefined
+                          await axios.delete(`/api/trips/getaway/${featured._id}/instances/${featured.committedInstance._id}`, { headers })
+                          setTrips((prev) => prev.filter((t) => t._id !== featured._id))
+                          await Promise.all([refetchTrips(), refetchWishlists()])
+                          success("Instance deleted successfully")
+                          navigate('/mytrips')
+                        } catch (err) {
+                          console.error(err)
+                          showError("Failed to delete instance. Please try again.")
+                        } finally {
+                          setDeletingIds(prev => {
+                            const newSet = new Set(prev)
+                            newSet.delete(featured._id)
+                            return newSet
+                          })
+                        }
+                      }}
                       disabled={deletingIds.has(featured._id)}
                       className={`rounded-xl bg-rose-600/90 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-rose-600 ${deletingIds.has(featured._id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
@@ -281,7 +311,7 @@ const MyTrips = () => {
               <h3 className="mb-4 text-2xl font-bold text-slate-900">{year}</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {groups[year].map((trip) => (
-                  <TripCard key={trip._id} trip={trip} onRemove={removePost} />
+                  <TripCard key={trip._id} trip={trip} instance={trip.committedInstance} onRemove={removePost} />
                 ))}
               </div>
             </section>

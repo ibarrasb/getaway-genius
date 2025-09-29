@@ -174,6 +174,62 @@ export const addTripInstance = async (req, res) => {
   }
 };
 
+export const commitTripInstance = async (req, res) => {
+  try {
+    const { id, instanceId } = req.params;
+
+    if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(instanceId)) {
+      return res.status(400).json({ msg: 'Invalid trip or instance id' });
+    }
+
+    const trip = await Trips.findById(id);
+    if (!trip) return res.status(404).json({ msg: 'Trip not found' });
+
+    const instanceExists = trip.instances.some(
+      (inst) => inst._id.toString() === instanceId
+    );
+    if (!instanceExists) {
+      return res.status(404).json({ msg: 'Instance not found' });
+    }
+
+    trip.instances.forEach((inst) => {
+      inst.isCommitted = inst._id.toString() === instanceId;
+    });
+    trip.committedInstanceId = new mongoose.Types.ObjectId(instanceId);
+
+    await trip.save();
+
+    return res.status(200).json({ msg: 'Instance committed', trip });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
+
+export const getTripInstance = async (req, res) => {
+  try {
+    const { id, instanceId } = req.params;
+
+    if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(instanceId)) {
+      return res.status(400).json({ msg: 'Invalid trip or instance id' });
+    }
+
+    const trip = await Trips.findById(id);
+    if (!trip) return res.status(404).json({ msg: 'Trip not found' });
+
+    const instance = trip.instances.find(
+      (inst) => inst._id.toString() === instanceId
+    );
+
+    if (!instance) {
+      return res.status(404).json({ msg: 'Instance not found' });
+    }
+
+    return res.status(200).json({ trip, instance });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
+
 export const deleteTripInstance = async (req, res) => {
   try {
     const { id, instanceId } = req.params;
@@ -182,17 +238,22 @@ export const deleteTripInstance = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid trip or instance id' });
     }
 
-    const updated = await Trips.findByIdAndUpdate(
-      id,
-      { $pull: { instances: { _id: new mongoose.Types.ObjectId(instanceId) } } },
-      { new: true }
+    const trip = await Trips.findById(id);
+    if (!trip) return res.status(404).json({ msg: 'Trip not found' });
+
+    if (trip.committedInstanceId?.toString() === instanceId) {
+      trip.committedInstanceId = null;
+    }
+
+    trip.instances = trip.instances.filter(
+      (inst) => inst._id.toString() !== instanceId
     );
 
-    if (!updated) return res.status(404).json({ msg: 'Trip not found' });
+    await trip.save();
 
     return res.status(200).json({
       msg: 'Instance deleted',
-      instances: updated.instances,
+      instances: trip.instances,
     });
   } catch (err) {
     return res.status(500).json({ msg: err.message });

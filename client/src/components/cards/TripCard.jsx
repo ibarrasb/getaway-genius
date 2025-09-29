@@ -23,7 +23,7 @@ const makeRange = (startStr, endStr) => {
   return { hasRange: true, label: `${fmt(s)} – ${fmt(e)}` }
 }
 
-const TripCard = ({ trip, onRemove, onFavoriteAdded }) => {
+const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
   const state = useContext(GlobalState)
   const api = state?.userAPI ?? state?.UserAPI
   const [email] = api?.email ?? [""]
@@ -47,46 +47,65 @@ const TripCard = ({ trip, onRemove, onFavoriteAdded }) => {
     setImgSrc(trip?.image_url || PLACEHOLDER_IMG)
   }, [trip?.image_url])
 
+  const displayData = instance || trip
+
   const { hasRange, label: rangeLabel } = useMemo(
-    () => makeRange(trip?.trip_start, trip?.trip_end),
-    [trip?.trip_start, trip?.trip_end]
+    () => makeRange(displayData?.trip_start, displayData?.trip_end),
+    [displayData?.trip_start, displayData?.trip_end]
   )
 
   const totalCost = useMemo(() => {
     return (
-      (Number(trip?.stay_expense) || 0) +
-      (Number(trip?.car_expense) || 0) +
-      (Number(trip?.travel_expense) || 0)
+      (Number(displayData?.stay_expense) || 0) +
+      (Number(displayData?.car_expense) || 0) +
+      (Number(displayData?.travel_expense) || 0) +
+      (Number(displayData?.other_expense) || 0)
     )
-  }, [trip])
+  }, [displayData])
 
   const handleRemove = useCallback(async () => {
     if (!trip?._id || isDeleting) return
     
-    if (!confirm("Do you want to delete this trip?")) return
+    const deleteMessage = instance 
+      ? "Do you want to delete this committed instance?" 
+      : "Do you want to delete this trip?"
+    
+    if (!confirm(deleteMessage)) return
     
     setIsDeleting(true)
     
     try {
       const headers = token ? { Authorization: token } : undefined
-      await axios.delete(`/api/trips/getaway/${trip._id}`, { headers })
       
-      if (location.pathname === `/trips/${trip._id}`) {
-        navigate('/explore')
+      if (instance?._id) {
+        await axios.delete(`/api/trips/getaway/${trip._id}/instances/${instance._id}`, { headers })
+        
+        if (location.pathname === `/trips/${trip._id}/instances/${instance._id}`) {
+          navigate('/mytrips')
+        }
+        
+        success("Instance deleted successfully")
+      } else {
+        await axios.delete(`/api/trips/getaway/${trip._id}`, { headers })
+        
+        if (location.pathname === `/trips/${trip._id}`) {
+          navigate('/explore')
+        }
+        
+        success("Trip deleted successfully")
       }
       
       onRemove?.(trip._id)
       
       await Promise.all([refetchTrips(), refetchWishlists()])
       
-      success("Trip deleted successfully")
     } catch (err) {
       console.error("Delete failed:", err)
-      error("Failed to delete trip. Please try again.")
+      error("Failed to delete. Please try again.")
     } finally {
       setIsDeleting(false)
     }
-  }, [trip?._id, isDeleting, token, location.pathname, navigate, onRemove, refetchTrips, refetchWishlists, success, error])
+  }, [trip?._id, instance, isDeleting, token, location.pathname, navigate, onRemove, refetchTrips, refetchWishlists, success, error])
 
   const handleFavoriteToggle = useCallback(() => {
     if (isToggling) return
@@ -274,15 +293,23 @@ const TripCard = ({ trip, onRemove, onFavoriteAdded }) => {
                 <circle cx="12" cy="12" r="9" />
               </svg>
             )}
-            {`${trip.instances.length} instances`}
+            {priceLabel}
           </span>
+          {instance && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-200">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Committed
+            </span>
+          )}
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
           <Link
-            to={`/trips/${trip?._id}`}
-            state={{ trip }}
+            to={instance ? `/trips/${trip?._id}/instances/${instance._id}` : `/trips/${trip?._id}`}
+            state={instance ? { trip, instance } : { trip }}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
