@@ -205,6 +205,31 @@ export const commitTripInstance = async (req, res) => {
   }
 };
 
+export const getTripInstance = async (req, res) => {
+  try {
+    const { id, instanceId } = req.params;
+
+    if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(instanceId)) {
+      return res.status(400).json({ msg: 'Invalid trip or instance id' });
+    }
+
+    const trip = await Trips.findById(id);
+    if (!trip) return res.status(404).json({ msg: 'Trip not found' });
+
+    const instance = trip.instances.find(
+      (inst) => inst._id.toString() === instanceId
+    );
+
+    if (!instance) {
+      return res.status(404).json({ msg: 'Instance not found' });
+    }
+
+    return res.status(200).json({ trip, instance });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
+
 export const deleteTripInstance = async (req, res) => {
   try {
     const { id, instanceId } = req.params;
