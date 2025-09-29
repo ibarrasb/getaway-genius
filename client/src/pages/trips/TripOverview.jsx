@@ -1,10 +1,13 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useContext } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import axios from 'axios'
 import { WiDaySunny, WiCloud, WiRain, WiSnow, WiThunderstorm } from 'react-icons/wi'
 import { Plus, Calendar, DollarSign, ArrowLeft } from 'lucide-react'
+import { GlobalState } from '../../context/GlobalState'
 
 const TripOverview = () => {
+  const state = useContext(GlobalState)
+  const token = state.token[0]
   const { tripId } = useParams()
   
   const [trip, setTrip] = useState(null)
@@ -198,8 +201,6 @@ const TripOverview = () => {
   const handleCommitInstance = async (instanceId) => {
     if (!instanceId || committingId) return
     
-    console.log('Attempting to commit instance:', { instanceId, tripId });
-    
     setCommittingId(instanceId)
     
     try {
@@ -209,16 +210,15 @@ const TripOverview = () => {
         { 
           headers: { 
             'Content-Type': 'application/json',
+            ...(token ? { Authorization: token } : {})
           } 
         }
       )
       
-      console.log('Commit successful:', data);
       setTrip(data.trip)
       setTripInstances(data.trip.instances || [])
     } catch (err) {
       console.error('Error committing instance:', err)
-      console.error('Error response:', err.response?.data);
       alert(err.response?.data?.msg || 'Failed to commit instance. Try again.')
     } finally {
       setCommittingId(null)
