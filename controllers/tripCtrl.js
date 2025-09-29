@@ -178,17 +178,34 @@ export const commitTripInstance = async (req, res) => {
   try {
     const { id, instanceId } = req.params;
 
-    if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(instanceId)) {
-      return res.status(400).json({ msg: 'Invalid trip or instance id' });
+    console.log('commitTripInstance called with:', { id, instanceId });
+    console.log('ID types:', { idType: typeof id, instanceIdType: typeof instanceId });
+    console.log('ID valid checks:', { 
+      idValid: mongoose.isValidObjectId(id), 
+      instanceIdValid: mongoose.isValidObjectId(instanceId) 
+    });
+
+    if (!mongoose.isValidObjectId(id)) {
+      console.error('Invalid trip ID:', id);
+      return res.status(400).json({ msg: `Invalid trip id: ${id}` });
+    }
+    
+    if (!mongoose.isValidObjectId(instanceId)) {
+      console.error('Invalid instance ID:', instanceId);
+      return res.status(400).json({ msg: `Invalid instance id: ${instanceId}` });
     }
 
     const trip = await Trips.findById(id);
-    if (!trip) return res.status(404).json({ msg: 'Trip not found' });
+    if (!trip) {
+      console.error('Trip not found:', id);
+      return res.status(404).json({ msg: 'Trip not found' });
+    }
 
     const instanceExists = trip.instances.some(
       (inst) => inst._id.toString() === instanceId
     );
     if (!instanceExists) {
+      console.error('Instance not found in trip:', { tripId: id, instanceId, instanceCount: trip.instances.length });
       return res.status(404).json({ msg: 'Instance not found' });
     }
 
@@ -198,9 +215,12 @@ export const commitTripInstance = async (req, res) => {
     trip.committedInstanceId = new mongoose.Types.ObjectId(instanceId);
 
     await trip.save();
+    
+    console.log('Instance committed successfully:', { tripId: id, instanceId });
 
     return res.status(200).json({ msg: 'Instance committed', trip });
   } catch (err) {
+    console.error('commitTripInstance error:', err);
     return res.status(500).json({ msg: err.message });
   }
 };
