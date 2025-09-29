@@ -47,7 +47,9 @@ const MyTrips = () => {
           params: { email },
           signal: controller.signal,
         })
-        setTrips(Array.isArray(res.data) ? res.data : [])
+        const allTrips = Array.isArray(res.data) ? res.data : []
+        const committedTrips = allTrips.filter(t => t.committedInstanceId)
+        setTrips(committedTrips)
       } catch (err) {
         if (err.name !== "CanceledError") {
           console.error(err)
@@ -144,24 +146,32 @@ const MyTrips = () => {
   // compute featured (soonest upcoming by start date), and the rest grouped by year
   const { featured, groups, orderedYears } = useMemo(() => {
     const now = new Date()
-    const upcoming = trips
-      .filter((t) => {
-        const end = new Date(t.trip_end); end.setDate(end.getDate() + 1)
-        return !Number.isNaN(end) && end >= now
+    const tripsWithCommittedInstance = trips
+      .map((t) => {
+        const committedInstance = t.instances.find(
+          (inst) => inst._id?.toString() === t.committedInstanceId?.toString()
+        )
+        return { ...t, committedInstance }
       })
-      .sort((a, b) => new Date(a.trip_start) - new Date(b.trip_start))
+      .filter((t) => t.committedInstance)
+      .sort((a, b) => new Date(a.committedInstance.trip_start) - new Date(b.committedInstance.trip_start))
+
+    const upcoming = tripsWithCommittedInstance.filter((t) => {
+      const end = new Date(t.committedInstance.trip_end); end.setDate(end.getDate() + 1)
+      return !Number.isNaN(end) && end >= now
+    })
 
     const f = upcoming[0] || null
     const rest = f ? upcoming.slice(1) : upcoming
 
     const byYear = rest.reduce((acc, t) => {
-      const y = new Date(t.trip_end).getFullYear()
+      const y = new Date(t.committedInstance.trip_end).getFullYear()
       ;(acc[y] ||= []).push(t)
       return acc
     }, {})
 
     Object.keys(byYear).forEach((y) =>
-      byYear[y].sort((a, b) => new Date(a.trip_start) - new Date(b.trip_start))
+      byYear[y].sort((a, b) => new Date(a.committedInstance.trip_start) - new Date(b.committedInstance.trip_start))
     )
 
     const years = Object.keys(byYear).map(Number).sort((a, b) => b - a)
@@ -190,7 +200,7 @@ const MyTrips = () => {
   }
 
   const showEmpty = !featured && orderedYears.length === 0
-  const countdown = featured ? nextTripCountdown(featured.trip_start, featured.trip_end) : null
+  const countdown = featured ? nextTripCountdown(featured.committedInstance.trip_start, featured.committedInstance.trip_end) : null
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50">
@@ -244,7 +254,7 @@ const MyTrips = () => {
                       {featured.location_address}
                     </h2>
                     <p className="text-sm text-slate-600">
-                      {fmtRange(featured.trip_start, featured.trip_end)}
+                      {fmtRange(featured.committedInstance.trip_start, featured.committedInstance.trip_end)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">

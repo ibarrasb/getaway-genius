@@ -15,6 +15,7 @@ const TripOverview = () => {
   const [weatherLoading, setWeatherLoading] = useState(false)
   const [funPlacesLoading, setFunPlacesLoading] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [committingId, setCommittingId] = useState(null)
   const [newInstance, setNewInstance] = useState({
     trip_start: '',
     trip_end: '',
@@ -193,6 +194,32 @@ const TripOverview = () => {
       });
     }
   };
+
+  const handleCommitInstance = async (instanceId) => {
+    if (!instanceId || committingId) return
+    
+    setCommittingId(instanceId)
+    
+    try {
+      const { data } = await axios.patch(
+        `/api/trips/getaway/${tripId}/instances/${instanceId}/commit`,
+        {},
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+          } 
+        }
+      )
+      
+      setTrip(data.trip)
+      setTripInstances(data.trip.instances || [])
+    } catch (err) {
+      console.error('Error committing instance:', err)
+      alert('Failed to commit instance. Try again.')
+    } finally {
+      setCommittingId(null)
+    }
+  }
   
 
   if (loading) {
@@ -339,10 +366,22 @@ const TripOverview = () => {
                     <Link
                       to={`/trips/${tripId}/instances/${instance._id || index}`}
                       state={{ trip, instance }}
-                      className="block w-full text-center bg-slate-100 text-slate-700 py-2 rounded-lg hover:bg-slate-200 transition-colors"
+                      className="block w-full text-center bg-slate-100 text-slate-700 py-2 rounded-lg hover:bg-slate-200 transition-colors mb-2"
                     >
                       View Details
                     </Link>
+                    
+                    <button
+                      onClick={() => handleCommitInstance(instance._id)}
+                      disabled={committingId === instance._id || instance.isCommitted}
+                      className={`block w-full text-center py-2 rounded-lg transition-colors ${
+                        instance.isCommitted 
+                          ? 'bg-green-100 text-green-700 ring-1 ring-green-300 cursor-default' 
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      } ${committingId === instance._id ? 'opacity-50 cursor-wait' : ''}`}
+                    >
+                      {committingId === instance._id ? 'Committing...' : instance.isCommitted ? 'Committed ✓' : 'Commit Trip'}
+                    </button>
                   </div>
 
             ))}

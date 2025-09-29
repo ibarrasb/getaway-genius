@@ -22,6 +22,7 @@ router
   .put(tripCtrl.updateTrip); // add `auth` here too if you want edits protected
 
 router.post('/getaway/:id/instances', tripCtrl.addTripInstance);
+router.patch('/getaway/:id/instances/:instanceId/commit', auth, tripCtrl.commitTripInstance);
 router.delete('/getaway/:id/instances/:instanceId', tripCtrl.deleteTripInstance);
 
 export default router;
