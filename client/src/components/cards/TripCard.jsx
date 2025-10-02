@@ -188,7 +188,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
     if (imgSrc !== PLACEHOLDER_IMG) setImgSrc(PLACEHOLDER_IMG)
   }
 
-  const priceLabel = totalCost > 0 ? `$${totalCost.toFixed(2)}` : "Needs attention"
+  const instanceNumber = trip.instances.length > 0 ? `${trip.instances.length} instance` : "Create Instance"
   const isIncomplete = totalCost <= 0
 
   return (
@@ -293,7 +293,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
                 <circle cx="12" cy="12" r="9" />
               </svg>
             )}
-            {priceLabel}
+            {instanceNumber}
           </span>
           {instance && (
             <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-200">
