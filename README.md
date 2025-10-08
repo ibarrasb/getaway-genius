@@ -42,14 +42,36 @@ A full-stack travel planning application that helps users create, manage, and or
 - npm 10.x [0-cite-18](#0-cite-18)   
 - MongoDB database  
   
-### Environment Variables  
+### Backend Environment Variables  
 Create a `.env` file in the root directory with:  
 ```  
 MONGODB_URL=your_mongodb_connection_string  
 ACCESS_TOKEN_SECRET=your_jwt_access_secret  
 REFRESH_TOKEN_SECRET=your_jwt_refresh_secret  
 CLIENT_ORIGIN=http://localhost:3000  
+GOOGLEAPIKEY=your_google_maps_api_key_for_backend  
+OPENWEATHERAPIKEY=your_openweather_api_key  
+OPENAI_API_KEY=your_openai_api_key  
+```
+
+### Frontend Environment Variables  
+Create a `.env` file in the `client/` directory with:  
 ```  
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key  
+```  
+
+**Required Google Cloud APIs:**  
+- Maps JavaScript API  
+- Places API (New)  
+
+**Development Setup:**  
+- Enable both APIs in your Google Cloud Console  
+- Add API key restrictions:  
+  - Application restrictions: HTTP referrers  
+  - Website restrictions: `http://localhost:5173/*`  
+- For production, add your production domain to the referrer list  
+
+**Note:** Do not commit API keys to the repository. The `.env` files are already in `.gitignore`.  
   
 ### Installation  
 ```bash  
@@ -135,4 +157,4 @@ ISC License [0-cite-30](#0-cite-30)
   
 ## Notes  
   
-The application uses ES modules throughout both client and server code [0-cite-31](#0-cite-31) [0-cite-32](#0-cite-32) . The development setup uses `concurrently` to run both frontend and backend simultaneously, while production serves the built React app through the Express server. The codebase includes both older Material-UI components and newer Tailwind-styled components, indicating ongoing modernization efforts.  
+The application uses ES modules throughout both client and server code [0-cite-31](#0-cite-31) [0-cite-32](#0-cite-32) . The development setup uses `concurrently` to run both frontend and backend simultaneously, while production serves the built React app through the Express server. The codebase includes both older Material-UI components and newer Tailwind-styled components, indicating ongoing modernization efforts.    

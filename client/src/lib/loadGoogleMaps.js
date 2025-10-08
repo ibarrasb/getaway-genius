@@ -1,17 +1,16 @@
 // src/utils/loadGoogleMaps.js
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+
 export async function loadGoogleMaps() {
-    if (!window.google || !window.google.maps) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_FRONTENDGOOGLEKEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-  
-      document.head.appendChild(script);
-  
-      await new Promise((resolve, reject) => {
-        script.onload = resolve;
-        script.onerror = () => reject(new Error("Google Maps JS failed to load"));
-      });
-    }
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    return { Map: null, places: null, google: null, disabled: true };
   }
+  setOptions({ apiKey, version: 'weekly', libraries: ['places'] });
+  const [{ Map }, places] = await Promise.all([
+    importLibrary('maps'),
+    importLibrary('places'),
+  ]);
+  return { Map, places, google: window.google, disabled: false };
+}
   
