@@ -4,26 +4,18 @@ import auth from '../middleware/auth.js';
 
 const router = Router();
 
-// Routes for managing wishlists
-router.route('/createlist')
-  .post(wishCtrl.createWishlist);
+router.route('/createlist').post(auth, wishCtrl.createWishlist);
 
-router.route('/getlists')
-  .get(wishCtrl.fetchLists);
+router.route('/getlists').get(auth, wishCtrl.fetchLists);
 
-router.route('/spec-wishlist/:id')
-  .get(wishCtrl.fetchWishlist);
+router.route('/spec-wishlist/:id').get(auth, wishCtrl.fetchWishlist);
 
-router.route('/editlist/:id')
-  .put(wishCtrl.updateList);
+router.route('/editlist/:id').put(auth, wishCtrl.updateList);
 
-router.route('/addtrip/:id')
-  .post(wishCtrl.addTripToWishlist);
+router.route('/addtrip/:id').post(auth, wishCtrl.addTripToWishlist);
 
-router.route('/:wishlistId/remove-trip/:tripId')
-  .delete(wishCtrl.removeTripFromWishlist);
+router.route('/:wishlistId/remove-trip/:tripId').delete(auth, wishCtrl.removeTripFromWishlist);
 
-router.route('/removewishlist/:id')
-  .delete(wishCtrl.removeWishlist);
+router.route('/removewishlist/:id').delete(auth, wishCtrl.removeWishlist);
 
 export default router;

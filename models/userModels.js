@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
 
+/**
+ * Schema for user accounts with authentication and profile data
+ */
 const userSchema = new mongoose.Schema(
   {
     fname: {

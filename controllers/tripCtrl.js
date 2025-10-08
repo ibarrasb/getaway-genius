@@ -1,8 +1,12 @@
-import Trips from '../models/tripModels.js';  
+import Trips from '../models/tripModels.js';
 import Wishlist from '../models/wishlistModel.js';
 import mongoose from 'mongoose';
 
-// GET /getaway-trip?email=...
+/**
+ * Get all trips for a user by email
+ * @param {Object} req - Express request with email query param
+ * @param {Object} res - Express response
+ */
 export const getTrips = async (req, res) => {
   try {
     const user_email = req.query.email;
@@ -24,7 +28,11 @@ export const getFavoriteTrips = async (req, res) => {
   }
 };
 
-// POST /getaway-trip
+/**
+ * Create a new trip with optional instances
+ * @param {Object} req - Express request with trip data in body
+ * @param {Object} res - Express response
+ */
 export const createTrips = async (req, res) => {
   try {
     const {
@@ -67,23 +75,20 @@ export const createTrips = async (req, res) => {
 };
 
 // DELETE /getaway/:id
-export const deleteTrip = async (req, res) => {  
-  try {  
-    const tripId = req.params.id;  
-      
-    // Remove trip from all wishlists that contain it  
-    await Wishlist.updateMany(  
-      { "trips._id": tripId },  
-      { $pull: { trips: { _id: tripId } } }  
-    );  
-      
-    // Delete the trip itself  
-    await Trips.findByIdAndDelete(tripId);  
-      
-    res.json({ msg: 'Deleted a Trip and removed from all wishlists' });  
-  } catch (err) {  
-    return res.status(500).json({ msg: err.message });  
-  }  
+export const deleteTrip = async (req, res) => {
+  try {
+    const tripId = req.params.id;
+
+    // Remove trip from all wishlists that contain it
+    await Wishlist.updateMany({ 'trips._id': tripId }, { $pull: { trips: { _id: tripId } } });
+
+    // Delete the trip itself
+    await Trips.findByIdAndDelete(tripId);
+
+    res.json({ msg: 'Deleted a Trip and removed from all wishlists' });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
 };
 
 // PUT /getaway/:id
@@ -138,7 +143,11 @@ export const getSpecificTrip = async (req, res) => {
   }
 };
 
-//TRIP INSTANCES------------
+/**
+ * Add a new instance to an existing trip
+ * @param {Object} req - Express request with trip ID in params and instance data in body
+ * @param {Object} res - Express response
+ */
 export const addTripInstance = async (req, res) => {
   try {
     const { id } = req.params;
@@ -181,6 +190,11 @@ export const addTripInstance = async (req, res) => {
   }
 };
 
+/**
+ * Commit a specific trip instance
+ * @param {Object} req - Express request with trip ID and instance ID in params
+ * @param {Object} res - Express response
+ */
 export const commitTripInstance = async (req, res) => {
   try {
     const { id, instanceId } = req.params;
@@ -192,9 +206,7 @@ export const commitTripInstance = async (req, res) => {
     const trip = await Trips.findById(id);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
-    const instanceExists = trip.instances.some(
-      (inst) => inst._id.toString() === instanceId
-    );
+    const instanceExists = trip.instances.some((inst) => inst._id.toString() === instanceId);
     if (!instanceExists) {
       return res.status(404).json({ msg: 'Instance not found' });
     }
@@ -202,7 +214,7 @@ export const commitTripInstance = async (req, res) => {
     trip.instances.forEach((inst) => {
       inst.isCommitted = inst._id.toString() === instanceId;
     });
-    trip.committedInstanceId = new mongoose.Types.ObjectId(String(instanceId));
+    trip.committedInstanceId = instanceId;
 
     await trip.save();
 
@@ -223,9 +235,7 @@ export const getTripInstance = async (req, res) => {
     const trip = await Trips.findById(id);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
-    const instance = trip.instances.find(
-      (inst) => inst._id.toString() === instanceId
-    );
+    const instance = trip.instances.find((inst) => inst._id.toString() === instanceId);
 
     if (!instance) {
       return res.status(404).json({ msg: 'Instance not found' });
@@ -252,9 +262,7 @@ export const deleteTripInstance = async (req, res) => {
       trip.committedInstanceId = null;
     }
 
-    trip.instances = trip.instances.filter(
-      (inst) => inst._id.toString() !== instanceId
-    );
+    trip.instances = trip.instances.filter((inst) => inst._id.toString() !== instanceId);
 
     await trip.save();
 
@@ -266,6 +274,3 @@ export const deleteTripInstance = async (req, res) => {
     return res.status(500).json({ msg: err.message });
   }
 };
-
-
-
