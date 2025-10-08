@@ -9,7 +9,11 @@ const createAccessToken = (user) =>
 const createRefreshToken = (user) =>
   jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
 
-// Register
+/**
+ * Register a new user with hashed password and issue tokens
+ * @param {Object} req - Express request with user data in body
+ * @param {Object} res - Express response
+ */
 export const register = async (req, res) => {
   try {
     const { fname, lname, email, password, birthday, city, state, zip } = req.body;
@@ -23,7 +27,14 @@ export const register = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const newUser = new Users({
-      fname, lname, email, password: passwordHash, birthday, city, state, zip,
+      fname,
+      lname,
+      email,
+      password: passwordHash,
+      birthday,
+      city,
+      state,
+      zip,
     });
 
     await newUser.save();
@@ -31,13 +42,13 @@ export const register = async (req, res) => {
     const accesstoken = createAccessToken({ id: newUser._id });
     const refreshtoken = createRefreshToken({ id: newUser._id });
 
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie('refreshtoken', refreshtoken, {
       httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'strict' : 'lax',
       path: '/api/user/refresh_token',
-      // optional hardening:
-      // secure: process.env.NODE_ENV === 'production',
-      // sameSite: 'strict',
-      // maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
     res.json({ accesstoken });
@@ -46,7 +57,11 @@ export const register = async (req, res) => {
   }
 };
 
-// Login
+/**
+ * Login user with email and password
+ * @param {Object} req - Express request with email and password
+ * @param {Object} res - Express response
+ */
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -60,12 +75,13 @@ export const login = async (req, res) => {
     const accesstoken = createAccessToken({ id: user._id });
     const refreshtoken = createRefreshToken({ id: user._id });
 
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie('refreshtoken', refreshtoken, {
       httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'strict' : 'lax',
       path: '/api/user/refresh_token',
-      // secure: process.env.NODE_ENV === 'production',
-      // sameSite: 'strict',
-      // maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
     res.json({ accesstoken });
