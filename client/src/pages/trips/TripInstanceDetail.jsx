@@ -2,42 +2,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import axios from "axios";
-import { parse, format as formatFn } from "date-fns";
-import { ArrowLeft, Edit2, Save, X, Calendar as CalendarIcon, Clock3 } from "lucide-react";
+import { Edit2, Save, X, Calendar as CalendarIcon, Clock3 } from "lucide-react";
 import TripDateRange from "@/components/TripDateRange";
 import BackButton from "@/components/BackButton";
-
-/** -------- date helpers: parse & format as LOCAL calendar dates -------- */
-const pickYmd = (s) => (typeof s === "string" ? (s.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? null) : null);
-const toLocalDate = (input) => {
-  if (!input) return null;
-  // works for 'yyyy-MM-dd' and for ISO like 'yyyy-MM-ddTHH:mm:ssZ'
-  const ymd = pickYmd(input);
-  if (ymd) return parse(ymd, "yyyy-MM-dd", new Date());
-  const d = new Date(input);
-  return Number.isNaN(d.getTime()) ? null : d;
-};
-const toYmdLocal = (input) => {
-  const d = toLocalDate(input);
-  return d ? formatFn(d, "yyyy-MM-dd") : "";
-};
-const toMMDDYYYY = (input) => {
-  const d = toLocalDate(input);
-  if (!d) return "Not set";
-  // strict MM/DD/YYYY for your UI
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${mm}/${dd}/${yyyy}`;
-};
-const daysBetween = (startYmd, endYmd) => {
-  const s = toLocalDate(startYmd);
-  const e = toLocalDate(endYmd);
-  if (!s || !e) return null;
-  const msPerDay = 24 * 60 * 60 * 1000;
-  // difference in *nights* (end - start)
-  return Math.round((e - s) / msPerDay);
-};
+import {
+  toYmdLocal,
+  formatMMDDYYYYLocal,
+  nightsBetween,
+} from "../utils/localDates";
 
 const TripInstanceDetail = () => {
   const { tripId, instanceId } = useParams();
@@ -71,7 +43,7 @@ const TripInstanceDetail = () => {
     if (!isNaN(value) || value === "") setFormData((p) => ({ ...p, [key]: value }));
   };
 
-  const nights = daysBetween(formData.trip_start, formData.trip_end);
+  const nights = nightsBetween(formData.trip_start, formData.trip_end);
   const total =
     (Number(formData.stay_expense) || 0) +
     (Number(formData.travel_expense) || 0) +
@@ -97,12 +69,12 @@ const TripInstanceDetail = () => {
     fetchTripInstance();
   }, [tripId, instanceId, trip, instance]);
 
-  // normalize instance -> form (as yyy-mm-dd strings; no UTC conversion)
+  // normalize instance -> form (as yyyy-MM-dd strings; no UTC conversion)
   useEffect(() => {
     if (instance) {
       setFormData({
-        trip_start: toYmdLocal(instance.trip_start), // <- local date string
-        trip_end: toYmdLocal(instance.trip_end),     // <- local date string
+        trip_start: toYmdLocal(instance.trip_start),
+        trip_end: toYmdLocal(instance.trip_end),
         stay_expense: instance.stay_expense ?? 0,
         travel_expense: instance.travel_expense ?? 0,
         car_expense: instance.car_expense ?? 0,
@@ -153,7 +125,7 @@ const TripInstanceDetail = () => {
       <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-slate-800 mb-2">Trip instance not found</h2>
-          <Link to="/explore" className="text-indigo-600 hover:text-indigo-700">Return to Explore</Link>
+        <Link to="/explore" className="text-indigo-600 hover:text-indigo-700">Return to Explore</Link>
         </div>
       </div>
     );
@@ -229,7 +201,7 @@ const TripInstanceDetail = () => {
                   <div>
                     <p className="text-xs uppercase tracking-wide text-slate-500">Trip Dates</p>
                     <p className="text-lg font-semibold text-slate-900">
-                      {toMMDDYYYY(formData.trip_start)} — {toMMDDYYYY(formData.trip_end)}
+                      {formatMMDDYYYYLocal(formData.trip_start)} — {formatMMDDYYYYLocal(formData.trip_end)}
                     </p>
                     <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
                       <Clock3 className="h-4 w-4" />
@@ -360,3 +332,4 @@ const TripInstanceDetail = () => {
 };
 
 export default TripInstanceDetail;
+
