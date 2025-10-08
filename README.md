@@ -38,8 +38,8 @@ A full-stack travel planning application that helps users create, manage, and or
 ## Installation & Setup  
   
 ### Prerequisites  
-- Node.js 22.x [0-cite-17](#0-cite-17)   
-- npm 10.x [0-cite-18](#0-cite-18)   
+- Node.js 22.x (preferred) or 23.x (supported) - CI runs on 22.x for stability
+- npm 10.x or higher
 - MongoDB database  
   
 ### Environment Variables  
@@ -135,4 +135,4 @@ ISC License [0-cite-30](#0-cite-30)
   
 ## Notes  
   
-The application uses ES modules throughout both client and server code [0-cite-31](#0-cite-31) [0-cite-32](#0-cite-32) . The development setup uses `concurrently` to run both frontend and backend simultaneously, while production serves the built React app through the Express server. The codebase includes both older Material-UI components and newer Tailwind-styled components, indicating ongoing modernization efforts.  
+The application uses ES modules throughout both client and server code [0-cite-31](#0-cite-31) [0-cite-32](#0-cite-32) . The development setup uses `concurrently` to run both frontend and backend simultaneously, while production serves the built React app through the Express server. The codebase includes both older Material-UI components and newer Tailwind-styled components, indicating ongoing modernization efforts.    

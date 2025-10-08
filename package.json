@@ -21,8 +21,8 @@
   "author": "",
   "license": "ISC",
   "engines": {
-    "node": "22.x",
-    "npm": "10.x"
+    "node": ">=18",
+    "npm": ">=10"
   },
   "dependencies": {
     "axios": "^1.7.5",
