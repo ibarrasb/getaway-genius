@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useContext } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
+import { parse } from "date-fns";
 import {
   WiDaySunny,
   WiCloud,
@@ -15,7 +16,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { GlobalState } from "../../context/GlobalState";
-import TripDateRange from "@/components/TripDateRange"; // ⬅️ shared component
+import TripDateRange from "@/components/TripDateRange"; // shared component
 
 const TripOverview = () => {
   const state = useContext(GlobalState);
@@ -66,15 +67,33 @@ const TripOverview = () => {
     (Number(instance.car_expense) || 0) +
     (Number(instance.other_expense) || 0);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "Not set";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+  // Displays both legacy ISO strings and new yyyy-MM-dd strings correctly (no TZ shift)
+  const formatDate = (dateInput) => {
+    if (!dateInput) return "Not set";
+  
+    // If it's a string, grab the leading YYYY-MM-DD (works for both 'yyyy-MM-dd'
+    // and ISO like 'yyyy-MM-ddTHH:mm:ssZ'). This avoids timezone shifts.
+    if (typeof dateInput === "string") {
+      const match = dateInput.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (match) {
+        const asLocal = parse(match[1], "yyyy-MM-dd", new Date());
+        return asLocal.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+      }
+    }
+  
+    // Fallback for Date objects or other formats.
+    const d = new Date(dateInput);
+    return d.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
   };
+  
 
   // -------- fetchers --------
   const fetchWeatherData = useCallback(async (locationAddress) => {
@@ -173,12 +192,9 @@ const TripOverview = () => {
   const handleCreateInstance = async () => {
     try {
       const payload = {
-        trip_start: newInstance.trip_start
-          ? new Date(newInstance.trip_start).toISOString()
-          : null,
-        trip_end: newInstance.trip_end
-          ? new Date(newInstance.trip_end).toISOString()
-          : null,
+        // Keep local calendar dates exactly as chosen (no UTC conversion)
+        trip_start: newInstance.trip_start || null, // 'yyyy-MM-dd'
+        trip_end: newInstance.trip_end || null,     // 'yyyy-MM-dd'
         stay_expense: Number(newInstance.stay_expense || 0),
         travel_expense: Number(newInstance.travel_expense || 0),
         car_expense: Number(newInstance.car_expense || 0),
@@ -387,7 +403,7 @@ const TripOverview = () => {
                 <div className="flex items-center gap-2 mb-3">
                   <CalendarIcon className="h-4 w-4 text-slate-500" />
                   <span className="text-sm text-slate-600">
-                    {formatDate(instance.trip_start)} - {formatDate(instance.trip_end)}
+                    {formatDate(instance.trip_start + 1)} - {formatDate(instance.trip_end + 1)}
                   </span>
                 </div>
 
@@ -429,102 +445,55 @@ const TripOverview = () => {
       </div>
 
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">
-              Create New Trip Instance
-            </h3>
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="
+              bg-white rounded-xl md:rounded-2xl shadow-xl ring-1 ring-black/5
+              w-full max-w-sm sm:max-w-md md:max-w-lg
+              transform transition-transform duration-200 ease-out
+              -translate-y-2 sm:-translate-y-4 md:-translate-y-8
+              max-h-[85vh] overflow-y-auto
+            "
+          >
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                Create New Trip Instance
+              </h3>
 
-            <div className="space-y-4">
-              {/* Date range (shared component) */}
-              <TripDateRange
-                newInstance={newInstance}
-                setNewInstance={setNewInstance}
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Stay
-                  </label>
-                  <input
-                    type="number"
-                    value={newInstance.stay_expense}
-                    onChange={(e) =>
-                      setNewInstance({ ...newInstance, stay_expense: e.target.value })
-                    }
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                    placeholder="0"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Travel
-                  </label>
-                  <input
-                    type="number"
-                    value={newInstance.travel_expense}
-                    onChange={(e) =>
-                      setNewInstance({ ...newInstance, travel_expense: e.target.value })
-                    }
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                    placeholder="0"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Car
-                  </label>
-                  <input
-                    type="number"
-                    value={newInstance.car_expense}
-                    onChange={(e) =>
-                      setNewInstance({ ...newInstance, car_expense: e.target.value })
-                    }
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                    placeholder="0"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Other
-                  </label>
-                  <input
-                    type="number"
-                    value={newInstance.other_expense}
-                    onChange={(e) =>
-                      setNewInstance({ ...newInstance, other_expense: e.target.value })
-                    }
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                    placeholder="0"
-                  />
-                </div>
+              <div className="space-y-4">
+                {/* Date range (shared component) */}
+                <TripDateRange
+                  newInstance={newInstance}
+                  setNewInstance={setNewInstance}
+                />
               </div>
-            </div>
 
-            <div className="flex gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 border border-slate-300 text-slate-700 py-2 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateInstance}
-                disabled={!newInstance.trip_start || !newInstance.trip_end}
-                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Create
-              </button>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 border border-slate-300 text-slate-700 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateInstance}
+                  disabled={!newInstance.trip_start || !newInstance.trip_end}
+                  className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Create
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };

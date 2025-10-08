@@ -1,182 +1,221 @@
 // src/pages/mytrips/MyTrips.jsx
-import { useContext, useEffect, useMemo, useState } from "react"
-import { Link, useNavigate, useLocation } from "react-router-dom"
-import axios from "axios"
-import { GlobalState } from "@/context/GlobalState.jsx"
-import TripCard from "@/components/cards/TripCard.jsx"
-import { useDataRefresh } from "@/hooks/useDataRefresh.js"
-import { useToast } from "@/context/ToastContext.jsx"
-// import FloatingCreateButton from "@/components/FloatingCreateButton.jsx"
-import { MOCK_TRIPS } from "@/mocks/trips"
+import { useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import { parse } from "date-fns";
+import { GlobalState } from "@/context/GlobalState.jsx";
+import TripCard from "@/components/cards/TripCard.jsx";
+import { useDataRefresh } from "@/hooks/useDataRefresh.js";
+import { useToast } from "@/context/ToastContext.jsx";
+import { MOCK_TRIPS } from "@/mocks/trips";
 
-const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
+
+// Parse server values as LOCAL calendar dates (no UTC shift).
+const toLocalDate = (input) => {
+  if (!input) return null;
+  if (typeof input === "string") {
+    const m = input.match(/^(\d{4}-\d{2}-\d{2})/); // matches 'yyyy-MM-dd' or ISO leading part
+    if (m) return parse(m[1], "yyyy-MM-dd", new Date());
+  }
+  const d = new Date(input);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
 
 const MyTrips = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const state = useContext(GlobalState)
-  const api = state?.userAPI ?? state?.UserAPI
-  const [email] = api?.email ?? [""]
-  const [isLogged] = api?.isLogged ?? [false]
-  const [token] = state?.token ?? [null]
-  const { refetchTrips, refetchWishlists } = useDataRefresh()
-  const { success, error: showError } = useToast()
+  const navigate = useNavigate();
+  const location = useLocation();
+  const state = useContext(GlobalState);
+  const api = state?.userAPI ?? state?.UserAPI;
+  const [email] = api?.email ?? [""];
+  const [isLogged] = api?.isLogged ?? [false];
+  const [token] = state?.token ?? [null];
+  const { refetchTrips, refetchWishlists } = useDataRefresh();
+  const { success, error: showError } = useToast();
 
-  const [trips, setTrips] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [deletingIds, setDeletingIds] = useState(new Set())
-  const [error, setError] = useState(null)
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deletingIds, setDeletingIds] = useState(new Set());
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const controller = new AbortController()
+    const controller = new AbortController();
     const run = async () => {
       if (USE_MOCKS) {
-        setTrips(MOCK_TRIPS)
-        setLoading(false)
-        return
+        setTrips(MOCK_TRIPS);
+        setLoading(false);
+        return;
       }
       if (!email) {
-        setTrips([])
-        setLoading(false)
-        return
+        setTrips([]);
+        setLoading(false);
+        return;
       }
       try {
-        setLoading(true)
-        setError(null)
+        setLoading(true);
+        setError(null);
         const res = await axios.get("/api/trips/getaway-trip", {
           params: { email },
           signal: controller.signal,
-        })
-        const allTrips = Array.isArray(res.data) ? res.data : []
-        const committedTrips = allTrips.filter(t => t.committedInstanceId)
-        setTrips(committedTrips)
+        });
+        const allTrips = Array.isArray(res.data) ? res.data : [];
+        const committedTrips = allTrips.filter((t) => t.committedInstanceId);
+        setTrips(committedTrips);
       } catch (err) {
         if (err.name !== "CanceledError") {
-          console.error(err)
-          setError("Failed to load trips.")
-          setTrips([])
+          console.error(err);
+          setError("Failed to load trips.");
+          setTrips([]);
         }
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    run()
-    return () => controller.abort()
-  }, [email])
+    };
+    run();
+    return () => controller.abort();
+  }, [email]);
 
   const removePost = async (id) => {
-    if (!id || deletingIds.has(id)) return
-    if (!confirm("Do you want to delete this trip?")) return
-    
-    setDeletingIds(prev => new Set([...prev, id]))
-    
+    if (!id || deletingIds.has(id)) return;
+    if (!confirm("Do you want to delete this trip?")) return;
+
+    setDeletingIds((prev) => new Set([...prev, id]));
+
     try {
-      setTrips((prev) => prev.filter((t) => t._id !== id))
-      
-      const headers = token ? { Authorization: token } : undefined
-      await axios.delete(`/api/trips/getaway/${id}`, { headers })
-      
+      setTrips((prev) => prev.filter((t) => t._id !== id));
+
+      const headers = token ? { Authorization: token } : undefined;
+      await axios.delete(`/api/trips/getaway/${id}`, { headers });
+
       if (location.pathname === `/trips/${id}`) {
-        navigate('/explore')
+        navigate("/explore");
       }
-      
-      await Promise.all([refetchTrips(), refetchWishlists()])
-      
-      success("Trip deleted successfully")
+
+      await Promise.all([refetchTrips(), refetchWishlists()]);
+      success("Trip deleted successfully");
     } catch (err) {
-      console.error(err)
+      console.error(err);
       try {
-        const headers = token ? { Authorization: token } : undefined
-        const res = await axios.get("/api/trips/getaway-trip", { headers })
-        setTrips(res.data || [])
+        const headers = token ? { Authorization: token } : undefined;
+        const res = await axios.get("/api/trips/getaway-trip", { headers });
+        setTrips(res.data || []);
       } catch (refetchError) {
-        console.error("Error refetching trips:", refetchError)
+        console.error("Error refetching trips:", refetchError);
       }
-      showError("Failed to delete trip. Please try again.")
+      showError("Failed to delete trip. Please try again.");
     } finally {
-      setDeletingIds(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(id)
-        return newSet
-      })
+      setDeletingIds((prev) => {
+        const ns = new Set(prev);
+        ns.delete(id);
+        return ns;
+      });
     }
-  }
+  };
 
   // helpers
   const fmtRange = (start, end) => {
-    const s = new Date(start), e = new Date(end)
-    const sameMonth = s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear()
-    const mo = (d) => d.toLocaleString(undefined, { month: "short" })
+    const s = toLocalDate(start);
+    const e = toLocalDate(end);
+    if (!s || !e) return "Not set";
+    const sameMonth = s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear();
+    const mo = (d) => d.toLocaleString(undefined, { month: "short" });
     return sameMonth
       ? `${mo(s)} ${s.getDate()}–${e.getDate()}`
-      : `${mo(s)} ${s.getDate()} – ${mo(e)} ${e.getDate()}`
-  }
+      : `${mo(s)} ${s.getDate()} – ${mo(e)} ${e.getDate()}`;
+  };
+
   const totalCost = (t) =>
-    (Number(t.stay_expense) || 0) + (Number(t.car_expense) || 0) + (Number(t.travel_expense) || 0) + (Number(t.other_expense) || 0)
+    (Number(t.stay_expense) || 0) +
+    (Number(t.car_expense) || 0) +
+    (Number(t.travel_expense) || 0) +
+    (Number(t.other_expense) || 0);
 
-  // countdown helper
   const nextTripCountdown = (start, end) => {
-    const now = new Date()
-    const s = new Date(start)
-    const e = new Date(end)
+    const now = new Date();
+    const s = toLocalDate(start);
+    const e = toLocalDate(end);
+    if (!s || !e) return null;
 
-    if (Number.isNaN(s) || Number.isNaN(e)) return null
+    // treat end date as inclusive (add one day at local midnight)
+    const eInclusive = new Date(e);
+    eInclusive.setDate(eInclusive.getDate() + 1);
 
-    if (now >= s && now <= e) {
-      return { label: "Happening now", tone: "emerald" }
+    if (now >= s && now < eInclusive) {
+      return { label: "Happening now", tone: "emerald" };
     }
 
-    const ms = s - now
-    const oneHour = 1000 * 60 * 60
-    const oneDay = oneHour * 24
+    const ms = s - now;
+    const oneHour = 1000 * 60 * 60;
+    const oneDay = oneHour * 24;
 
     if (ms > 0 && ms < oneDay) {
-      const hours = Math.max(1, Math.ceil(ms / oneHour))
-      return { label: `In ${hours} hour${hours === 1 ? "" : "s"}`, tone: "indigo" }
+      const hours = Math.max(1, Math.ceil(ms / oneHour));
+      return { label: `In ${hours} hour${hours === 1 ? "" : "s"}`, tone: "indigo" };
     }
 
-    const days = Math.ceil(ms / oneDay)
-    if (days === 0) return { label: "Today", tone: "indigo" }
-    if (days === 1) return { label: "Tomorrow", tone: "indigo" }
-    if (days > 1) return { label: `${days} days until your next trip`, tone: "indigo" }
+    const days = Math.ceil(ms / oneDay);
+    if (days === 0) return { label: "Today", tone: "indigo" };
+    if (days === 1) return { label: "Tomorrow", tone: "indigo" };
+    if (days > 1) return { label: `${days} days until your next trip`, tone: "indigo" };
 
-    return { label: "Starts soon", tone: "indigo" }
-  }
+    return { label: "Starts soon", tone: "indigo" };
+  };
 
-  // compute featured (soonest upcoming by start date), and the rest grouped by year
+  // compute featured (soonest upcoming), and the rest grouped by year — all using local dates
   const { featured, groups, orderedYears } = useMemo(() => {
-    const now = new Date()
+    const now = new Date();
+
     const tripsWithCommittedInstance = trips
       .map((t) => {
         const committedInstance = t.instances.find(
           (inst) => inst._id?.toString() === t.committedInstanceId?.toString()
-        )
-        return { ...t, committedInstance }
+        );
+        return { ...t, committedInstance };
       })
-      .filter((t) => t.committedInstance)
-      .sort((a, b) => new Date(a.committedInstance.trip_start) - new Date(b.committedInstance.trip_start))
+      .filter((t) => t.committedInstance);
 
+    // sort by local start date
+    tripsWithCommittedInstance.sort((a, b) => {
+      const as = toLocalDate(a.committedInstance.trip_start);
+      const bs = toLocalDate(b.committedInstance.trip_start);
+      return (as?.getTime() ?? 0) - (bs?.getTime() ?? 0);
+    });
+
+    // keep upcoming: end date inclusive
     const upcoming = tripsWithCommittedInstance.filter((t) => {
-      const end = new Date(t.committedInstance.trip_end); end.setDate(end.getDate() + 1)
-      return !Number.isNaN(end) && end >= now
-    })
+      const end = toLocalDate(t.committedInstance.trip_end);
+      if (!end) return false;
+      const endInclusive = new Date(end);
+      endInclusive.setDate(endInclusive.getDate() + 1);
+      return endInclusive >= now;
+    });
 
-    const f = upcoming[0] || null
-    const rest = f ? upcoming.slice(1) : upcoming
+    const f = upcoming[0] || null;
+    const rest = f ? upcoming.slice(1) : upcoming;
 
+    // group others by end-year (local)
     const byYear = rest.reduce((acc, t) => {
-      const y = new Date(t.committedInstance.trip_end).getFullYear()
-      ;(acc[y] ||= []).push(t)
-      return acc
-    }, {})
+      const end = toLocalDate(t.committedInstance.trip_end);
+      if (!end) return acc;
+      const y = end.getFullYear();
+      (acc[y] ||= []).push(t);
+      return acc;
+    }, {});
 
     Object.keys(byYear).forEach((y) =>
-      byYear[y].sort((a, b) => new Date(a.committedInstance.trip_start) - new Date(b.committedInstance.trip_start))
-    )
+      byYear[y].sort((a, b) => {
+        const as = toLocalDate(a.committedInstance.trip_start);
+        const bs = toLocalDate(b.committedInstance.trip_start);
+        return (as?.getTime() ?? 0) - (bs?.getTime() ?? 0);
+      })
+    );
 
-    const years = Object.keys(byYear).map(Number).sort((a, b) => b - a)
-    return { featured: f, groups: byYear, orderedYears: years }
-  }, [trips])
+    const years = Object.keys(byYear)
+      .map(Number)
+      .sort((a, b) => b - a);
+
+    return { featured: f, groups: byYear, orderedYears: years };
+  }, [trips]);
 
   // if not logged in (and not using mocks), show prompt
   if (!isLogged && !USE_MOCKS) {
@@ -186,7 +225,7 @@ const MyTrips = () => {
           Please log in to view your trips.
         </p>
       </div>
-    )
+    );
   }
 
   if (loading) {
@@ -196,11 +235,16 @@ const MyTrips = () => {
           Loading trips…
         </div>
       </div>
-    )
+    );
   }
 
-  const showEmpty = !featured && orderedYears.length === 0
-  const countdown = featured ? nextTripCountdown(featured.committedInstance.trip_start, featured.committedInstance.trip_end) : null
+  const showEmpty = !featured && orderedYears.length === 0;
+  const countdown = featured
+    ? nextTripCountdown(
+        featured.committedInstance.trip_start,
+        featured.committedInstance.trip_end
+      )
+    : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50">
@@ -254,48 +298,62 @@ const MyTrips = () => {
                       {featured.location_address}
                     </h2>
                     <p className="text-sm text-slate-600">
-                      {fmtRange(featured.committedInstance.trip_start, featured.committedInstance.trip_end)}
+                      {fmtRange(
+                        featured.committedInstance.trip_start,
+                        featured.committedInstance.trip_end
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="rounded-xl bg-indigo-50 px-4 py-2 text-indigo-700 ring-1 ring-indigo-200">
                       <span className="text-xs uppercase tracking-wide">Est. Total</span>
                       <div className="text-lg font-bold">
-                        {totalCost(featured.committedInstance) > 0 ? `$${totalCost(featured.committedInstance).toFixed(0)}` : "—"}
+                        {totalCost(featured.committedInstance) > 0
+                          ? `$${totalCost(featured.committedInstance).toFixed(0)}`
+                          : "—"}
                       </div>
                     </div>
                     <button
-                      onClick={() => navigate(`/trips/${featured._id}/instances/${featured.committedInstance._id}`)}
+                      onClick={() =>
+                        navigate(
+                          `/trips/${featured._id}/instances/${featured.committedInstance._id}`
+                        )
+                      }
                       className="rounded-xl bg-slate-900 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-slate-800"
                     >
                       View
                     </button>
                     <button
                       onClick={async () => {
-                        if (!confirm("Do you want to delete this committed instance?")) return
-                        setDeletingIds(prev => new Set([...prev, featured._id]))
+                        if (!confirm("Do you want to delete this committed instance?")) return;
+                        setDeletingIds((prev) => new Set([...prev, featured._id]));
                         try {
-                          const headers = token ? { Authorization: token } : undefined
-                          await axios.delete(`/api/trips/getaway/${featured._id}/instances/${featured.committedInstance._id}`, { headers })
-                          setTrips((prev) => prev.filter((t) => t._id !== featured._id))
-                          await Promise.all([refetchTrips(), refetchWishlists()])
-                          success("Instance deleted successfully")
-                          navigate('/mytrips')
+                          const headers = token ? { Authorization: token } : undefined;
+                          await axios.delete(
+                            `/api/trips/getaway/${featured._id}/instances/${featured.committedInstance._id}`,
+                            { headers }
+                          );
+                          setTrips((prev) => prev.filter((t) => t._id !== featured._id));
+                          await Promise.all([refetchTrips(), refetchWishlists()]);
+                          success("Instance deleted successfully");
+                          navigate("/mytrips");
                         } catch (err) {
-                          console.error(err)
-                          showError("Failed to delete instance. Please try again.")
+                          console.error(err);
+                          showError("Failed to delete instance. Please try again.");
                         } finally {
-                          setDeletingIds(prev => {
-                            const newSet = new Set(prev)
-                            newSet.delete(featured._id)
-                            return newSet
-                          })
+                          setDeletingIds((prev) => {
+                            const ns = new Set(prev);
+                            ns.delete(featured._id);
+                            return ns;
+                          });
                         }
                       }}
                       disabled={deletingIds.has(featured._id)}
-                      className={`rounded-xl bg-rose-600/90 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-rose-600 ${deletingIds.has(featured._id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`rounded-xl bg-rose-600/90 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-rose-600 ${
+                        deletingIds.has(featured._id) ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                     >
-                      {deletingIds.has(featured._id) ? 'Deleting...' : 'Delete'}
+                      {deletingIds.has(featured._id) ? "Deleting..." : "Delete"}
                     </button>
                   </div>
                 </div>
@@ -305,32 +363,33 @@ const MyTrips = () => {
         )}
 
         {/* Rest of upcoming trips (grouped by year) */}
-        {!showEmpty ? (
+        {orderedYears.length ? (
           orderedYears.map((year) => (
             <section key={year} className="mb-10">
               <h3 className="mb-4 text-2xl font-bold text-slate-900">{year}</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {groups[year].map((trip) => (
-                  <TripCard key={trip._id} trip={trip} instance={trip.committedInstance} onRemove={removePost} />
+                  <TripCard
+                    key={trip._id}
+                    trip={trip}
+                    instance={trip.committedInstance}
+                    onRemove={removePost}
+                  />
                 ))}
               </div>
             </section>
           ))
         ) : (
-          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-            <p className="text-lg font-semibold text-slate-900">Start planning your trips!</p>
-            <p className="mt-1 text-slate-600">You don&apos;t have any upcoming commited trips yet.</p>
-            {/* <Link
-              to="/search"
-              className="mt-6 inline-flex rounded-xl bg-indigo-600 px-5 py-2.5 font-semibold text-white shadow-md transition hover:bg-indigo-700"
-            >
-              Create your first trip
-            </Link> */}
-          </div>
+          !featured && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+              <p className="text-lg font-semibold text-slate-900">Start planning your trips!</p>
+              <p className="mt-1 text-slate-600">You don&apos;t have any upcoming committed trips yet.</p>
+            </div>
+          )
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MyTrips
+export default MyTrips;

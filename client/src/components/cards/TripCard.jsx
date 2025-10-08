@@ -1,58 +1,83 @@
 // src/components/cards/TripCard.jsx
-import { useContext, useEffect, useMemo, useState, useCallback } from "react"
-import { Link, useNavigate, useLocation } from "react-router-dom"
-import axios from "axios"
-import { GlobalState } from "@/context/GlobalState.jsx"
-import WishlistModal from "@/components/modals/WishlistModal"
-import { useDataRefresh } from "@/hooks/useDataRefresh.js"
-import { useToast } from "@/context/ToastContext.jsx"
+import { useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import { parse } from "date-fns";
+import { GlobalState } from "@/context/GlobalState.jsx";
+import WishlistModal from "@/components/modals/WishlistModal";
+import { useDataRefresh } from "@/hooks/useDataRefresh.js";
+import { useToast } from "@/context/ToastContext.jsx";
 
-const PLACEHOLDER_IMG = "https://picsum.photos/seed/getaway/1200/800"
+const PLACEHOLDER_IMG = "https://picsum.photos/seed/getaway/1200/800";
 
-const isValidDate = (d) => d instanceof Date && !isNaN(d.getTime())
+/** Parse server values as LOCAL calendar dates (no UTC shift). */
+const toLocalDate = (input) => {
+  if (!input) return null;
+  if (typeof input === "string") {
+    // works for 'yyyy-MM-dd' and ISO 'yyyy-MM-ddTHH:mm:ssZ'
+    const m = input.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) return parse(m[1], "yyyy-MM-dd", new Date());
+  }
+  const d = new Date(input);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
 
 const makeRange = (startStr, endStr) => {
-  const s = startStr ? new Date(startStr) : null
-  const e = endStr ? new Date(endStr) : null
-  const sOk = isValidDate(s)
-  const eOk = isValidDate(e)
-  if (!sOk && !eOk) return { hasRange: false, label: "" }
-  if (sOk && !eOk) return { hasRange: true, label: s.toLocaleDateString() }
-  if (!sOk && eOk) return { hasRange: true, label: e.toLocaleDateString() }
-  const fmt = (d) => `${d.toLocaleString("default", { month: "short" })} ${d.getDate()}`
-  return { hasRange: true, label: `${fmt(s)} – ${fmt(e)}` }
-}
+  const s = toLocalDate(startStr);
+  const e = toLocalDate(endStr);
+  if (!s && !e) return { hasRange: false, label: "" };
+
+  const short = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+  if (s && !e) return { hasRange: true, label: short(s) };
+  if (!s && e) return { hasRange: true, label: short(e) };
+
+  const sameYear = s.getFullYear() === e.getFullYear();
+  const sameMonth = sameYear && s.getMonth() === e.getMonth();
+
+  if (sameMonth) {
+    const mo = s.toLocaleString(undefined, { month: "short" });
+    return { hasRange: true, label: `${mo} ${s.getDate()}–${e.getDate()}` };
+  }
+
+  const startFmt = s.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: sameYear ? undefined : "numeric",
+  });
+  const endFmt = e.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: sameYear ? undefined : "numeric",
+  });
+  return { hasRange: true, label: `${startFmt} – ${endFmt}` };
+};
 
 const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
-  const state = useContext(GlobalState)
-  const api = state?.userAPI ?? state?.UserAPI
-  const [email] = api?.email ?? [""]
-  const [token] = state?.token ?? [null]
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { refetchTrips, refetchWishlists } = useDataRefresh()
-  const { success, error } = useToast()
+  const state = useContext(GlobalState);
+  const api = state?.userAPI ?? state?.UserAPI;
+  const [email] = api?.email ?? [""];
+  const [token] = state?.token ?? [null];
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { refetchTrips, refetchWishlists } = useDataRefresh();
+  const { success, error } = useToast();
 
-  const [isFavorite, setIsFavorite] = useState(Boolean(trip.isFavorite))
-  const [showWishlistModal, setShowWishlistModal] = useState(false)
-  const [imgSrc, setImgSrc] = useState(trip?.image_url || PLACEHOLDER_IMG)
-  const [isToggling, setIsToggling] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(Boolean(trip.isFavorite));
+  const [showWishlistModal, setShowWishlistModal] = useState(false);
+  const [imgSrc, setImgSrc] = useState(trip?.image_url || PLACEHOLDER_IMG);
+  const [isToggling, setIsToggling] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    setIsFavorite(Boolean(trip.isFavorite))
-  }, [trip])
+  useEffect(() => setIsFavorite(Boolean(trip.isFavorite)), [trip]);
+  useEffect(() => setImgSrc(trip?.image_url || PLACEHOLDER_IMG), [trip?.image_url]);
 
-  useEffect(() => {
-    setImgSrc(trip?.image_url || PLACEHOLDER_IMG)
-  }, [trip?.image_url])
-
-  const displayData = instance || trip
+  const displayData = instance || trip;
 
   const { hasRange, label: rangeLabel } = useMemo(
     () => makeRange(displayData?.trip_start, displayData?.trip_end),
     [displayData?.trip_start, displayData?.trip_end]
-  )
+  );
 
   const totalCost = useMemo(() => {
     return (
@@ -60,136 +85,135 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
       (Number(displayData?.car_expense) || 0) +
       (Number(displayData?.travel_expense) || 0) +
       (Number(displayData?.other_expense) || 0)
-    )
-  }, [displayData])
+    );
+  }, [displayData]);
 
   const handleRemove = useCallback(async () => {
-    if (!trip?._id || isDeleting) return
-    
-    const deleteMessage = instance 
-      ? "Do you want to delete this committed instance?" 
-      : "Do you want to delete this trip?"
-    
-    if (!confirm(deleteMessage)) return
-    
-    setIsDeleting(true)
-    
+    if (!trip?._id || isDeleting) return;
+
+    const deleteMessage = instance
+      ? "Do you want to delete this committed instance?"
+      : "Do you want to delete this trip?";
+    if (!confirm(deleteMessage)) return;
+
+    setIsDeleting(true);
     try {
-      const headers = token ? { Authorization: token } : undefined
-      
+      const headers = token ? { Authorization: token } : undefined;
+
       if (instance?._id) {
-        await axios.delete(`/api/trips/getaway/${trip._id}/instances/${instance._id}`, { headers })
-        
+        await axios.delete(`/api/trips/getaway/${trip._id}/instances/${instance._id}`, { headers });
         if (location.pathname === `/trips/${trip._id}/instances/${instance._id}`) {
-          navigate('/mytrips')
+          navigate("/mytrips");
         }
-        
-        success("Instance deleted successfully")
+        success("Instance deleted successfully");
       } else {
-        await axios.delete(`/api/trips/getaway/${trip._id}`, { headers })
-        
+        await axios.delete(`/api/trips/getaway/${trip._id}`, { headers });
         if (location.pathname === `/trips/${trip._id}`) {
-          navigate('/explore')
+          navigate("/explore");
         }
-        
-        success("Trip deleted successfully")
+        success("Trip deleted successfully");
       }
-      
-      onRemove?.(trip._id)
-      
-      await Promise.all([refetchTrips(), refetchWishlists()])
-      
+
+      onRemove?.(trip._id);
+      await Promise.all([refetchTrips(), refetchWishlists()]);
     } catch (err) {
-      console.error("Delete failed:", err)
-      error("Failed to delete. Please try again.")
+      console.error("Delete failed:", err);
+      error("Failed to delete. Please try again.");
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }, [trip?._id, instance, isDeleting, token, location.pathname, navigate, onRemove, refetchTrips, refetchWishlists, success, error])
+  }, [
+    trip?._id,
+    instance,
+    isDeleting,
+    token,
+    location.pathname,
+    navigate,
+    onRemove,
+    refetchTrips,
+    refetchWishlists,
+    success,
+    error,
+  ]);
 
   const handleFavoriteToggle = useCallback(() => {
-    if (isToggling) return
-    if (isFavorite) handleUnfavorite()
-    else setShowWishlistModal(true)
-  }, [isFavorite, isToggling])
+    if (isToggling) return;
+    if (isFavorite) handleUnfavorite();
+    else setShowWishlistModal(true);
+  }, [isFavorite, isToggling]);
 
-  const handleModalClose = () => setShowWishlistModal(false)
+  const handleModalClose = () => setShowWishlistModal(false);
 
   const handleModalSave = async () => {
     try {
-      setIsFavorite(true)
-      
+      setIsFavorite(true);
       await axios.put(
         `/api/trips/getaway/${trip._id}`,
         { isFavorite: true },
         token ? { headers: { Authorization: token } } : undefined
-      )
-      
-      setShowWishlistModal(false)
-      
-      await Promise.all([refetchTrips(), refetchWishlists()])
-      onFavoriteAdded?.()
-      
+      );
+      setShowWishlistModal(false);
+      await Promise.all([refetchTrips(), refetchWishlists()]);
+      onFavoriteAdded?.();
     } catch (err) {
-      console.error("Error updating trip details:", err)
-      setIsFavorite(false)
-      error("Failed to add trip to wishlist. Please try again.")
+      console.error("Error updating trip details:", err);
+      setIsFavorite(false);
+      error("Failed to add trip to wishlist. Please try again.");
     }
-  }
+  };
 
   const handleUnfavorite = async () => {
-    if (!trip?._id || isToggling) return
-    
-    setIsToggling(true)
-    const originalFavoriteState = isFavorite
-    
+    if (!trip?._id || isToggling) return;
+
+    setIsToggling(true);
+    const originalFavoriteState = isFavorite;
+
     try {
-      setIsFavorite(false)
-      
+      setIsFavorite(false);
+
       const wishlistsRes = await axios.get("/api/wishlist/getlists", {
         params: { email },
         ...(token ? { headers: { Authorization: token } } : {}),
-      })
-      const wishlists = wishlistsRes.data || []
-      const target = wishlists.find((w) => (w.trips || []).some((t) => t._id === trip._id))
+      });
+      const wishlists = wishlistsRes.data || [];
+      const target = wishlists.find((w) => (w.trips || []).some((t) => t._id === trip._id));
 
       if (target?._id) {
         await axios.delete(
           `/api/wishlist/${target._id}/remove-trip/${trip._id}`,
           token ? { headers: { Authorization: token } } : undefined
-        )
+        );
       }
 
       await axios.put(
         `/api/trips/getaway/${trip._id}`,
         { isFavorite: false },
         token ? { headers: { Authorization: token } } : undefined
-      )
+      );
 
-      await Promise.all([refetchTrips(), refetchWishlists()])
-      
+      await Promise.all([refetchTrips(), refetchWishlists()]);
       if (target?.list_name) {
-        success(`Trip removed from ${target.list_name}`)
+        success(`Trip removed from ${target.list_name}`);
       } else {
-        success("Trip removed from favorites")
+        success("Trip removed from favorites");
       }
-      
-      onFavoriteAdded?.()
+      onFavoriteAdded?.();
     } catch (err) {
-      console.error("Unfavorite failed:", err)
-      setIsFavorite(originalFavoriteState)
-      error("Failed to remove from favorites. Please try again.")
+      console.error("Unfavorite failed:", err);
+      setIsFavorite(originalFavoriteState);
+      error("Failed to remove from favorites. Please try again.");
     } finally {
-      setIsToggling(false)
+      setIsToggling(false);
     }
-  }
+  };
 
   const onImgError = () => {
-    if (imgSrc !== PLACEHOLDER_IMG) setImgSrc(PLACEHOLDER_IMG)
-  }
+    if (imgSrc !== PLACEHOLDER_IMG) setImgSrc(PLACEHOLDER_IMG);
+  };
 
-  const instanceNumber = trip.instances.length > 0 ? `${trip.instances.length} instance` : "Create Instance"
-  const isIncomplete = totalCost <= 0
+  const instanceNumber =
+    trip.instances.length > 0 ? `${trip.instances.length} instance` : "Create Instance";
+  const isIncomplete = totalCost <= 0;
 
   return (
     <div
@@ -218,13 +242,19 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
           disabled={isToggling}
           aria-label={isFavorite ? "Unfavorite" : "Add to wishlist"}
           aria-pressed={isFavorite}
-          className={`absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-slate-700 shadow-md ring-1 ring-black/5 transition hover:scale-105 hover:bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isToggling ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-slate-700 shadow-md ring-1 ring-black/5 transition hover:scale-105 hover:bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+            isToggling ? "opacity-50 cursor-not-allowed" : ""
+          }`}
           title={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
         >
           {isToggling ? (
             <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
             </svg>
           ) : (
             <svg
@@ -277,12 +307,12 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
           <span
             className={
               `inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ` +
-              (isIncomplete
+              ((totalCost <= 0)
                 ? "bg-amber-50 text-amber-700 ring-amber-200"
                 : "bg-emerald-50 text-emerald-700 ring-emerald-200")
             }
           >
-            {!isIncomplete ? (
+            {totalCost > 0 ? (
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 1v22M3 6h18M3 12h18M3 18h18" />
               </svg>
@@ -293,7 +323,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
                 <circle cx="12" cy="12" r="9" />
               </svg>
             )}
-            {instanceNumber}
+            {trip.instances.length > 0 ? `${trip.instances.length} instance` : "Create Instance"}
           </span>
           {instance && (
             <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-200">
@@ -322,13 +352,19 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
             type="button"
             onClick={handleRemove}
             disabled={isDeleting}
-            className={`inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 ${
+              isDeleting ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             {isDeleting ? (
               <>
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </svg>
                 Deleting...
               </>
@@ -345,8 +381,9 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
       </div>
 
       {/* subtle outer glow on hover */}
-      <div className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-           style={{ boxShadow: "0 0 0 1px rgba(99,102,241,.15), 0 10px 30px rgba(2,6,23,.10)" }}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{ boxShadow: "0 0 0 1px rgba(99,102,241,.15), 0 10px 30px rgba(2,6,23,.10)" }}
       />
 
       {/* Wishlist modal */}
@@ -357,7 +394,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
         trip={trip}
       />
     </div>
-  )
-}
+  );
+};
 
-export default TripCard
+export default TripCard;

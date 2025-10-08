@@ -1,8 +1,43 @@
+// src/pages/trips/TripInstanceDetail.jsx
 import { useState, useEffect } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import axios from "axios";
+import { parse, format as formatFn } from "date-fns";
 import { ArrowLeft, Edit2, Save, X, Calendar as CalendarIcon, Clock3 } from "lucide-react";
-import TripDateRange from "@/components/TripDateRange"; // ⬅️ uses your Done/Clear version
+import TripDateRange from "@/components/TripDateRange";
+import BackButton from "@/components/BackButton";
+
+/** -------- date helpers: parse & format as LOCAL calendar dates -------- */
+const pickYmd = (s) => (typeof s === "string" ? (s.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? null) : null);
+const toLocalDate = (input) => {
+  if (!input) return null;
+  // works for 'yyyy-MM-dd' and for ISO like 'yyyy-MM-ddTHH:mm:ssZ'
+  const ymd = pickYmd(input);
+  if (ymd) return parse(ymd, "yyyy-MM-dd", new Date());
+  const d = new Date(input);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+const toYmdLocal = (input) => {
+  const d = toLocalDate(input);
+  return d ? formatFn(d, "yyyy-MM-dd") : "";
+};
+const toMMDDYYYY = (input) => {
+  const d = toLocalDate(input);
+  if (!d) return "Not set";
+  // strict MM/DD/YYYY for your UI
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+};
+const daysBetween = (startYmd, endYmd) => {
+  const s = toLocalDate(startYmd);
+  const e = toLocalDate(endYmd);
+  if (!s || !e) return null;
+  const msPerDay = 24 * 60 * 60 * 1000;
+  // difference in *nights* (end - start)
+  return Math.round((e - s) / msPerDay);
+};
 
 const TripInstanceDetail = () => {
   const { tripId, instanceId } = useParams();
@@ -25,30 +60,15 @@ const TripInstanceDetail = () => {
     activities: [],
   });
 
-  // -------- helpers --------
-  const toMMDDYYYY = (dateString) => {
-    if (!dateString) return "Not set";
-    const d = new Date(dateString);
-    return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}/${d.getFullYear()}`;
-    // If your dates look a day off, ensure server stores UTC or adjust with timezone.
-  };
-
   const formatCurrency0 = (val) =>
-    Number(val || 0).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
+    Number(val || 0).toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    });
   const formatFixed2 = (val) => (val === "" ? "" : Number(val || 0).toFixed(2));
-
   const handleExpenseChange = (key, value) => {
     if (!isNaN(value) || value === "") setFormData((p) => ({ ...p, [key]: value }));
-  };
-
-  const daysBetween = (start, end) => {
-    if (!start || !end) return null;
-    const s = new Date(start);
-    const e = new Date(end);
-    const msPerDay = 1000 * 60 * 60 * 24;
-    const diff = Math.round((e - s) / msPerDay);
-    return diff >= 0 ? diff : null;
   };
 
   const nights = daysBetween(formData.trip_start, formData.trip_end);
@@ -77,15 +97,16 @@ const TripInstanceDetail = () => {
     fetchTripInstance();
   }, [tripId, instanceId, trip, instance]);
 
+  // normalize instance -> form (as yyy-mm-dd strings; no UTC conversion)
   useEffect(() => {
     if (instance) {
       setFormData({
-        trip_start: instance.trip_start ? new Date(instance.trip_start).toISOString().slice(0, 10) : "",
-        trip_end: instance.trip_end ? new Date(instance.trip_end).toISOString().slice(0, 10) : "",
-        stay_expense: instance.stay_expense || 0,
-        travel_expense: instance.travel_expense || 0,
-        car_expense: instance.car_expense || 0,
-        other_expense: instance.other_expense || 0,
+        trip_start: toYmdLocal(instance.trip_start), // <- local date string
+        trip_end: toYmdLocal(instance.trip_end),     // <- local date string
+        stay_expense: instance.stay_expense ?? 0,
+        travel_expense: instance.travel_expense ?? 0,
+        car_expense: instance.car_expense ?? 0,
+        other_expense: instance.other_expense ?? 0,
         activities: instance.activities || [],
       });
       setFetchLoading(false);
@@ -97,9 +118,12 @@ const TripInstanceDetail = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (trip && trip.instances) {
+      // Keep dates as 'yyyy-MM-dd' strings; let the server decide how to store them.
+      if (trip && Array.isArray(trip.instances)) {
         const updatedInstances = trip.instances.map((inst, idx) =>
-          (inst._id === instanceId || idx.toString() === instanceId) ? { ...inst, ...formData } : inst
+          (inst._id === instanceId || String(idx) === String(instanceId))
+            ? { ...inst, ...formData }
+            : inst
         );
         await axios.put(`/api/trips/getaway/${tripId}`, { ...trip, instances: updatedInstances });
       } else {
@@ -140,10 +164,7 @@ const TripInstanceDetail = () => {
     <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <Link to={`/trips/${tripId}`} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Trip Overview
-          </Link>
+          <BackButton label="Back" />
         </div>
 
         <div className="relative rounded-[28px] bg-white shadow-[0_10px_40px_-10px_rgba(2,6,23,0.12)] ring-1 ring-slate-100 overflow-hidden">
@@ -198,7 +219,7 @@ const TripInstanceDetail = () => {
               </span>
             </div>
 
-            {/* ===== Dates section (own hero card) ===== */}
+            {/* ===== Dates section ===== */}
             <div className="rounded-2xl ring-1 ring-slate-100 bg-gradient-to-r from-indigo-50 to-white p-5 shadow-sm">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -219,9 +240,9 @@ const TripInstanceDetail = () => {
                   </div>
                 </div>
 
-                {/* Only show the editor when in edit mode */}
                 {editMode && (
                   <div className="w-full md:w-auto md:min-w-[420px]">
+                    {/* This component already writes yyyy-MM-dd strings into setNewInstance */}
                     <TripDateRange newInstance={formData} setNewInstance={setFormData} />
                   </div>
                 )}
@@ -234,7 +255,7 @@ const TripInstanceDetail = () => {
               <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
                 <p className="text-sm text-slate-500 mb-1">Flights</p>
                 {!editMode ? (
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency0(formData.travel_expense)}</p>
+                  <p className="text-2xl font-semibold text-slate-900">{formatFixed2(formData.travel_expense)}</p>
                 ) : (
                   <input
                     type="number"
@@ -251,7 +272,7 @@ const TripInstanceDetail = () => {
               <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
                 <p className="text-sm text-slate-500 mb-1">Hotel</p>
                 {!editMode ? (
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency0(formData.stay_expense)}</p>
+                  <p className="text-2xl font-semibold text-slate-900">{formatFixed2(formData.stay_expense)}</p>
                 ) : (
                   <input
                     type="number"
@@ -268,7 +289,7 @@ const TripInstanceDetail = () => {
               <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
                 <p className="text-sm text-slate-500 mb-1">Car</p>
                 {!editMode ? (
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency0(formData.car_expense)}</p>
+                  <p className="text-2xl font-semibold text-slate-900">{formatFixed2(formData.car_expense)}</p>
                 ) : (
                   <input
                     type="number"
@@ -287,7 +308,7 @@ const TripInstanceDetail = () => {
               <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
                 <p className="text-sm text-slate-500 mb-1">Other</p>
                 {!editMode ? (
-                  <p className="text-xl font-semibold text-slate-900">${formatFixed2(formData.other_expense)}</p>
+                  <p className="text-2xl font-semibold text-slate-900">{formatFixed2(formData.other_expense)}</p>
                 ) : (
                   <input
                     type="number"
