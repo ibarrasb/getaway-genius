@@ -127,8 +127,18 @@ export const updateTrip = async (req, res) => {
     return res.status(500).json({ msg: err.message });
   }
 };
-// POST /getaway/:id/instances
-// POST /getaway/:id/instances
+
+// GET /getaway/:id
+export const getSpecificTrip = async (req, res) => {
+  try {
+    const detailedTrip = await Trips.findById(req.params.id);
+    res.json(detailedTrip);
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+};
+
+//TRIP INSTANCES------------
 export const addTripInstance = async (req, res) => {
   try {
     const { id } = req.params;
@@ -192,7 +202,7 @@ export const commitTripInstance = async (req, res) => {
     trip.instances.forEach((inst) => {
       inst.isCommitted = inst._id.toString() === instanceId;
     });
-    trip.committedInstanceId = new mongoose.Types.ObjectId(instanceId);
+    trip.committedInstanceId = new mongoose.Types.ObjectId(String(instanceId));
 
     await trip.save();
 
@@ -257,12 +267,5 @@ export const deleteTripInstance = async (req, res) => {
   }
 };
 
-// GET /getaway/:id
-export const getSpecificTrip = async (req, res) => {
-  try {
-    const detailedTrip = await Trips.findById(req.params.id);
-    res.json(detailedTrip);
-  } catch (err) {
-    return res.status(500).json({ msg: err.message });
-  }
-};
+
+
