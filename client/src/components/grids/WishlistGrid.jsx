@@ -113,7 +113,6 @@ const WishlistGrid = () => {
         title="No wishlists yet"
         subtitle="Create a wishlist to save ideas for later."
         ctaHref="/search"
-        ctaLabel="Start exploring"
       />
     )
   }
