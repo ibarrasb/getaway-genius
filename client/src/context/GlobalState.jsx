@@ -12,11 +12,9 @@ export const DataProvider = ({ children }) => {
 
   const refreshToken = useCallback(async () => {  
     try {  
-      console.log('🔄 Refresh token starting...')  
       setError(null)  
       const res = await axios.get('/api/user/refresh_token', { withCredentials: true })  
       const t = res.data?.accesstoken ?? null  
-      console.log('✅ Refresh token success:', !!t)  
       setToken(t)  
     } catch (err) {  
       console.error('❌ Refresh token failed:', err)  
@@ -28,7 +26,6 @@ export const DataProvider = ({ children }) => {
   }, [])
 
   useEffect(() => {  
-    console.log('🚀 GlobalState useEffect running')  
     refreshToken()  
 }, [])
 

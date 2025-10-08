@@ -133,9 +133,6 @@ export const addTripInstance = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Debug (TEMP): verify what's arriving
-    // console.log('addTripInstance body:', req.body);
-
     const parseDate = (v) => {
       if (!v) return null;
       const d = new Date(v);
