@@ -1,5 +1,8 @@
 import mongoose from 'mongoose';
 
+/**
+ * Schema for user wishlists containing saved trips
+ */
 const wishlistSchema = new mongoose.Schema(
   {
     list_name: {
