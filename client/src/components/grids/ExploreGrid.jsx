@@ -29,14 +29,12 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
       }
 
       if (!email && token && state?.userAPI?.refresh) {
-        console.log("🔄 No email yet, calling userAPI.refresh()…")
         try {
           await state.userAPI.refresh()
         } catch {}
       }
 
       if (!email) {
-        console.log("⚠️ Still no email in context — skipping fetch")
         setItems([])
         setLoading(false)
         return
@@ -50,7 +48,6 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
           signal: controller.signal,
         })
         const all = Array.isArray(res.data) ? res.data : []
-        console.log(`✅ Trips fetched (${all.length})`, all)
         setItems(all)
       } catch (e) {
         if (e.name !== "CanceledError") {
