@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Autocomplete from "react-google-autocomplete";
 import axios from "axios";
 import { GlobalState } from "@/context/GlobalState.jsx";
+import { loadGoogleMaps } from "@/lib/loadGoogleMaps";
 
 const PLACEHOLDER =
   "data:image/svg+xml;utf8," +
@@ -29,6 +30,19 @@ const Search = () => {
   const [error, setError] = useState(null);
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState(null);
+  const [mapsReady, setMapsReady] = useState(false);
+  const [mapsDisabled, setMapsDisabled] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const res = await loadGoogleMaps();
+      if (res?.disabled) {
+        setMapsDisabled(true);
+      } else {
+        setMapsReady(true);
+      }
+    })();
+  }, []);
 
   // ---- photo helpers (return a URL, not bytes) ----
   const buildPhotoProxyURL = (photoreference) =>
@@ -169,14 +183,30 @@ const Search = () => {
                 <label htmlFor="place-search" className="mb-2 block text-sm font-medium text-slate-700">
                   City
                 </label>
-                <Autocomplete
-                  id="place-search"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300"
-                  onPlaceSelected={handlePlaceSelected}
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  options={{ types: ["(cities)"] }} // hint cities in the dropdown
-                />
+                {mapsDisabled ? (
+                  <input
+                    id="place-search"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400"
+                    placeholder="Maps disabled in this environment"
+                    disabled
+                  />
+                ) : mapsReady ? (
+                  <Autocomplete
+                    id="place-search"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300"
+                    onPlaceSelected={handlePlaceSelected}
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    options={{ types: ["(cities)"] }}
+                  />
+                ) : (
+                  <input
+                    id="place-search"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400"
+                    placeholder="Loading Maps…"
+                    disabled
+                  />
+                )}
                 {error && (
                   <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     {error}
