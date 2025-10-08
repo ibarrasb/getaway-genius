@@ -1,14 +1,15 @@
 // src/utils/loadGoogleMaps.js
-import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
 export async function loadGoogleMaps() {
-  if (!window.google || !window.google.maps) {
-    setOptions({
-      apiKey: import.meta.env.VITE_FRONTENDGOOGLEKEY,
-      version: "weekly"
-    });
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) throw new Error('Missing VITE_GOOGLE_MAPS_API_KEY');
 
-    await importLibrary("places");
-  }
+  setOptions({ apiKey, version: 'weekly', libraries: ['places'] });
+  const [{ Map }, places] = await Promise.all([
+    importLibrary('maps'),
+    importLibrary('places'),
+  ]);
+  return { Map, places, google: window.google };
 }
   
