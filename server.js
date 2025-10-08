@@ -8,6 +8,13 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import pino from 'pino';
+import pinoHttp from 'pino-http';
+import crypto from 'crypto';
+import swaggerUi from 'swagger-ui-express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,36 +23,62 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-//Middleware
 app.use(express.json());
+app.use(helmet());
+app.use(compression());
 app.use(cookieParser());
+
+const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
+app.use(
+  pinoHttp({
+    logger,
+    genReqId: (req) => req.headers['x-request-id'] || crypto.randomUUID(),
+    customProps: (req) => ({ requestId: req.id }),
+  })
+);
+
 app.use(
   cors({
-    // In prod, consider setting a specific origin via CLIENT_ORIGIN
     origin: process.env.CLIENT_ORIGIN || true,
     credentials: true,
   })
 );
 
-// Helpful behind proxies (Heroku/Render) for secure cookies, req.ip, etc.
 app.set('trust proxy', 1);
 
-//Import routes AFTER dotenv has populated process.env
-const externalRoutes = (await import('./routes/externalRoutes.js')).default;
-const tripsRouter    = (await import('./routes/tripsRoutes.js')).default;
-const usersRouter    = (await import('./routes/userRoutes.js')).default;
-const wishlistRoutes = (await import('./routes/wishlistRoutes.js')).default;
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  message: {
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests, please try again later',
+      details: {},
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-//Routes (API first)
+app.use('/api', limiter);
+
+const externalRoutes = (await import('./routes/externalRoutes.js')).default;
+const tripsRouter = (await import('./routes/tripsRoutes.js')).default;
+const usersRouter = (await import('./routes/userRoutes.js')).default;
+const wishlistRoutes = (await import('./routes/wishlistRoutes.js')).default;
+const { notFoundHandler, errorHandler } = await import('./middleware/errorHandler.js');
+const swaggerSpec = (await import('./config/swagger.js')).default;
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api', externalRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/trips', tripsRouter);
 app.use('/api/user', usersRouter);
-
-// Healthcheck
 app.get('/health', (_req, res) => res.status(200).send('ok'));
 
-//Static (Vite build) LAST, only in production
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(__dirname, 'client', 'dist');
   app.use(express.static(clientDist));
