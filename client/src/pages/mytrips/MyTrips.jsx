@@ -1,26 +1,15 @@
 // src/pages/mytrips/MyTrips.jsx
-import { useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import { parse } from "date-fns";
 import { GlobalState } from "@/context/GlobalState.jsx";
 import TripCard from "@/components/cards/TripCard.jsx";
 import { useDataRefresh } from "@/hooks/useDataRefresh.js";
 import { useToast } from "@/context/ToastContext.jsx";
 import { MOCK_TRIPS } from "@/mocks/trips";
+import { toLocalDate, addDays, fmtRangeShort } from "../utils/localDates";
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
-
-// Parse server values as LOCAL calendar dates (no UTC shift).
-const toLocalDate = (input) => {
-  if (!input) return null;
-  if (typeof input === "string") {
-    const m = input.match(/^(\d{4}-\d{2}-\d{2})/); // matches 'yyyy-MM-dd' or ISO leading part
-    if (m) return parse(m[1], "yyyy-MM-dd", new Date());
-  }
-  const d = new Date(input);
-  return Number.isNaN(d.getTime()) ? null : d;
-};
 
 const MyTrips = () => {
   const navigate = useNavigate();
@@ -112,18 +101,6 @@ const MyTrips = () => {
     }
   };
 
-  // helpers
-  const fmtRange = (start, end) => {
-    const s = toLocalDate(start);
-    const e = toLocalDate(end);
-    if (!s || !e) return "Not set";
-    const sameMonth = s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear();
-    const mo = (d) => d.toLocaleString(undefined, { month: "short" });
-    return sameMonth
-      ? `${mo(s)} ${s.getDate()}–${e.getDate()}`
-      : `${mo(s)} ${s.getDate()} – ${mo(e)} ${e.getDate()}`;
-  };
-
   const totalCost = (t) =>
     (Number(t.stay_expense) || 0) +
     (Number(t.car_expense) || 0) +
@@ -133,12 +110,8 @@ const MyTrips = () => {
   const nextTripCountdown = (start, end) => {
     const now = new Date();
     const s = toLocalDate(start);
-    const e = toLocalDate(end);
-    if (!s || !e) return null;
-
-    // treat end date as inclusive (add one day at local midnight)
-    const eInclusive = new Date(e);
-    eInclusive.setDate(eInclusive.getDate() + 1);
+    const eInclusive = addDays(end, 1); // treat end as inclusive
+    if (!s || !eInclusive) return null;
 
     if (now >= s && now < eInclusive) {
       return { label: "Happening now", tone: "emerald" };
@@ -183,11 +156,8 @@ const MyTrips = () => {
 
     // keep upcoming: end date inclusive
     const upcoming = tripsWithCommittedInstance.filter((t) => {
-      const end = toLocalDate(t.committedInstance.trip_end);
-      if (!end) return false;
-      const endInclusive = new Date(end);
-      endInclusive.setDate(endInclusive.getDate() + 1);
-      return endInclusive >= now;
+      const endInclusive = addDays(t.committedInstance.trip_end, 1);
+      return endInclusive && endInclusive >= now;
     });
 
     const f = upcoming[0] || null;
@@ -298,7 +268,7 @@ const MyTrips = () => {
                       {featured.location_address}
                     </h2>
                     <p className="text-sm text-slate-600">
-                      {fmtRange(
+                      {fmtRangeShort(
                         featured.committedInstance.trip_start,
                         featured.committedInstance.trip_end
                       )}

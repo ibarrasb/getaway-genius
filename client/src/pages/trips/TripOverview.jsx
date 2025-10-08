@@ -1,7 +1,7 @@
+// src/pages/trips/TripOverview.jsx
 import { useState, useEffect, useCallback, useContext } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
-import { parse } from "date-fns";
 import {
   WiDaySunny,
   WiCloud,
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { GlobalState } from "../../context/GlobalState";
 import TripDateRange from "@/components/TripDateRange"; // shared component
+import { fmtRangeShort } from "../utils/localDates"; // ✅ local date utils (no TZ shift)
 
 const TripOverview = () => {
   const state = useContext(GlobalState);
@@ -66,34 +67,6 @@ const TripOverview = () => {
     (Number(instance.travel_expense) || 0) +
     (Number(instance.car_expense) || 0) +
     (Number(instance.other_expense) || 0);
-
-  // Displays both legacy ISO strings and new yyyy-MM-dd strings correctly (no TZ shift)
-  const formatDate = (dateInput) => {
-    if (!dateInput) return "Not set";
-  
-    // If it's a string, grab the leading YYYY-MM-DD (works for both 'yyyy-MM-dd'
-    // and ISO like 'yyyy-MM-ddTHH:mm:ssZ'). This avoids timezone shifts.
-    if (typeof dateInput === "string") {
-      const match = dateInput.match(/^(\d{4}-\d{2}-\d{2})/);
-      if (match) {
-        const asLocal = parse(match[1], "yyyy-MM-dd", new Date());
-        return asLocal.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
-      }
-    }
-  
-    // Fallback for Date objects or other formats.
-    const d = new Date(dateInput);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-  
 
   // -------- fetchers --------
   const fetchWeatherData = useCallback(async (locationAddress) => {
@@ -192,9 +165,9 @@ const TripOverview = () => {
   const handleCreateInstance = async () => {
     try {
       const payload = {
-        // Keep local calendar dates exactly as chosen (no UTC conversion)
-        trip_start: newInstance.trip_start || null, // 'yyyy-MM-dd'
-        trip_end: newInstance.trip_end || null,     // 'yyyy-MM-dd'
+        // Keep local calendar dates exactly as chosen (yyyy-MM-dd; no UTC conversion)
+        trip_start: newInstance.trip_start || null,
+        trip_end: newInstance.trip_end || null,
         stay_expense: Number(newInstance.stay_expense || 0),
         travel_expense: Number(newInstance.travel_expense || 0),
         car_expense: Number(newInstance.car_expense || 0),
@@ -326,9 +299,7 @@ const TripOverview = () => {
                         <p className="text-lg font-medium text-slate-800">
                           {(weatherData.weather?.[0]?.description || "")
                             .split(" ")
-                            .map(
-                              (w) => w.charAt(0).toUpperCase() + w.slice(1)
-                            )
+                            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
                             .join(" ")}
                         </p>
                         <p className="text-2xl font-bold text-slate-700">
@@ -403,7 +374,7 @@ const TripOverview = () => {
                 <div className="flex items-center gap-2 mb-3">
                   <CalendarIcon className="h-4 w-4 text-slate-500" />
                   <span className="text-sm text-slate-600">
-                    {formatDate(instance.trip_start + 1)} - {formatDate(instance.trip_end + 1)}
+                    {fmtRangeShort(instance.trip_start, instance.trip_end)}
                   </span>
                 </div>
 

@@ -2,56 +2,13 @@
 import { useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import { parse } from "date-fns";
 import { GlobalState } from "@/context/GlobalState.jsx";
 import WishlistModal from "@/components/modals/WishlistModal";
 import { useDataRefresh } from "@/hooks/useDataRefresh.js";
 import { useToast } from "@/context/ToastContext.jsx";
+import { fmtRangeShort } from "../../pages/utils/localDates"; 
 
 const PLACEHOLDER_IMG = "https://picsum.photos/seed/getaway/1200/800";
-
-/** Parse server values as LOCAL calendar dates (no UTC shift). */
-const toLocalDate = (input) => {
-  if (!input) return null;
-  if (typeof input === "string") {
-    // works for 'yyyy-MM-dd' and ISO 'yyyy-MM-ddTHH:mm:ssZ'
-    const m = input.match(/^(\d{4}-\d{2}-\d{2})/);
-    if (m) return parse(m[1], "yyyy-MM-dd", new Date());
-  }
-  const d = new Date(input);
-  return Number.isNaN(d.getTime()) ? null : d;
-};
-
-const makeRange = (startStr, endStr) => {
-  const s = toLocalDate(startStr);
-  const e = toLocalDate(endStr);
-  if (!s && !e) return { hasRange: false, label: "" };
-
-  const short = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-
-  if (s && !e) return { hasRange: true, label: short(s) };
-  if (!s && e) return { hasRange: true, label: short(e) };
-
-  const sameYear = s.getFullYear() === e.getFullYear();
-  const sameMonth = sameYear && s.getMonth() === e.getMonth();
-
-  if (sameMonth) {
-    const mo = s.toLocaleString(undefined, { month: "short" });
-    return { hasRange: true, label: `${mo} ${s.getDate()}–${e.getDate()}` };
-  }
-
-  const startFmt = s.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: sameYear ? undefined : "numeric",
-  });
-  const endFmt = e.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: sameYear ? undefined : "numeric",
-  });
-  return { hasRange: true, label: `${startFmt} – ${endFmt}` };
-};
 
 const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
   const state = useContext(GlobalState);
@@ -74,10 +31,11 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
 
   const displayData = instance || trip;
 
-  const { hasRange, label: rangeLabel } = useMemo(
-    () => makeRange(displayData?.trip_start, displayData?.trip_end),
+  const rangeLabel = useMemo(
+    () => fmtRangeShort(displayData?.trip_start, displayData?.trip_end),
     [displayData?.trip_start, displayData?.trip_end]
   );
+  const hasRange = Boolean(rangeLabel);
 
   const totalCost = useMemo(() => {
     return (
@@ -211,9 +169,9 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
     if (imgSrc !== PLACEHOLDER_IMG) setImgSrc(PLACEHOLDER_IMG);
   };
 
-  const instanceNumber =
-    trip.instances.length > 0 ? `${trip.instances.length} instance` : "Create Instance";
-  const isIncomplete = totalCost <= 0;
+  // const instanceNumber =
+  //   trip.instances.length > 0 ? `${trip.instances.length} instance` : "Create Instance";
+  // const isIncomplete = totalCost <= 0;
 
   return (
     <div
