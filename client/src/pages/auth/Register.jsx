@@ -141,16 +141,30 @@ const Register = () => {
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-slate-700">Date of birth</label>
-              <input
-                type="date"
-                name="birthday"
-                required
-                value={form.birthday}
-                onChange={onChange}
-                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300"
-              />
-            </div>
+  <label className="mb-1 block text-sm font-medium text-slate-700">
+    Date of birth
+  </label>
+
+  <div className="relative">
+    <input
+      type="date"
+      name="birthday"
+      required
+      value={form.birthday}
+      onChange={onChange}
+      className="
+        block w-full rounded-xl border border-slate-300 bg-white
+        px-4 pr-10 py-2.5 h-12
+        text-slate-900 shadow-sm outline-none transition
+        focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300
+        appearance-none [-webkit-appearance:none]
+      "
+    />
+    {/* optional calendar icon so the padding-right makes visual sense */}
+
+  </div>
+</div>
+
 
             <div className="md:col-span-1">
               <label className="mb-1 block text-sm font-medium text-slate-700">City</label>
