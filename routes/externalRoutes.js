@@ -2,6 +2,7 @@
 
 import { Router } from 'express';
 import OpenAI from 'openai';
+import { uploadImageBuffer } from '../services/cloudinary.js';
 
 const router = Router();
 
@@ -42,7 +43,7 @@ router.get('/places-details', async (req, res) => {
   }
 });
 
-// Google Places: Photo bytes
+// Google Places: Photo bytes - uploads to Cloudinary and returns stable URL
 router.get('/places-pics', async (req, res) => {
   try {
     const apiKey = process.env.GOOGLEAPIKEY;
@@ -51,9 +52,7 @@ router.get('/places-pics', async (req, res) => {
       return res.status(400).json({ error: 'Missing GOOGLEAPIKEY or photoreference' });
     }
 
- 
-const url = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
-// const url = `https://places.googleapis.com/v1/${encodeURI(photoreference)}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
+    const url = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
 
     const resp = await fetch(url);
     const buf = Buffer.from(await resp.arrayBuffer());
@@ -64,10 +63,10 @@ const url = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiK
         .json({ error: 'Places media error', details: buf.toString('utf-8') });
     }
 
-    // Pass through content-type if provided
-    const ct = resp.headers.get('content-type') || 'image/jpeg';
-    res.set('Content-Type', ct);
-    return res.send(buf);
+    const filename = photoreference.split('/').pop() || 'photo';
+    const cloudinaryUrl = await uploadImageBuffer(buf, filename);
+
+    return res.json({ url: cloudinaryUrl });
   } catch (error) {
     console.error('Places pics error:', error);
     return res.status(500).json({ error: 'Failed to fetch data' });
