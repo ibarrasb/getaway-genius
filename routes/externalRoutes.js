@@ -69,10 +69,8 @@ router.get('/places-pics', async (req, res) => {
       const cloudinaryUrl = await uploadImageBuffer(buf, shortHash);
       return res.json({ url: cloudinaryUrl });
     } catch (cloudinaryError) {
-      console.error('Cloudinary upload failed, falling back to Google proxy:', cloudinaryError);
-      const ct = resp.headers.get('content-type') || 'image/jpeg';
-      res.set('Content-Type', ct);
-      return res.send(buf);
+      console.error('Cloudinary upload failed, falling back to Google media URL:', cloudinaryError);
+      return res.json({ url });
     }
   } catch (error) {
     console.error('Places pics error:', error);
