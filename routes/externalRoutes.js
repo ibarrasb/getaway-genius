@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import { createHash } from 'crypto';
 import OpenAI from 'openai';
-import { uploadImageBuffer } from '../services/cloudinary.js';
+import { getExistingCloudinaryUrl } from '../services/cloudinary.js';
 
 const router = Router();
 
@@ -44,7 +44,7 @@ router.get('/places-details', async (req, res) => {
   }
 });
 
-// Google Places: Photo bytes - uploads to Cloudinary and returns stable URL
+// Google Places: Photo preview - returns Cloudinary URL if exists, otherwise Google media URL (no upload)
 router.get('/places-pics', async (req, res) => {
   try {
     const apiKey = process.env.GOOGLEAPIKEY;
@@ -53,25 +53,19 @@ router.get('/places-pics', async (req, res) => {
       return res.status(400).json({ error: 'Missing GOOGLEAPIKEY or photoreference' });
     }
 
-    const url = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
-
-    const resp = await fetch(url);
-    const buf = Buffer.from(await resp.arrayBuffer());
-
-    if (!resp.ok) {
-      return res
-        .status(resp.status)
-        .json({ error: 'Places media error', details: buf.toString('utf-8') });
-    }
-
+    const shortHash = createHash('sha256').update(photoreference).digest('hex').slice(0, 32);
+    
     try {
-      const shortHash = createHash('sha256').update(photoreference).digest('hex').slice(0, 32);
-      const cloudinaryUrl = await uploadImageBuffer(buf, shortHash);
-      return res.json({ url: cloudinaryUrl });
+      const existingUrl = await getExistingCloudinaryUrl(shortHash);
+      if (existingUrl) {
+        return res.json({ url: existingUrl });
+      }
     } catch (cloudinaryError) {
-      console.error('Cloudinary upload failed, falling back to Google media URL:', cloudinaryError);
-      return res.json({ url });
+      console.warn('Could not check Cloudinary for existing asset:', cloudinaryError);
     }
+
+    const googleMediaUrl = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
+    return res.json({ url: googleMediaUrl });
   } catch (error) {
     console.error('Places pics error:', error);
     return res.status(500).json({ error: 'Failed to fetch data' });
