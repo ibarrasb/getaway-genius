@@ -1,6 +1,7 @@
 // routes/externalRoutes.js (ESM)
 
 import { Router } from 'express';
+import { createHash } from 'crypto';
 import OpenAI from 'openai';
 import { uploadImageBuffer } from '../services/cloudinary.js';
 
@@ -63,10 +64,16 @@ router.get('/places-pics', async (req, res) => {
         .json({ error: 'Places media error', details: buf.toString('utf-8') });
     }
 
-    const filename = photoreference.split('/').pop() || 'photo';
-    const cloudinaryUrl = await uploadImageBuffer(buf, filename);
-
-    return res.json({ url: cloudinaryUrl });
+    try {
+      const shortHash = createHash('sha256').update(photoreference).digest('hex').slice(0, 32);
+      const cloudinaryUrl = await uploadImageBuffer(buf, shortHash);
+      return res.json({ url: cloudinaryUrl });
+    } catch (cloudinaryError) {
+      console.error('Cloudinary upload failed, falling back to Google proxy:', cloudinaryError);
+      const ct = resp.headers.get('content-type') || 'image/jpeg';
+      res.set('Content-Type', ct);
+      return res.send(buf);
+    }
   } catch (error) {
     console.error('Places pics error:', error);
     return res.status(500).json({ error: 'Failed to fetch data' });
