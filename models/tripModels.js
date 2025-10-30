@@ -25,6 +25,7 @@ const TripSchema = new mongoose.Schema({
   car_expense: Number,
   other_expense: Number,
   image_url: String,
+  cloudinaryUploaded: { type: Boolean, default: false },
   isFavorite: { type: Boolean, default: false },
   activities: [String],
   instances: { type: [InstanceSchema], default: [] },

@@ -30,10 +30,6 @@ const Search = () => {
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState(null);
 
-  // ---- photo helpers (return a URL, not bytes) ----
-  const buildPhotoProxyURL = (photoreference) =>
-    `/api/places-pics?photoreference=${encodeURIComponent(photoreference)}`;
-
   // Returns a stable URL string for a random photo of the place
   const getPlacePhotoURL = useCallback(async (placeid, signal) => {
     const res = await fetch(
@@ -50,8 +46,14 @@ const Search = () => {
     const randomRef = random?.name; // e.g. "places/XXX/photos/YYY"
     if (!randomRef) return "";
 
-    // ✅ return a URL that always serves this exact photo via your backend
-    return buildPhotoProxyURL(randomRef);
+    const photoRes = await fetch(
+      `/api/places-pics?photoreference=${encodeURIComponent(randomRef)}`,
+      { signal }
+    );
+    if (!photoRes.ok) throw new Error("Failed to fetch photo URL");
+    const photoData = await photoRes.json();
+    
+    return photoData.url || "";
   }, []);
 
   // load a preview photo when the place changes

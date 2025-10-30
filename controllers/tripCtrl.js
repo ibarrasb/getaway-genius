@@ -1,6 +1,8 @@
 import Trips from '../models/tripModels.js';  
 import Wishlist from '../models/wishlistModel.js';
 import mongoose from 'mongoose';
+import { createHash } from 'crypto';
+import { uploadImageBuffer } from '../services/cloudinary.js';
 
 // GET /getaway-trip?email=...
 export const getTrips = async (req, res) => {
@@ -27,7 +29,7 @@ export const getFavoriteTrips = async (req, res) => {
 // POST /getaway-trip
 export const createTrips = async (req, res) => {
   try {
-    const {
+    let {
       user_email,
       location_address,
       trip_start,
@@ -44,6 +46,35 @@ export const createTrips = async (req, res) => {
 
     if (!image_url) return res.status(400).json({ msg: 'No image upload' });
 
+    let cloudinaryUploaded = false;
+
+    if (image_url.includes('places.googleapis.com/v1/') && image_url.includes('/media')) {
+      try {
+        const urlObj = new URL(image_url);
+        const pathMatch = urlObj.pathname.match(/^\/v1\/(.+)\/media$/);
+        
+        if (pathMatch) {
+          const photoreference = pathMatch[1];
+          const shortHash = createHash('sha256').update(photoreference).digest('hex').slice(0, 32);
+          
+          const apiKey = process.env.GOOGLEAPIKEY;
+          const googleMediaUrl = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
+          
+          const resp = await fetch(googleMediaUrl);
+          if (resp.ok) {
+            const buf = Buffer.from(await resp.arrayBuffer());
+            const cloudinaryUrl = await uploadImageBuffer(buf, shortHash);
+            image_url = cloudinaryUrl;
+            cloudinaryUploaded = true;
+          }
+        }
+      } catch (uploadError) {
+        console.error('Failed to upload to Cloudinary during trip creation:', uploadError);
+      }
+    } else if (image_url.includes('res.cloudinary.com')) {
+      cloudinaryUploaded = true;
+    }
+
     const newVacation = new Trips({
       user_email,
       location_address,
@@ -54,6 +85,7 @@ export const createTrips = async (req, res) => {
       car_expense,
       other_expense,
       image_url,
+      cloudinaryUploaded,
       isFavorite,
       activities,
       instances,
