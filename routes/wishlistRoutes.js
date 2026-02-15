@@ -6,24 +6,24 @@ const router = Router();
 
 // Routes for managing wishlists
 router.route('/createlist')
-  .post(wishCtrl.createWishlist);
+  .post(auth, wishCtrl.createWishlist);
 
 router.route('/getlists')
-  .get(wishCtrl.fetchLists);
+  .get(auth, wishCtrl.fetchLists);
 
 router.route('/spec-wishlist/:id')
-  .get(wishCtrl.fetchWishlist);
+  .get(auth, wishCtrl.fetchWishlist);
 
 router.route('/editlist/:id')
-  .put(wishCtrl.updateList);
+  .put(auth, wishCtrl.updateList);
 
 router.route('/addtrip/:id')
-  .post(wishCtrl.addTripToWishlist);
+  .post(auth, wishCtrl.addTripToWishlist);
 
 router.route('/:wishlistId/remove-trip/:tripId')
-  .delete(wishCtrl.removeTripFromWishlist);
+  .delete(auth, wishCtrl.removeTripFromWishlist);
 
 router.route('/removewishlist/:id')
-  .delete(wishCtrl.removeWishlist);
+  .delete(auth, wishCtrl.removeWishlist);
 
 export default router;

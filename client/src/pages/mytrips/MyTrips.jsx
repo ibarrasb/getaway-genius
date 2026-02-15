@@ -217,8 +217,8 @@ const MyTrips = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50">
-      <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="gg-page min-h-screen">
+      <div className="mx-auto max-w-6xl">
         {error && (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
@@ -233,7 +233,7 @@ const MyTrips = () => {
                 "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ring-1 " +
                 (countdown.tone === "emerald"
                   ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                  : "bg-indigo-50 text-indigo-700 ring-indigo-200")
+                  : "bg-sky-50 text-sky-700 ring-sky-200")
               }
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -248,7 +248,7 @@ const MyTrips = () => {
         {/* Featured trip */}
         {featured && (
           <section className="mb-10">
-            <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
+            <div className="gg-glass relative overflow-hidden rounded-3xl border border-white/70">
               {/* image */}
               <div className="relative h-64 w-full sm:h-80">
                 <img
@@ -262,7 +262,7 @@ const MyTrips = () => {
 
               {/* content */}
               <div className="relative -mt-16 px-5 pb-5 sm:-mt-20 sm:px-8">
-                <div className="flex flex-col gap-3 rounded-2xl bg-white/90 p-4 backdrop-blur shadow-md ring-1 ring-slate-200 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 rounded-2xl bg-white/95 p-4 backdrop-blur shadow-md ring-1 ring-slate-200 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-xl font-extrabold text-slate-900">
                       {featured.location_address}
@@ -275,7 +275,7 @@ const MyTrips = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-indigo-50 px-4 py-2 text-indigo-700 ring-1 ring-indigo-200">
+                    <div className="rounded-xl bg-teal-50 px-4 py-2 text-teal-700 ring-1 ring-teal-200">
                       <span className="text-xs uppercase tracking-wide">Est. Total</span>
                       <div className="text-lg font-bold">
                         {totalCost(featured.committedInstance) > 0
@@ -289,7 +289,7 @@ const MyTrips = () => {
                           `/trips/${featured._id}/instances/${featured.committedInstance._id}`
                         )
                       }
-                      className="rounded-xl bg-slate-900 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                      className="rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-2 font-semibold text-white shadow-sm transition hover:brightness-105"
                     >
                       View
                     </button>

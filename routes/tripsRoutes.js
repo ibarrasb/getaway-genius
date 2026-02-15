@@ -7,23 +7,23 @@ const router = Router();
 // gets and posts trips made from users
 router
   .route('/getaway-trip')
-  .get(tripCtrl.getTrips)
+  .get(auth, tripCtrl.getTrips)
   .post(auth, tripCtrl.createTrips);
 
 // get favorite trips
 router.route('/favorites')
-  .get(tripCtrl.getFavoriteTrips);
+  .get(auth, tripCtrl.getFavoriteTrips);
 
 // deletes and updates specific posts
 router
   .route('/getaway/:id')
-  .get(tripCtrl.getSpecificTrip)
+  .get(auth, tripCtrl.getSpecificTrip)
   .delete(auth, tripCtrl.deleteTrip)
-  .put(tripCtrl.updateTrip); // add `auth` here too if you want edits protected
+  .put(auth, tripCtrl.updateTrip);
 
-router.post('/getaway/:id/instances', tripCtrl.addTripInstance);
-router.get('/getaway/:id/instances/:instanceId', tripCtrl.getTripInstance);
+router.post('/getaway/:id/instances', auth, tripCtrl.addTripInstance);
+router.get('/getaway/:id/instances/:instanceId', auth, tripCtrl.getTripInstance);
 router.patch('/getaway/:id/instances/:instanceId/commit', auth, tripCtrl.commitTripInstance);
-router.delete('/getaway/:id/instances/:instanceId', tripCtrl.deleteTripInstance);
+router.delete('/getaway/:id/instances/:instanceId', auth, tripCtrl.deleteTripInstance);
 
 export default router;

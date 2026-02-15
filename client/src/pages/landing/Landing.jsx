@@ -1,130 +1,120 @@
-import { Link } from "react-router-dom"
+import { Link } from "react-router-dom";
 
-const CTA = ({ to, children, variant = "primary" }) => {
-  const base =
-    "inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2"
-  const styles =
-    variant === "primary"
-      ? "bg-indigo-600 text-white shadow-indigo-500/30 shadow hover:bg-indigo-700 focus:ring-indigo-300"
-      : "border border-slate-300 bg-white text-slate-800 shadow-sm hover:bg-slate-50 focus:ring-slate-300"
-  return (
-    <Link to={to} className={`${base} ${styles}`}>
-      {children}
-    </Link>
-  )
-}
+const CTA = ({ to, children, primary = false }) => (
+  <Link
+    to={to}
+    className={[
+      "inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition active:scale-[0.98]",
+      primary
+        ? "bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-lg shadow-cyan-900/20 hover:brightness-105"
+        : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+    ].join(" ")}
+  >
+    {children}
+  </Link>
+);
 
-const Stat = ({ label, value }) => (
-  <div className="rounded-2xl bg-white/70 p-4 shadow-sm ring-1 ring-slate-200">
-    <p className="text-xs text-slate-500">{label}</p>
-    <p className="mt-1 text-lg font-semibold text-slate-900">{value}</p>
+const Metric = ({ label, value }) => (
+  <div className="gg-card p-4">
+    <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+    <p className="mt-1 text-2xl font-extrabold text-slate-900">{value}</p>
   </div>
-)
+);
 
 const Landing = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-50 text-slate-900">
-      {/* top bar */}
-      <header className="mx-auto max-w-6xl px-4 py-6">
-        <div className="flex items-center gap-2 text-2xl font-extrabold tracking-tight">
-          <span className="text-indigo-600">Getaway</span>
-          <span>Genius</span>
-        </div>
-      </header>
-
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        {/* bg blobs */}
-        <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-indigo-200/50 blur-3xl" />
-          <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-fuchsia-200/50 blur-3xl" />
-        </div>
-
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-4 py-16 md:grid-cols-2 md:py-24">
-          {/* copy */}
-          <div>
-            <h1 className="text-4xl font-extrabold leading-tight md:text-5xl">
-              Plan Smarter, <span className="text-indigo-600">Travel Further.</span>
-            </h1>
-            <p className="mt-4 text-lg text-slate-600">
-              Find, plan, and save your perfect trip—affordable adventures await.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <CTA to="/login">Get Started</CTA>
-              <CTA to="/about" variant="secondary">About us</CTA>
-            </div>
-
-            {/* mini trust row */}
-            <div className="mt-6 flex items-center gap-6 text-sm text-slate-500">
-              <span>✓ Budget planner</span>
-              <span>✓ Weather insights</span>
-              <span>✓ Wishlists</span>
-            </div>
+    <div className="gg-page relative overflow-hidden">
+      <section className="gg-container grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="gg-glass gg-fade-up rounded-[2rem] border border-white/70 p-7 sm:p-10">
+          <p className="gg-pill inline-flex">Trip intelligence for real people</p>
+          <h1 className="gg-hero-title gg-title-xl mt-5 text-slate-900">
+            Your next getaway
+            <span className="block bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent">
+              starts with clarity.
+            </span>
+          </h1>
+          <p className="gg-lead gg-fade-up gg-fade-up-delay-1 mt-5 max-w-xl">
+            Getaway Genius helps you shape trips around budget, timing, and mood. Compare the full
+            cost, keep contenders in one workspace, and lock in the option that feels right.
+          </p>
+          <div className="gg-fade-up gg-fade-up-delay-2 mt-8 flex flex-wrap gap-3">
+            <CTA to="/login" primary>
+              Start Planning
+            </CTA>
+            <CTA to="/about">See How It Works</CTA>
           </div>
+          <div className="gg-fade-up gg-fade-up-delay-3 mt-6 flex flex-wrap gap-2 text-xs text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">Cost-first planning</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">Weather signals</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">Shortlist + wishlist</span>
+          </div>
+        </div>
 
-          {/* preview card */}
-          <div className="rounded-3xl bg-white/70 p-6 shadow-xl ring-1 ring-slate-200 backdrop-blur">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">Sample Trip</p>
-                <h3 className="mt-1 text-xl font-semibold">Miami Weekend</h3>
+        <div className="grid gap-4">
+          <div className="gg-glass gg-fade-up gg-fade-up-delay-1 rounded-[2rem] border border-white/70 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">Live Scenario</p>
+            <div className="mt-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-700 p-5 text-white">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-teal-200">Potential getaway</p>
+                  <h3 className="mt-1 text-2xl font-bold">San Diego, CA</h3>
+                </div>
+                <p className="rounded-full bg-teal-300/20 px-3 py-1 text-xs font-semibold text-teal-100">
+                  Best-value window
+                </p>
               </div>
-              <span className="rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
-                $412 est.
-              </span>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-slate-200">Flights</p>
+                  <p className="mt-1 text-xl font-bold">$238</p>
+                </div>
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-slate-200">Stay</p>
+                  <p className="mt-1 text-xl font-bold">$410</p>
+                </div>
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-slate-200">Transit</p>
+                  <p className="mt-1 text-xl font-bold">$72</p>
+                </div>
+                <div className="rounded-xl bg-white/10 p-3">
+                  <p className="text-slate-200">Extra</p>
+                  <p className="mt-1 text-xl font-bold">$95</p>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div className="mt-6 grid grid-cols-3 gap-4">
-              <Stat label="Flights" value="$220" />
-              <Stat label="Hotel" value="$150" />
-              <Stat label="Car" value="$42" />
-            </div>
-
-            <div className="mt-6 h-28 rounded-2xl bg-gradient-to-r from-indigo-200 via-indigo-100 to-transparent" />
+          <div className="grid grid-cols-2 gap-4">
+            <Metric label="Saved Comparisons" value="42+" />
+            <Metric label="Avg. Budget Delta" value="-17%" />
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section className="border-t border-slate-200 bg-white/60">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-center text-3xl font-bold">How It Works</h2>
-
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">1️⃣ Discover</h3>
-              <p className="mt-2 text-sm text-slate-600">
-                Filter trips by location, date, and budget.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">2️⃣ Plan &amp; Save</h3>
-              <p className="mt-2 text-sm text-slate-600">
-                Favorite destinations, set budgets, and get weather insights.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">3️⃣ Go &amp; Enjoy</h3>
-              <p className="mt-2 text-sm text-slate-600">
-                Seamless trip organization with wishlist &amp; details.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="border-t border-slate-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 text-center">
-          <h2 className="text-3xl font-bold">Ready for Your Next Getaway?</h2>
-          <div className="mt-6 flex justify-center">
-            <CTA to="/login">Start Planning</CTA>
-          </div>
-        </div>
+      <section className="gg-container mt-7 grid gap-4 md:grid-cols-3">
+        {[
+          {
+            title: "Scout options",
+            desc: "Search places, pull photos, and snapshot quick cost assumptions.",
+          },
+          {
+            title: "Pressure-test plans",
+            desc: "Stack trip variants and see when shifting dates lowers total spend.",
+          },
+          {
+            title: "Commit with confidence",
+            desc: "Lock your chosen instance and keep the rest as future playbooks.",
+          },
+        ].map((item, idx) => (
+          <article key={item.title} className={`gg-card gg-fade-up p-5 ${idx ? "gg-fade-up-delay-1" : ""}`}>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">Step {idx + 1}</p>
+            <h3 className="mt-2 text-xl font-bold text-slate-900">{item.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.desc}</p>
+          </article>
+        ))}
       </section>
     </div>
-  )
-}
+  );
+};
 
-export default Landing
+export default Landing;

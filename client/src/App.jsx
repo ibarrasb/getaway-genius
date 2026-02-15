@@ -11,7 +11,7 @@ const App = () => {
     <DataProvider>
       <ToastProvider>
         <Router>
-          <div className="min-h-screen flex flex-col justify-between bg-background text-foreground">
+          <div className="gg-shell gg-grid-overlay min-h-screen flex flex-col justify-between text-[var(--gg-ink)]">
             <Header />
             <main className="flex-1">
               <MainPages />

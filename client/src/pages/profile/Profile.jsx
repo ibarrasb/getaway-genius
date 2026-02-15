@@ -130,9 +130,9 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-50">
-        <div className="mx-auto max-w-3xl px-4 py-10">
-          <div className="animate-pulse rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-xl ring-1 ring-slate-200">
+      <div className="gg-page min-h-screen">
+        <div className="mx-auto max-w-3xl py-6">
+          <div className="gg-glass animate-pulse rounded-3xl border border-white/70 p-8">
             <div className="mb-4 h-6 w-40 rounded bg-slate-200" />
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="h-12 rounded bg-slate-200" />
@@ -149,11 +149,11 @@ const Profile = () => {
 
   if (!userDetails) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-50">
-        <div className="mx-auto max-w-xl px-4 py-16">
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl ring-1 ring-slate-200">
+      <div className="gg-page min-h-screen">
+        <div className="mx-auto max-w-xl py-16">
+          <div className="gg-glass rounded-3xl border border-white/70 p-8 text-center">
             <p className="text-lg font-semibold text-slate-900">User not found</p>
-            <Link to="/mytrips" className="mt-4 inline-block rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700">
+            <Link to="/mytrips" className="mt-4 inline-block rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-2 font-semibold text-white hover:brightness-105">
               Back to My Trips
             </Link>
           </div>
@@ -163,8 +163,8 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-50">
-      <header className="mx-auto max-w-3xl px-4 py-6">
+    <div className="gg-page min-h-screen">
+      <header className="mx-auto max-w-3xl py-4">
         <div className="flex items-center justify-between">
           <Link
             to="/mytrips"
@@ -183,7 +183,7 @@ const Profile = () => {
               className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                 editMode
                   ? "bg-slate-100 text-slate-800 ring-1 ring-slate-300 hover:bg-slate-200"
-                  : "bg-slate-900 text-white hover:bg-slate-800"
+                  : "bg-gradient-to-r from-teal-600 to-blue-600 text-white hover:brightness-105"
               }`}
             >
               {editMode ? "Cancel" : "Edit"}
@@ -192,8 +192,8 @@ const Profile = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 pb-16">
-        <div className="rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-xl ring-1 ring-slate-200 backdrop-blur">
+      <main className="mx-auto max-w-3xl pb-16">
+        <div className="gg-glass rounded-3xl border border-white/70 p-8">
           <h1 className="text-2xl font-bold text-slate-900">
             {userDetails.fname || "User"} {userDetails.lname || ""}
           </h1>
@@ -221,7 +221,7 @@ const Profile = () => {
                 required
                 pattern="[A-Za-z]*"
                 title="First name must contain only letters."
-                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-slate-50"
+                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-300 disabled:cursor-not-allowed disabled:bg-slate-50"
                 placeholder="Jane"
               />
             </div>
@@ -236,7 +236,7 @@ const Profile = () => {
                 required
                 pattern="[A-Za-z]*"
                 title="Last name must contain only letters."
-                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-slate-50"
+                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-300 disabled:cursor-not-allowed disabled:bg-slate-50"
                 placeholder="Doe"
               />
             </div>
@@ -249,7 +249,7 @@ const Profile = () => {
                 onChange={(e) => onChange("birthday", e.target.value)}
                 disabled={!editMode || !isOwnProfile}
                 required
-                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-slate-50"
+                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-300 disabled:cursor-not-allowed disabled:bg-slate-50"
               />
             </div>
 
@@ -261,7 +261,7 @@ const Profile = () => {
                 onChange={(e) => onChange("city", e.target.value)}
                 disabled={!editMode || !isOwnProfile}
                 required
-                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-slate-50"
+                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-300 disabled:cursor-not-allowed disabled:bg-slate-50"
                 placeholder="Austin"
               />
             </div>
@@ -273,7 +273,7 @@ const Profile = () => {
                 onChange={(e) => onChange("state", e.target.value)}
                 disabled={!editMode || !isOwnProfile}
                 required
-                className="block w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-slate-50"
+                className="block w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-300 disabled:cursor-not-allowed disabled:bg-slate-50"
               >
                 <option value="">Select State</option>
                 {US_STATES.map((s) => (
@@ -293,7 +293,7 @@ const Profile = () => {
                 disabled={!editMode || !isOwnProfile}
                 required
                 title="Zip code must be exactly 5 digits."
-                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-slate-50"
+                className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-300 disabled:cursor-not-allowed disabled:bg-slate-50"
                 placeholder="12345"
               />
               <p className="mt-1 text-xs text-slate-500">Must be exactly 5 digits.</p>
@@ -322,7 +322,7 @@ const Profile = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"
+                  className="rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:opacity-60"
                 >
                   {submitting ? "Saving…" : "Save"}
                 </button>

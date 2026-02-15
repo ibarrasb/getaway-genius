@@ -175,7 +175,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
 
   return (
     <div
-      className="group relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+      className="gg-card group relative overflow-hidden rounded-3xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
       role="article"
     >
       {/* Media */}
@@ -200,7 +200,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
           disabled={isToggling}
           aria-label={isFavorite ? "Unfavorite" : "Add to wishlist"}
           aria-pressed={isFavorite}
-          className={`absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-slate-700 shadow-md ring-1 ring-black/5 transition hover:scale-105 hover:bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+          className={`absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-slate-700 shadow-md ring-1 ring-black/5 transition hover:scale-105 hover:bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500 ${
             isToggling ? "opacity-50 cursor-not-allowed" : ""
           }`}
           title={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
@@ -298,7 +298,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
           <Link
             to={instance ? `/trips/${trip?._id}/instances/${instance._id}` : `/trips/${trip?._id}`}
             state={instance ? { trip, instance } : { trip }}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 5v14M5 12h14" strokeLinecap="round" />
@@ -310,7 +310,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
             type="button"
             onClick={handleRemove}
             disabled={isDeleting}
-            className={`inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 ${
+            className={`inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-400 ${
               isDeleting ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
@@ -341,7 +341,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
       {/* subtle outer glow on hover */}
       <div
         className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        style={{ boxShadow: "0 0 0 1px rgba(99,102,241,.15), 0 10px 30px rgba(2,6,23,.10)" }}
+        style={{ boxShadow: "0 0 0 1px rgba(20,184,166,.2), 0 14px 30px rgba(2,6,23,.12)" }}
       />
 
       {/* Wishlist modal */}

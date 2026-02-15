@@ -69,18 +69,18 @@ const Register = () => {
   
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-50">
-      <header className="mx-auto max-w-6xl px-4 py-6">
+    <div className="min-h-screen px-3 pt-3 sm:px-5">
+      <header className="mx-auto max-w-6xl py-4">
         <div className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-slate-900">
-          <span className="text-indigo-600">Getaway</span>
+          <span className="text-teal-700">Getaway</span>
           <span>Genius</span>
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-6xl items-center justify-center px-4 py-10">
-        <div className="w-full max-w-xl rounded-3xl bg-white/80 p-8 shadow-xl ring-1 ring-slate-200 backdrop-blur">
+      <main className="mx-auto flex max-w-6xl items-center justify-center py-8">
+        <div className="gg-glass w-full max-w-xl rounded-3xl border border-white/70 p-8">
           <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
-          <p className="mt-1 text-sm text-slate-600">It only takes a minute.</p>
+          <p className="mt-1 text-sm text-slate-600">Set up your travel command center in a minute.</p>
 
           {error && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -213,7 +213,7 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="mt-2 w-full rounded-xl bg-indigo-600 px-5 py-2.5 text-white shadow-md transition hover:bg-indigo-700 disabled:opacity-60"
+                className="mt-2 w-full rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-5 py-2.5 text-white shadow-md transition hover:brightness-105 disabled:opacity-60"
               >
                 {submitting ? "Creating account…" : "Register"}
               </button>
@@ -222,7 +222,7 @@ const Register = () => {
 
           <p className="mt-6 text-center text-sm text-slate-600">
             Already have an account?{" "}
-            <Link to="/login" className="font-semibold text-indigo-600 hover:underline">
+            <Link to="/login" className="font-semibold text-teal-700 hover:underline">
               Log in
             </Link>
           </p>

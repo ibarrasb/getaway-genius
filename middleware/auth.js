@@ -2,11 +2,16 @@ import jwt from 'jsonwebtoken';
 
 const auth = (req, res, next) => {
   try {
-    const token = req.header('Authorization');
-    if (!token) return res.status(400).json({ msg: 'Invalid Authentication' });
+    const authHeader = req.header('Authorization');
+    if (!authHeader) return res.status(401).json({ msg: 'Invalid Authentication' });
+
+    const token = authHeader.startsWith('Bearer ')
+      ? authHeader.slice(7).trim()
+      : authHeader.trim();
+    if (!token) return res.status(401).json({ msg: 'Invalid Authentication' });
 
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-      if (err) return res.status(400).json({ msg: err.message });
+      if (err) return res.status(401).json({ msg: err.message });
 
       req.user = user;
       next();

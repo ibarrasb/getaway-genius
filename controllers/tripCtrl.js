@@ -1,25 +1,46 @@
 import Trips from '../models/tripModels.js';  
 import Wishlist from '../models/wishlistModel.js';
+import Users from '../models/userModels.js';
 import mongoose from 'mongoose';
 import { createHash } from 'crypto';
 import { uploadImageBuffer } from '../services/cloudinary.js';
 
-// GET /getaway-trip?email=...
+const getAuthContext = async (req) => {
+  if (!req.user?.id) return null;
+  const user = await Users.findById(req.user.id).select('email');
+  if (!user?.email) return null;
+  return { userId: req.user.id, userEmail: user.email };
+};
+
+const buildTripOwnershipFilter = ({ userId }) => ({ userId });
+
+const buildWishlistOwnershipFilter = ({ userId }) => ({ userId });
+
+const findOwnedTrip = async (tripId, authCtx) => {
+  if (!mongoose.isValidObjectId(tripId)) return null;
+  return Trips.findOne({ _id: tripId, ...buildTripOwnershipFilter(authCtx) });
+};
+
+// GET /getaway-trip
 export const getTrips = async (req, res) => {
   try {
-    const user_email = req.query.email;
-    const trips = await Trips.find({ user_email });
+    const authCtx = await getAuthContext(req);
+    if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
+
+    const trips = await Trips.find(buildTripOwnershipFilter(authCtx));
     res.json(trips);
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
 };
 
-// GET /favorites?email=...
+// GET /favorites
 export const getFavoriteTrips = async (req, res) => {
   try {
-    const user_email = req.query.email;
-    const trips = await Trips.find({ user_email, isFavorite: true });
+    const authCtx = await getAuthContext(req);
+    if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
+
+    const trips = await Trips.find({ ...buildTripOwnershipFilter(authCtx), isFavorite: true });
     res.json(trips);
   } catch (err) {
     return res.status(500).json({ msg: err.message });
@@ -29,8 +50,10 @@ export const getFavoriteTrips = async (req, res) => {
 // POST /getaway-trip
 export const createTrips = async (req, res) => {
   try {
+    const authCtx = await getAuthContext(req);
+    if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
+
     let {
-      user_email,
       location_address,
       trip_start,
       trip_end,
@@ -76,7 +99,8 @@ export const createTrips = async (req, res) => {
     }
 
     const newVacation = new Trips({
-      user_email,
+      userId: authCtx.userId,
+      user_email: authCtx.userEmail,
       location_address,
       trip_start,
       trip_end,
@@ -101,16 +125,24 @@ export const createTrips = async (req, res) => {
 // DELETE /getaway/:id
 export const deleteTrip = async (req, res) => {  
   try {  
+    const authCtx = await getAuthContext(req);
+    if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
+
     const tripId = req.params.id;  
+    const trip = await findOwnedTrip(tripId, authCtx);
+    if (!trip) return res.status(404).json({ msg: 'Trip not found' });
       
     // Remove trip from all wishlists that contain it  
     await Wishlist.updateMany(  
-      { "trips._id": tripId },  
+      {
+        ...buildWishlistOwnershipFilter(authCtx),
+        "trips._id": tripId,
+      },  
       { $pull: { trips: { _id: tripId } } }  
     );  
       
     // Delete the trip itself  
-    await Trips.findByIdAndDelete(tripId);  
+    await Trips.findByIdAndDelete(trip._id);  
       
     res.json({ msg: 'Deleted a Trip and removed from all wishlists' });  
   } catch (err) {  
@@ -121,8 +153,13 @@ export const deleteTrip = async (req, res) => {
 // PUT /getaway/:id
 export const updateTrip = async (req, res) => {
   try {
+    const authCtx = await getAuthContext(req);
+    if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
+
+    const existingTrip = await findOwnedTrip(req.params.id, authCtx);
+    if (!existingTrip) return res.status(404).json({ msg: 'Trip not found' });
+
     const {
-      user_email,
       location_address,
       trip_start,
       trip_end,
@@ -137,9 +174,10 @@ export const updateTrip = async (req, res) => {
     } = req.body;
 
     await Trips.findOneAndUpdate(
-      { _id: req.params.id },
+      { _id: existingTrip._id, ...buildTripOwnershipFilter(authCtx) },
       {
-        user_email,
+        userId: authCtx.userId,
+        user_email: authCtx.userEmail,
         location_address,
         trip_start,
         trip_end,
@@ -163,7 +201,12 @@ export const updateTrip = async (req, res) => {
 // GET /getaway/:id
 export const getSpecificTrip = async (req, res) => {
   try {
-    const detailedTrip = await Trips.findById(req.params.id);
+    const authCtx = await getAuthContext(req);
+    if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
+
+    const detailedTrip = await findOwnedTrip(req.params.id, authCtx);
+    if (!detailedTrip) return res.status(404).json({ msg: 'Trip not found' });
+
     res.json(detailedTrip);
   } catch (err) {
     return res.status(500).json({ msg: err.message });
@@ -173,7 +216,12 @@ export const getSpecificTrip = async (req, res) => {
 //TRIP INSTANCES------------
 export const addTripInstance = async (req, res) => {
   try {
+    const authCtx = await getAuthContext(req);
+    if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
+
     const { id } = req.params;
+    const trip = await findOwnedTrip(id, authCtx);
+    if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
     const parseDate = (v) => {
       if (!v) return null;
@@ -199,7 +247,7 @@ export const addTripInstance = async (req, res) => {
     };
 
     const updated = await Trips.findByIdAndUpdate(
-      id,
+      trip._id,
       { $push: { instances: instance } },
       { new: true, runValidators: true }
     );
@@ -216,12 +264,14 @@ export const addTripInstance = async (req, res) => {
 export const commitTripInstance = async (req, res) => {
   try {
     const { id, instanceId } = req.params;
+    const authCtx = await getAuthContext(req);
+    if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
 
     if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(instanceId)) {
       return res.status(400).json({ msg: 'Invalid trip or instance id' });
     }
 
-    const trip = await Trips.findById(id);
+    const trip = await findOwnedTrip(id, authCtx);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
     const instanceExists = trip.instances.some(
@@ -247,12 +297,14 @@ export const commitTripInstance = async (req, res) => {
 export const getTripInstance = async (req, res) => {
   try {
     const { id, instanceId } = req.params;
+    const authCtx = await getAuthContext(req);
+    if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
 
     if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(instanceId)) {
       return res.status(400).json({ msg: 'Invalid trip or instance id' });
     }
 
-    const trip = await Trips.findById(id);
+    const trip = await findOwnedTrip(id, authCtx);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
     const instance = trip.instances.find(
@@ -272,12 +324,14 @@ export const getTripInstance = async (req, res) => {
 export const deleteTripInstance = async (req, res) => {
   try {
     const { id, instanceId } = req.params;
+    const authCtx = await getAuthContext(req);
+    if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
 
     if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(instanceId)) {
       return res.status(400).json({ msg: 'Invalid trip or instance id' });
     }
 
-    const trip = await Trips.findById(id);
+    const trip = await findOwnedTrip(id, authCtx);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
     if (trip.committedInstanceId?.toString() === instanceId) {
@@ -298,6 +352,3 @@ export const deleteTripInstance = async (req, res) => {
     return res.status(500).json({ msg: err.message });
   }
 };
-
-
-

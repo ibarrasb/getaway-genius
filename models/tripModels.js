@@ -16,6 +16,7 @@ const InstanceSchema = new mongoose.Schema(
 );
 
 const TripSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', index: true, default: null },
   user_email: String,
   location_address: String,
   trip_start: Date,
@@ -31,5 +32,8 @@ const TripSchema = new mongoose.Schema({
   instances: { type: [InstanceSchema], default: [] },
   committedInstanceId: { type: mongoose.Schema.Types.ObjectId, default: null },
 }, { timestamps: true });
+
+TripSchema.index({ userId: 1, createdAt: -1 });
+TripSchema.index({ user_email: 1, createdAt: -1 });
 
 export default mongoose.model('Trips', TripSchema);

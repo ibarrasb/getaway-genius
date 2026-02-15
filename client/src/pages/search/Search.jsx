@@ -1,7 +1,6 @@
 // src/pages/search/Search.jsx
-import { useState, useEffect, useCallback, useContext } from "react";
+import { useState, useEffect, useCallback, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Autocomplete from "react-google-autocomplete";
 import axios from "axios";
 import { GlobalState } from "@/context/GlobalState.jsx";
 
@@ -24,11 +23,14 @@ const Search = () => {
   // ui state
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [photoURL, setPhotoURL] = useState(""); // <-- this will be a stable backend URL
-  const [searchValue, setSearchValue] = useState("");
   const [loadingPhoto, setLoadingPhoto] = useState(false);
   const [error, setError] = useState(null);
   const [creating, setCreating] = useState(false);
   const [createMsg, setCreateMsg] = useState(null);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const [locationBrief, setLocationBrief] = useState(null);
+  const [briefMsg, setBriefMsg] = useState(null);
+  const autocompleteHostRef = useRef(null);
 
   // Returns a stable URL string for a random photo of the place
   const getPlacePhotoURL = useCallback(async (placeid, signal) => {
@@ -85,10 +87,65 @@ const Search = () => {
   // selection handler
   const handlePlaceSelected = (place) => {
     setSelectedPlace(place || null);
-    setSearchValue("");
     setError(null);
     setCreateMsg(null);
+    setLocationBrief(null);
+    setBriefMsg(null);
   };
+
+  useEffect(() => {
+    const host = autocompleteHostRef.current;
+    if (!host || !window.google?.maps?.places?.PlaceAutocompleteElement) return;
+
+    const placeAutocomplete = new window.google.maps.places.PlaceAutocompleteElement({
+      includedPrimaryTypes: ["locality"],
+    });
+
+    placeAutocomplete.setAttribute("requested-region", "US");
+    placeAutocomplete.setAttribute("placeholder", "Search for a city");
+    placeAutocomplete.style.width = "100%";
+    placeAutocomplete.style.display = "block";
+    placeAutocomplete.style.color = "#0f172a";
+    placeAutocomplete.style.background = "#ffffff";
+    placeAutocomplete.style.setProperty("--gmpx-color-surface", "#ffffff");
+    placeAutocomplete.style.setProperty("--gmpx-color-on-surface", "#0f172a");
+    placeAutocomplete.style.setProperty("--gmpx-color-on-surface-variant", "#334155");
+    placeAutocomplete.style.setProperty("--gmpx-color-outline", "#cbd5e1");
+    placeAutocomplete.style.setProperty("--gmpx-color-primary", "#0f766e");
+    placeAutocomplete.style.setProperty("--gmpx-font-family-base", "Sora, ui-sans-serif, system-ui, sans-serif");
+    placeAutocomplete.style.setProperty("--gmpx-font-size-base", "14px");
+    placeAutocomplete.className =
+      "w-full rounded-xl border border-slate-300 bg-white shadow-sm outline-none transition focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-300";
+
+    const onSelect = async (event) => {
+      try {
+        const prediction = event.placePrediction;
+        if (!prediction?.toPlace) return;
+        const place = prediction.toPlace();
+        await place.fetchFields({
+          fields: ["id", "displayName", "formattedAddress"],
+        });
+
+        handlePlaceSelected({
+          place_id: place.id || "",
+          name: place.displayName || "",
+          formatted_address: place.formattedAddress || "",
+        });
+      } catch (e) {
+        console.error("Places selection failed:", e);
+        setError("Couldn’t load place details. Try another city.");
+      }
+    };
+
+    placeAutocomplete.addEventListener("gmp-select", onSelect);
+    host.innerHTML = "";
+    host.appendChild(placeAutocomplete);
+
+    return () => {
+      placeAutocomplete.removeEventListener("gmp-select", onSelect);
+      host.innerHTML = "";
+    };
+  }, []);
 
   // display name for selected city
   const locationName =
@@ -130,10 +187,41 @@ const Search = () => {
     }
   };
 
+  const handleGenerateBrief = async () => {
+    if (!locationName || briefLoading) return;
+
+    try {
+      setBriefLoading(true);
+      setBriefMsg(null);
+      const response = await fetch("/api/chatgpt/location-brief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ location: locationName }),
+      });
+
+      if (!response.ok) {
+        setLocationBrief(null);
+        const errText = await response.text();
+        setBriefMsg(errText || "Couldn’t generate a trip brief right now.");
+        return;
+      }
+
+      const data = await response.json();
+      setLocationBrief(data);
+      if (data?.warning) setBriefMsg(data.warning);
+    } catch (err) {
+      console.error("Failed to generate location brief:", err);
+      setLocationBrief(null);
+      setBriefMsg("Couldn’t generate a trip brief right now.");
+    } finally {
+      setBriefLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-slate-50">
+    <div className="gg-page min-h-screen">
       {/* Top bar */}
-      <header className="mx-auto max-w-6xl px-4 py-6">
+      <header className="gg-container py-4">
         <div className="flex items-center justify-between">
           <button
             onClick={() =>
@@ -147,23 +235,23 @@ const Search = () => {
             Back
           </button>
 
-          <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200">
-            <span className="inline-block h-2 w-2 rounded-full bg-indigo-600" />
+          <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 ring-1 ring-teal-200">
+            <span className="inline-block h-2 w-2 rounded-full bg-teal-600" />
             City search
           </span>
         </div>
       </header>
 
       {/* Search hero */}
-      <section className="mx-auto max-w-6xl px-4">
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white/70 p-6 shadow-xl ring-1 ring-slate-200 backdrop-blur">
+      <section className="gg-container">
+        <div className="gg-glass overflow-visible rounded-3xl border border-white/70 p-6">
           <div className="grid gap-6 md:grid-cols-2">
             {/* Left: input */}
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              <h1 className="gg-title-lg text-slate-900">
                 Where are you going?
               </h1>
-              <p className="mt-2 text-slate-600">
+              <p className="gg-lead mt-2">
                 Type a <span className="font-semibold">city name</span> and we’ll show a quick visual so you can get a feel for it.
               </p>
 
@@ -171,13 +259,10 @@ const Search = () => {
                 <label htmlFor="place-search" className="mb-2 block text-sm font-medium text-slate-700">
                   City
                 </label>
-                <Autocomplete
+                <div
                   id="place-search"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300"
-                  onPlaceSelected={handlePlaceSelected}
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  options={{ types: ["(cities)"] }} // hint cities in the dropdown
+                  ref={autocompleteHostRef}
+                  className="gg-place-autocomplete-host relative z-30 text-slate-900"
                 />
                 {error && (
                   <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -216,14 +301,24 @@ const Search = () => {
 
           {/* Action row under the preview */}
           <div className="mt-6 flex items-center justify-end">
-            <button
-              type="button"
-              onClick={handleCreateTrip}
-              disabled={!selectedPlace || creating}
-              className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 disabled:opacity-60"
-            >
-              {creating ? "Creating…" : "Create Trip"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleGenerateBrief}
+                disabled={!selectedPlace || briefLoading}
+                className="gg-btn-soft text-sm"
+              >
+                {briefLoading ? "Generating brief..." : "AI Trip Brief"}
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateTrip}
+                disabled={!selectedPlace || creating}
+                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:brightness-105 disabled:opacity-60"
+              >
+                {creating ? "Creating…" : "Create Trip"}
+              </button>
+            </div>
           </div>
 
           {createMsg && (
@@ -231,12 +326,47 @@ const Search = () => {
               {createMsg}
             </div>
           )}
+
+          {locationBrief && (
+            <div className="mt-4 gg-card rounded-2xl p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
+                AI Destination Brief
+              </p>
+              <p className="mt-2 text-sm text-slate-700">{locationBrief.summary}</p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(locationBrief.bestMonths || []).map((m) => (
+                  <span
+                    key={m}
+                    className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700"
+                  >
+                    {m}
+                  </span>
+                ))}
+              </div>
+
+              <ul className="mt-3 space-y-1 text-sm text-slate-700">
+                {(locationBrief.budgetTips || []).map((tip, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-teal-600" />
+                    <span>{tip}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {briefMsg && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {briefMsg}
+            </div>
+          )}
         </div>
       </section>
 
       {/* Spacer / subtle tip */}
-      <section className="mx-auto max-w-6xl px-4 py-8">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+      <section className="gg-container py-8">
+        <div className="gg-card rounded-2xl p-5 text-center">
           <p className="text-sm text-slate-600">
             Pro tip: try nearby cities too — prices and vibes can change a lot with short hops.
           </p>

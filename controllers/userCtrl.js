@@ -114,7 +114,12 @@ export const getUser = async (req, res) => {
 // Get any user by id
 export const getLoggedUser = async (req, res) => {
   try {
-    const detailedUser = await Users.findById(req.params.id);
+    if (!req.user?.id) return res.status(401).json({ msg: 'Invalid Authentication' });
+    if (req.user.id !== req.params.id) return res.status(403).json({ msg: 'Forbidden' });
+
+    const detailedUser = await Users.findById(req.params.id).select('-password');
+    if (!detailedUser) return res.status(404).json({ msg: 'User does not exist.' });
+
     res.json(detailedUser);
   } catch (err) {
     return res.status(500).json({ msg: err.message });
@@ -124,11 +129,17 @@ export const getLoggedUser = async (req, res) => {
 // Update user
 export const updateUser = async (req, res) => {
   try {
+    if (!req.user?.id) return res.status(401).json({ msg: 'Invalid Authentication' });
+    if (req.user.id !== req.params.id) return res.status(403).json({ msg: 'Forbidden' });
+
     const { fname, lname, birthday, city, state, zip } = req.body;
-    await Users.findOneAndUpdate(
+    const updated = await Users.findOneAndUpdate(
       { _id: req.params.id },
-      { fname, lname, birthday, city, state, zip }
+      { fname, lname, birthday, city, state, zip },
+      { new: true }
     );
+    if (!updated) return res.status(404).json({ msg: 'User does not exist.' });
+
     res.json({ msg: 'Updated User' });
   } catch (err) {
     return res.status(500).json({ msg: err.message });

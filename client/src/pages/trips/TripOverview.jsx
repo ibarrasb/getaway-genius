@@ -1,5 +1,5 @@
 // src/pages/trips/TripOverview.jsx
-import { useState, useEffect, useCallback, useContext } from "react";
+import { useState, useEffect, useCallback, useContext, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import {
@@ -22,15 +22,19 @@ import { fmtRangeShort } from "../utils/localDates"; // ✅ local date utils (no
 const TripOverview = () => {
   const state = useContext(GlobalState);
   const token = state.token[0];
+  const globalLoading = state.loading?.[0] ?? false;
   const { tripId } = useParams();
 
   const [trip, setTrip] = useState(null);
   const [tripInstances, setTripInstances] = useState([]);
   const [weatherData, setWeatherData] = useState(null);
   const [funPlaces, setFunPlaces] = useState(null);
+  const [tripSuggestions, setTripSuggestions] = useState([]);
+  const [fetchError, setFetchError] = useState("");
   const [loading, setLoading] = useState(true);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [funPlacesLoading, setFunPlacesLoading] = useState(false);
+  const [tripSuggestionsLoading, setTripSuggestionsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [committingId, setCommittingId] = useState(null);
   const [newInstance, setNewInstance] = useState({
@@ -67,6 +71,11 @@ const TripOverview = () => {
     (Number(instance.travel_expense) || 0) +
     (Number(instance.car_expense) || 0) +
     (Number(instance.other_expense) || 0);
+
+  const authHeaders = useMemo(
+    () => (token ? { Authorization: token } : undefined),
+    [token]
+  );
 
   // -------- fetchers --------
   const fetchWeatherData = useCallback(async (locationAddress) => {
@@ -116,10 +125,49 @@ const TripOverview = () => {
     }
   }, []);
 
+  const fetchTripSuggestions = useCallback(async (locationAddress) => {
+    setTripSuggestionsLoading(true);
+    try {
+      const { city, state: locState, country } =
+        parseLocationAddress(locationAddress);
+      const location = [city, locState, country].filter(Boolean).join(", ");
+
+      const response = await fetch("/api/chatgpt/trip-suggestion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ location }),
+      });
+
+      if (!response.ok) {
+        setTripSuggestions([]);
+        return;
+      }
+
+      const data = await response.json();
+      const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : [];
+      setTripSuggestions(suggestions);
+    } catch (error) {
+      console.error("Error fetching trip suggestions:", error);
+      setTripSuggestions([]);
+    } finally {
+      setTripSuggestionsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchTripData = async () => {
+      if (globalLoading) return;
+      if (!token) {
+        setFetchError("Your session expired. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const tripRes = await axios.get(`/api/trips/getaway/${tripId}`);
+        setFetchError("");
+        const tripRes = await axios.get(`/api/trips/getaway/${tripId}`, {
+          headers: authHeaders,
+        });
         setTrip(tripRes.data);
 
         const instances =
@@ -131,16 +179,22 @@ const TripOverview = () => {
         if (tripRes.data.location_address) {
           fetchWeatherData(tripRes.data.location_address);
           fetchFunPlaces(tripRes.data.location_address);
+          fetchTripSuggestions(tripRes.data.location_address);
         }
       } catch (error) {
         console.error("Error fetching trip data:", error);
+        if (error?.response?.status === 401) {
+          setFetchError("Your session expired. Please log in again.");
+        } else {
+          setFetchError("Could not load this trip right now.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchTripData();
-  }, [tripId, fetchWeatherData, fetchFunPlaces]);
+  }, [tripId, token, globalLoading, authHeaders, fetchWeatherData, fetchFunPlaces, fetchTripSuggestions]);
 
   // -------- actions --------
   const handleDeleteInstance = async (instanceId) => {
@@ -154,7 +208,9 @@ const TripOverview = () => {
         prev.filter((i) => (i._id || "").toString() !== instanceId.toString())
       );
 
-      await axios.delete(`/api/trips/getaway/${tripId}/instances/${instanceId}`);
+      await axios.delete(`/api/trips/getaway/${tripId}/instances/${instanceId}`, {
+        headers: authHeaders,
+      });
     } catch (err) {
       console.error("Error deleting instance:", err?.response?.data || err.message);
       setTripInstances((prev) => [...prev]); // optional revert
@@ -177,7 +233,12 @@ const TripOverview = () => {
       const { data: createdInstance } = await axios.post(
         `/api/trips/getaway/${tripId}/instances`,
         payload,
-        { headers: { "Content-Type": "application/json" } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(authHeaders || {}),
+          },
+        }
       );
 
       setTripInstances((prev) => [createdInstance, ...prev]);
@@ -214,7 +275,7 @@ const TripOverview = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: token } : {}),
+            ...(authHeaders || {}),
           },
         }
       );
@@ -232,9 +293,9 @@ const TripOverview = () => {
   // -------- UI --------
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-teal-600 border-t-transparent"></div>
           <p className="text-slate-600">Loading trip details...</p>
         </div>
       </div>
@@ -243,11 +304,16 @@ const TripOverview = () => {
 
   if (!trip) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Trip not found</h2>
-          <Link to="/explore" className="text-indigo-600 hover:text-indigo-700">
-            Return to Explore
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">
+            {fetchError || "Trip not found"}
+          </h2>
+          <Link
+            to={fetchError ? "/login" : "/explore"}
+            className="text-teal-700 hover:text-teal-800"
+          >
+            {fetchError ? "Go to Login" : "Return to Explore"}
           </Link>
         </div>
       </div>
@@ -255,18 +321,18 @@ const TripOverview = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen px-3 pb-12 pt-4 sm:px-5">
+      <div className="mx-auto max-w-6xl">
         <div className="mb-6">
           <Link
             to="/explore"
-            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 mb-4"
+            className="mb-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-600 transition hover:text-slate-800"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Explore
           </Link>
 
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="gg-glass overflow-hidden rounded-3xl border border-white/70">
             <div className="relative h-64 md:h-80">
               <img
                 src={trip.image_url}
@@ -284,7 +350,7 @@ const TripOverview = () => {
             <div className="p-6">
               <div className="grid md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-semibold text-slate-800 mb-4">
+                  <h3 className="mb-4 text-xl font-semibold text-slate-800">
                     Current Weather
                   </h3>
                   {weatherLoading ? (
@@ -313,7 +379,7 @@ const TripOverview = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold text-slate-800 mb-4">
+                  <h3 className="mb-4 text-xl font-semibold text-slate-800">
                     Suggestions
                   </h3>
                   {funPlacesLoading ? (
@@ -341,12 +407,12 @@ const TripOverview = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="gg-glass rounded-3xl border border-white/70 p-6">
+          <div className="mb-6 flex items-center justify-between">
             <h2 className="text-2xl font-bold text-slate-800">Trip Instances</h2>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-2 text-white transition hover:brightness-105"
               type="button"
             >
               <Plus className="h-4 w-4" />
@@ -358,12 +424,12 @@ const TripOverview = () => {
             {tripInstances.map((instance, index) => (
               <div
                 key={instance._id || index}
-                className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow relative"
+                className="gg-card relative rounded-2xl p-4 transition hover:-translate-y-0.5 hover:shadow-lg"
               >
                 {/* top-right delete button */}
                 <button
                   onClick={() => handleDeleteInstance(instance._id || index)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-red-600"
+                  className="absolute right-3 top-3 rounded-full p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                   aria-label="Delete instance"
                   title="Delete instance"
                   type="button"
@@ -379,7 +445,7 @@ const TripOverview = () => {
                 </div>
 
                 <div className="flex items-center gap-2 mb-4">
-                  <DollarSign className="h-4 w-4 text-green-600" />
+                  <DollarSign className="h-4 w-4 text-emerald-600" />
                   <span className="text-lg font-semibold text-slate-800">
                     ${calculateTotalCost(instance).toFixed(2)}
                   </span>
@@ -388,7 +454,7 @@ const TripOverview = () => {
                 <Link
                   to={`/trips/${tripId}/instances/${instance._id || index}`}
                   state={{ trip, instance }}
-                  className="block w-full text-center bg-slate-100 text-slate-700 py-2 rounded-lg hover:bg-slate-200 transition-colors mb-2"
+                  className="mb-2 block w-full rounded-xl border border-slate-200 bg-white py-2 text-center text-slate-700 transition hover:bg-slate-50"
                 >
                   View Details
                 </Link>
@@ -399,7 +465,7 @@ const TripOverview = () => {
                   className={`block w-full text-center py-2 rounded-lg transition-colors ${
                     instance.isCommitted
                       ? "bg-green-100 text-green-700 ring-1 ring-green-300 cursor-default"
-                      : "bg-indigo-600 text-white hover:bg-indigo-700"
+                      : "bg-gradient-to-r from-teal-600 to-blue-600 text-white hover:brightness-105"
                   } ${committingId === instance._id ? "opacity-50 cursor-wait" : ""}`}
                   type="button"
                 >
@@ -413,6 +479,38 @@ const TripOverview = () => {
             ))}
           </div>
         </div>
+
+        <div className="mt-6 gg-glass rounded-3xl border border-white/70 p-6">
+          <h2 className="text-2xl font-bold text-slate-800">Best Time Windows (AI)</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Seasonal timing suggestions based on cost, experience, and crowd levels.
+          </p>
+
+          {tripSuggestionsLoading ? (
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="gg-skeleton h-36" />
+              ))}
+            </div>
+          ) : tripSuggestions.length ? (
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {tripSuggestions.map((item, idx) => (
+                <article key={`${item.season}-${idx}`} className="gg-card rounded-2xl p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
+                    {item.season}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{item.monthIntervals}</p>
+                  <p className="mt-2 text-sm text-slate-700">{item.reason}</p>
+                  <p className="mt-2 text-xs text-slate-500">{item.description}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+              AI suggestions are unavailable right now.
+            </div>
+          )}
+        </div>
       </div>
 
       {showCreateModal && (
@@ -421,15 +519,7 @@ const TripOverview = () => {
           role="dialog"
           aria-modal="true"
         >
-          <div
-            className="
-              bg-white rounded-xl md:rounded-2xl shadow-xl ring-1 ring-black/5
-              w-full max-w-sm sm:max-w-md md:max-w-lg
-              transform transition-transform duration-200 ease-out
-              -translate-y-2 sm:-translate-y-4 md:-translate-y-8
-              max-h-[85vh] overflow-y-auto
-            "
-          >
+          <div className="gg-glass max-h-[85vh] w-full max-w-sm -translate-y-2 overflow-y-auto rounded-xl border border-white/70 shadow-xl transition-transform duration-200 ease-out sm:max-w-md sm:-translate-y-4 md:max-w-lg md:-translate-y-8 md:rounded-2xl">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-4">
                 Create New Trip Instance
@@ -455,7 +545,7 @@ const TripOverview = () => {
                   type="button"
                   onClick={handleCreateInstance}
                   disabled={!newInstance.trip_start || !newInstance.trip_end}
-                  className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 rounded-lg bg-gradient-to-r from-teal-600 to-blue-600 py-2 text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Create
                 </button>

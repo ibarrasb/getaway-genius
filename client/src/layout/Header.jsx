@@ -1,38 +1,12 @@
-import { useContext, useState, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { GlobalState } from "@/context/GlobalState.jsx";
 
 const NAV = [
-  {
-    label: "My Trips",
-    to: "/mytrips",
-    icon: (
-      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M3 7h18M3 12h18M3 17h18" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    label: "Explore",
-    to: "/explore",
-    icon: (
-      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <circle cx="11" cy="11" r="7" strokeWidth="2" />
-        <path d="M21 21l-3.6-3.6" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    label: "Past",
-    to: "/previous-trips",
-    icon: (
-      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <circle cx="12" cy="12" r="9" strokeWidth="2" />
-        <path d="M12 7v5l3 2" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
+  { label: "Mission", to: "/mytrips" },
+  { label: "Workbench", to: "/explore" },
+  { label: "Archive", to: "/previous-trips" },
 ];
 
 const Header = () => {
@@ -47,14 +21,12 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // hide on these routes
-  const hideExact = ["/"];
+  const hideExact = ["/", "/login", "/register"];
   const hideStartsWith = ["/search", "/trips", "/profile", "/about", "/wishlist-detail", "/view-all"];
   const shouldHide =
     hideExact.includes(location.pathname) ||
     hideStartsWith.some((p) => location.pathname.startsWith(p));
 
-  // close drawer when route changes
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
@@ -66,158 +38,116 @@ const Header = () => {
       setIsLogged?.(false);
       state?.setToken?.(null);
       await axios.get("/api/user/logout", { withCredentials: true });
-    } catch {}
+    } catch {
+      // ignore logout response errors; local cleanup still executes
+    }
     localStorage.clear();
     navigate("/login", { replace: true });
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full">
-      {/* glowing gradient bar */}
-      <div className="pointer-events-none h-[2px] w-full bg-gradient-to-r from-indigo-500 via-sky-400 to-fuchsia-500 opacity-80" />
-
-      {/* glass top bar */}
-      <div className="border-b border-slate-200/60 bg-white/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          {/* brand */}
-          <Link
-            to="/mytrips"
-            className="group relative inline-flex items-center gap-2 rounded-2xl px-2 py-1"
-          >
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-fuchsia-600 text-white shadow-md ring-1 ring-black/5 transition-transform duration-300 group-hover:rotate-6 group-active:scale-95">
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M12 3v3M12 18v3M3 12h3M18 12h3" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="12" cy="12" r="5" strokeWidth="2" />
+    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-5">
+      <div className="gg-glass mx-auto max-w-6xl rounded-3xl border border-white/70">
+        <div className="flex items-center justify-between gap-3 px-3 py-3 sm:px-5">
+          <Link to="/mytrips" className="group inline-flex items-center gap-3 rounded-2xl px-2 py-1">
+            <span className="relative grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-700/30">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 7h10l2 3h6" strokeLinecap="round" />
+                <path d="M8 17h.01M17 17h.01" strokeLinecap="round" />
+                <path d="M7 17h-1a2 2 0 01-2-2V7a2 2 0 012-2h3l2 2h7a2 2 0 012 2v6a2 2 0 01-2 2h-1" strokeLinecap="round" />
               </svg>
             </span>
-            <div className="flex flex-col leading-none">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600">
-                Getaway
-              </span>
-              <span className="text-lg font-extrabold text-slate-900">Genius</span>
+            <div className="leading-none">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-teal-700">Getaway</p>
+              <p className="text-lg font-extrabold text-slate-900">Genius</p>
             </div>
-            <span className="pointer-events-none absolute inset-0 -z-10 rounded-2xl bg-gradient-to-br from-indigo-600/0 via-indigo-600/0 to-fuchsia-600/0 blur-xl transition-opacity duration-300 group-hover:from-indigo-600/20 group-hover:to-fuchsia-600/20" />
           </Link>
 
-          {/* right actions (desktop only) */}
-          <nav className="hidden items-center gap-2 sm:flex">
-            <Link
-              to="/about"
-              className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 ring-1 ring-transparent transition hover:bg-slate-100 hover:ring-slate-200"
-            >
-              About
-            </Link>
+          <div className="hidden items-center gap-1 rounded-full border border-slate-200/70 bg-white/70 p-1 sm:flex">
+            {NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === "/mytrips"}
+                className={({ isActive }) =>
+                  [
+                    "rounded-full px-3 py-1.5 text-sm font-semibold transition",
+                    isActive
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "text-slate-600 hover:bg-slate-100",
+                  ].join(" ")
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+
+          <div className="hidden items-center gap-2 sm:flex">
             <Link
               to={`/profile/${userID}`}
-              className="rounded-xl px-3 py-2 text-sm font-medium text-slate-700 ring-1 ring-transparent transition hover:bg-slate-100 hover:ring-slate-200"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             >
               Profile
             </Link>
             <button
               onClick={logoutUser}
-              className="rounded-xl px-3 py-2 text-sm font-semibold text-rose-600 ring-1 ring-transparent transition hover:bg-rose-50 hover:ring-rose-200"
+              className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
             >
               Logout
             </button>
-          </nav>
+          </div>
 
-          {/* mobile menu button */}
           <button
-            className="sm:hidden rounded-xl p-2 text-slate-700 ring-1 ring-slate-200/60 transition hover:bg-slate-50"
+            className="sm:hidden rounded-xl border border-slate-200 bg-white p-2 text-slate-700"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle menu"
             aria-expanded={open}
           >
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="round" />
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
             </svg>
           </button>
         </div>
-      </div>
 
-      {/* tab strip — desktop/tablet only */}
-      <div className="hidden sm:block border-b border-slate-200/60 bg-white/60 backdrop-blur-xl">
-        <div className="mx-auto max-w-6xl px-4">
-          <ul className="relative flex items-center gap-1 py-2">
-            <li className="pointer-events-none absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-slate-300/80 to-transparent" />
-            {NAV.map(({ to, label, icon }) => (
-              <li key={to}>
+        {open && (
+          <div className="border-t border-slate-200/70 px-3 pb-3 pt-2 sm:hidden">
+            <div className="grid gap-2">
+              {NAV.map((item) => (
                 <NavLink
-                  to={to}
-                  end={to === "/mytrips"}
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === "/mytrips"}
                   className={({ isActive }) =>
                     [
-                      "group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition",
+                      "rounded-xl px-4 py-2 text-sm font-semibold transition",
                       isActive
-                        ? "bg-slate-900 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-slate-100",
+                        ? "bg-slate-900 text-white"
+                        : "bg-white text-slate-700 hover:bg-slate-100",
                     ].join(" ")
                   }
                 >
-                  <span
-                    className="grid h-5 w-5 place-items-center rounded-full bg-white/20 text-current ring-1 ring-black/5 transition-all group-hover:scale-105"
-                    aria-hidden
-                  >
-                    {icon}
-                  </span>
-                  {label}
+                  {item.label}
                 </NavLink>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* mobile drawer — mobile only */}
-      {open && (
-        <div className="sm:hidden border-b border-slate-200/60 bg-white/90 backdrop-blur-xl">
-          <div className="mx-auto max-w-6xl px-4 py-4 space-y-2">
-            {NAV.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === "/mytrips"}
-                onClick={() => setOpen(false)}
-                className={({ isActive }) =>
-                  [
-                    "block rounded-2xl px-4 py-3 text-sm font-semibold ring-1 transition",
-                    isActive
-                      ? "bg-slate-900 text-white ring-slate-900/10"
-                      : "text-slate-700 ring-slate-200 hover:bg-slate-100",
-                  ].join(" ")
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-            <div className="mt-3 flex gap-2">
-              <Link
-                to="/about"
-                onClick={() => setOpen(false)}
-                className="flex-1 rounded-2xl px-4 py-3 text-center text-sm font-medium text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-100"
-              >
-                About
-              </Link>
+              ))}
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
               <Link
                 to={`/profile/${userID}`}
-                onClick={() => setOpen(false)}
-                className="flex-1 rounded-2xl px-4 py-3 text-center text-sm font-medium text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-100"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-center text-sm font-medium text-slate-700"
               >
                 Profile
               </Link>
               <button
-                onClick={() => {
-                  setOpen(false);
-                  logoutUser();
-                }}
-                className="flex-1 rounded-2xl px-4 py-3 text-center text-sm font-semibold text-rose-600 ring-1 ring-rose-200 transition hover:bg-rose-50"
+                onClick={logoutUser}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700"
               >
                 Logout
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </header>
   );
 };

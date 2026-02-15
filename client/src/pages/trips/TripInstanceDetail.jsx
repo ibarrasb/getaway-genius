@@ -1,5 +1,5 @@
 // src/pages/trips/TripInstanceDetail.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import axios from "axios";
 import { Edit2, Save, X, Calendar as CalendarIcon, Clock3 } from "lucide-react";
@@ -10,11 +10,19 @@ import {
   formatMMDDYYYYLocal,
   nightsBetween,
 } from "../utils/localDates";
+import { GlobalState } from "@/context/GlobalState.jsx";
 
 const TripInstanceDetail = () => {
+  const globalState = useContext(GlobalState);
+  const token = globalState?.token?.[0] ?? null;
+  const globalLoading = globalState?.loading?.[0] ?? false;
   const { tripId, instanceId } = useParams();
   const locationState = useLocation();
   const stateData = locationState.state || {};
+  const authHeaders = useMemo(
+    () => (token ? { Authorization: token } : undefined),
+    [token]
+  );
 
   const [trip, setTrip] = useState(stateData.trip || null);
   const [instance, setInstance] = useState(stateData.instance || null);
@@ -53,10 +61,18 @@ const TripInstanceDetail = () => {
   // -------- fetch --------
   useEffect(() => {
     const fetchTripInstance = async () => {
+      if (globalLoading) return;
+      if (!token) {
+        setFetchLoading(false);
+        return;
+      }
+
       if (!trip || !instance) {
         try {
           setFetchLoading(true);
-          const { data } = await axios.get(`/api/trips/getaway/${tripId}/instances/${instanceId}`);
+          const { data } = await axios.get(`/api/trips/getaway/${tripId}/instances/${instanceId}`, {
+            headers: authHeaders,
+          });
           setTrip(data.trip);
           setInstance(data.instance);
         } catch (err) {
@@ -67,7 +83,7 @@ const TripInstanceDetail = () => {
       }
     };
     fetchTripInstance();
-  }, [tripId, instanceId, trip, instance]);
+  }, [tripId, instanceId, trip, instance, token, globalLoading, authHeaders]);
 
   // normalize instance -> form (as yyyy-MM-dd strings; no UTC conversion)
   useEffect(() => {
@@ -97,9 +113,15 @@ const TripInstanceDetail = () => {
             ? { ...inst, ...formData }
             : inst
         );
-        await axios.put(`/api/trips/getaway/${tripId}`, { ...trip, instances: updatedInstances });
+        await axios.put(
+          `/api/trips/getaway/${tripId}`,
+          { ...trip, instances: updatedInstances },
+          { headers: authHeaders }
+        );
       } else {
-        await axios.put(`/api/trips/getaway/${tripId}`, formData);
+        await axios.put(`/api/trips/getaway/${tripId}`, formData, {
+          headers: authHeaders,
+        });
       }
       setEditMode(false);
     } catch (error) {
@@ -332,4 +354,3 @@ const TripInstanceDetail = () => {
 };
 
 export default TripInstanceDetail;
-

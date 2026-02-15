@@ -97,7 +97,7 @@ const WishlistGrid = () => {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-40 animate-pulse rounded-2xl border border-slate-200 bg-white" />
+          <div key={i} className="gg-skeleton h-40" />
         ))}
       </div>
     )
@@ -122,7 +122,7 @@ const WishlistGrid = () => {
       {lists.map((wl) => (
         <div
           key={wl._id}
-          className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+          className="gg-card overflow-hidden rounded-2xl"
         >
           <div className="p-4">
             <h3 className="text-lg font-semibold text-slate-900">{wl.list_name}</h3>
@@ -146,7 +146,7 @@ const WishlistGrid = () => {
           <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
             <Link
               to={`/wishlist-detail/${wl._id}`}
-              className="rounded-xl bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-800"
+              className="gg-btn-soft py-1.5 text-sm"
             >
               View
             </Link>

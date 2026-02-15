@@ -25,7 +25,7 @@ router.route('/infor')
   .get(auth, userCtrl.getUser);
 
 router.route('/profile/:id')
-  .get(userCtrl.getLoggedUser)
-  .put(userCtrl.updateUser);
+  .get(auth, userCtrl.getLoggedUser)
+  .put(auth, userCtrl.updateUser);
 
 export default router;

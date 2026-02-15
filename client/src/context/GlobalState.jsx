@@ -29,10 +29,18 @@ export const DataProvider = ({ children }) => {
     refreshToken()  
 }, [])
 
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common.Authorization = token
+    } else {
+      delete axios.defaults.headers.common.Authorization
+    }
+  }, [token])
+
   const userAPI = useUserAPI(token)
 
   const value = useMemo(
-    () => ({ token: [token, setToken], loading: [loading, setLoading], error: [error, setError], userAPI, refreshToken }),
+    () => ({ token: [token, setToken], setToken, loading: [loading, setLoading], error: [error, setError], userAPI, refreshToken }),
     [token, loading, error, userAPI, refreshToken]
   )
 
