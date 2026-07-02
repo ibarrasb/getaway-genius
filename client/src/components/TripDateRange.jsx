@@ -1,6 +1,6 @@
 // TripDateRange.jsx (JSX)
 import * as React from "react";
-import { format, parse, isBefore, startOfToday } from "date-fns";
+import { format, parse, isAfter, isBefore, startOfToday } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import * as Popover from "@radix-ui/react-popover";
@@ -17,10 +17,23 @@ function useIsMobile(breakpointPx = 640) {
   return isMobile;
 }
 
-export default function TripDateRange({ newInstance, setNewInstance, className = "" }) {
+const parseBound = (value) =>
+  value ? parse(String(value).slice(0, 10), "yyyy-MM-dd", new Date()) : null;
+
+export default function TripDateRange({
+  newInstance,
+  setNewInstance,
+  className = "",
+  minDate,
+  maxDate,
+  label = "Trip Dates",
+}) {
   const [open, setOpen] = React.useState(false);
   const isMobile = useIsMobile();
   const today = startOfToday();
+  const minBound = parseBound(minDate);
+  const maxBound = parseBound(maxDate);
+  const earliest = minBound && isAfter(minBound, today) ? minBound : today;
 
   // Parse saved yyyy-MM-dd as local dates (avoids UTC shift showing previous day)
   const committed =
@@ -39,7 +52,7 @@ export default function TripDateRange({ newInstance, setNewInstance, className =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const label = committed
+  const rangeLabel = committed
     ? `${format(committed.from, "PPP")} → ${format(committed.to, "PPP")}`
     : "Pick a date range";
 
@@ -75,12 +88,12 @@ export default function TripDateRange({ newInstance, setNewInstance, className =
 
   return (
     <div className={className}>
-      <label className="mb-1 block text-sm font-medium text-slate-700">Trip Dates</label>
+      <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
 
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger asChild>
           <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
-            {label}
+            {rangeLabel}
           </Button>
         </Popover.Trigger>
 
@@ -102,9 +115,10 @@ export default function TripDateRange({ newInstance, setNewInstance, className =
                 numberOfMonths={isMobile ? 1 : 2}
                 selected={draft}
                 onSelect={handleSelect}
-                defaultMonth={draft?.from || committed?.from || today}
-                // 🔒 Disable past days
-                disabled={(date) => isBefore(date, today)}
+                defaultMonth={draft?.from || committed?.from || earliest}
+                disabled={(date) =>
+                  isBefore(date, earliest) || (maxBound ? isAfter(date, maxBound) : false)
+                }
                 className="rounded-md border bg-white p-3"
               />
 

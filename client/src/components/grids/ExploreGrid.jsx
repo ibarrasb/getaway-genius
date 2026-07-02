@@ -4,6 +4,7 @@ import TripCard from "@/components/cards/TripCard"
 import { GlobalState } from "@/context/GlobalState"
 import EmptyState from "@/components/empty/EmptyState"
 import { MOCK_TRIPS } from "@/mocks/trips"
+import { toLocalDate } from "@/pages/utils/localDates"
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
 
@@ -80,7 +81,9 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
 
   const sorted = useMemo(() => {
     return [...items].sort(
-      (a, b) => new Date(a.trip_start).getTime() - new Date(b.trip_start).getTime()
+      (a, b) =>
+        (toLocalDate(a.board_start || a.trip_start)?.getTime() ?? 0) -
+        (toLocalDate(b.board_start || b.trip_start)?.getTime() ?? 0)
     )
   }, [items])
 
@@ -102,9 +105,9 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
     return (
       <EmptyState
         title="No trips yet"
-        subtitle="Start planning and your trips will appear here."
+        subtitle="Create a date window, then compare destinations inside it."
         ctaHref="/search"
-        ctaLabel="Create a trip"
+        ctaLabel="Create a board"
       />
     )
   }

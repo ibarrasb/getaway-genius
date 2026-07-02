@@ -21,6 +21,48 @@ const findOwnedTrip = async (tripId, authCtx) => {
   return Trips.findOne({ _id: tripId, ...buildTripOwnershipFilter(authCtx) });
 };
 
+const parseDate = (v) => {
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+const num = (v, fallback = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const sanitizeCostItems = (items) =>
+  (Array.isArray(items) ? items : [])
+    .filter((item) => item && (item.name || item.url || Number(item.price) > 0))
+    .map((item) => ({
+      category: String(item.category || 'other'),
+      name: String(item.name || ''),
+      url: String(item.url || ''),
+      price: num(item.price),
+      quantity: Math.max(1, num(item.quantity, 1)),
+      start_date: parseDate(item.start_date),
+      end_date: parseDate(item.end_date),
+      notes: String(item.notes || ''),
+    }));
+
+const sanitizeInstancePayload = (body = {}) => ({
+  option_title: String(body.option_title || ''),
+  destination: String(body.destination || ''),
+  image_url: String(body.image_url || ''),
+  status: ['considering', 'top_choice', 'eliminated', 'booked'].includes(body.status)
+    ? body.status
+    : 'considering',
+  trip_start: parseDate(body.trip_start),
+  trip_end: parseDate(body.trip_end),
+  stay_expense: num(body.stay_expense),
+  travel_expense: num(body.travel_expense),
+  car_expense: num(body.car_expense),
+  other_expense: num(body.other_expense),
+  cost_items: sanitizeCostItems(body.cost_items),
+  notes: String(body.notes || ''),
+});
+
 // GET /getaway-trip
 export const getTrips = async (req, res) => {
   try {
@@ -54,6 +96,10 @@ export const createTrips = async (req, res) => {
     if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
 
     let {
+      board_title,
+      board_start,
+      board_end,
+      travelers,
       location_address,
       trip_start,
       trip_end,
@@ -67,11 +113,11 @@ export const createTrips = async (req, res) => {
       instances,
     } = req.body;
 
-    if (!image_url) return res.status(400).json({ msg: 'No image upload' });
+    image_url = image_url || '';
 
     let cloudinaryUploaded = false;
 
-    if (image_url.includes('places.googleapis.com/v1/') && image_url.includes('/media')) {
+    if (image_url && image_url.includes('places.googleapis.com/v1/') && image_url.includes('/media')) {
       try {
         const urlObj = new URL(image_url);
         const pathMatch = urlObj.pathname.match(/^\/v1\/(.+)\/media$/);
@@ -101,9 +147,13 @@ export const createTrips = async (req, res) => {
     const newVacation = new Trips({
       userId: authCtx.userId,
       user_email: authCtx.userEmail,
-      location_address,
-      trip_start,
-      trip_end,
+      board_title,
+      board_start: parseDate(board_start),
+      board_end: parseDate(board_end),
+      travelers: Math.max(1, num(travelers, 1)),
+      location_address: location_address || board_title,
+      trip_start: parseDate(trip_start || board_start),
+      trip_end: parseDate(trip_end || board_end),
       stay_expense,
       travel_expense,
       car_expense,
@@ -112,11 +162,13 @@ export const createTrips = async (req, res) => {
       cloudinaryUploaded,
       isFavorite,
       activities,
-      instances,
+      instances: Array.isArray(instances)
+        ? instances.map((instance) => sanitizeInstancePayload(instance))
+        : [],
     });
 
     await newVacation.save();
-    res.json({ msg: 'Created a planned trip' });
+    res.json({ msg: 'Created a planning board', trip: newVacation });
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
@@ -159,7 +211,11 @@ export const updateTrip = async (req, res) => {
     const existingTrip = await findOwnedTrip(req.params.id, authCtx);
     if (!existingTrip) return res.status(404).json({ msg: 'Trip not found' });
 
-    const {
+    let {
+      board_title,
+      board_start,
+      board_end,
+      travelers,
       location_address,
       trip_start,
       trip_end,
@@ -173,14 +229,27 @@ export const updateTrip = async (req, res) => {
       instances,
     } = req.body;
 
+    if (Array.isArray(instances)) {
+      instances = instances.map((instance) => ({
+        ...sanitizeInstancePayload(instance),
+        _id: instance._id,
+        isCommitted: Boolean(instance.isCommitted),
+        createdAt: instance.createdAt || new Date(),
+      }));
+    }
+
     await Trips.findOneAndUpdate(
       { _id: existingTrip._id, ...buildTripOwnershipFilter(authCtx) },
       {
         userId: authCtx.userId,
         user_email: authCtx.userEmail,
+        board_title,
+        board_start: parseDate(board_start),
+        board_end: parseDate(board_end),
+        travelers: Math.max(1, num(travelers, 1)),
         location_address,
-        trip_start,
-        trip_end,
+        trip_start: parseDate(trip_start || board_start),
+        trip_end: parseDate(trip_end || board_end),
         stay_expense,
         travel_expense,
         car_expense,
@@ -223,25 +292,9 @@ export const addTripInstance = async (req, res) => {
     const trip = await findOwnedTrip(id, authCtx);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
-    const parseDate = (v) => {
-      if (!v) return null;
-      const d = new Date(v);
-      return isNaN(d.getTime()) ? null : d; // guard against "Invalid Date"
-    };
-
-    const num = (v) => {
-      const n = Number(v);
-      return Number.isFinite(n) ? n : 0;
-    };
-
     const instance = {
       _id: new mongoose.Types.ObjectId(),
-      trip_start: parseDate(req.body.trip_start),
-      trip_end: parseDate(req.body.trip_end),
-      stay_expense: num(req.body.stay_expense),
-      travel_expense: num(req.body.travel_expense),
-      car_expense: num(req.body.car_expense),
-      other_expense: num(req.body.other_expense),
+      ...sanitizeInstancePayload(req.body),
       createdAt: new Date(),
       isCommitted: false,
     };
@@ -254,7 +307,7 @@ export const addTripInstance = async (req, res) => {
 
     if (!updated) return res.status(404).json({ msg: 'Trip not found' });
 
-    return res.status(201).json(instance);
+    return res.status(201).json(updated);
   } catch (err) {
     console.error('addTripInstance error:', err);
     return res.status(400).json({ msg: err.message || 'Invalid instance payload' });

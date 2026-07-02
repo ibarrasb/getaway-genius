@@ -1,13 +1,27 @@
 import Users from '../models/userModels.js';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 
 // Helpers to create tokens
+const getJwtSecret = (secret) => new TextEncoder().encode(secret);
+
+const createToken = (payload, secret, expiresIn) =>
+  new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(expiresIn)
+    .sign(getJwtSecret(secret));
+
+const verifyToken = async (token, secret) => {
+  const { payload } = await jwtVerify(token, getJwtSecret(secret));
+  return payload;
+};
+
 const createAccessToken = (user) =>
-  jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
+  createToken(user, process.env.ACCESS_TOKEN_SECRET, '1d');
 
 const createRefreshToken = (user) =>
-  jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+  createToken(user, process.env.REFRESH_TOKEN_SECRET, '7d');
 
 // Register
 export const register = async (req, res) => {
@@ -28,8 +42,8 @@ export const register = async (req, res) => {
 
     await newUser.save();
 
-    const accesstoken = createAccessToken({ id: newUser._id });
-    const refreshtoken = createRefreshToken({ id: newUser._id });
+    const accesstoken = await createAccessToken({ id: newUser._id.toString() });
+    const refreshtoken = await createRefreshToken({ id: newUser._id.toString() });
 
     res.cookie('refreshtoken', refreshtoken, {
       httpOnly: true,
@@ -57,8 +71,8 @@ export const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: 'Incorrect password.' });
 
-    const accesstoken = createAccessToken({ id: user._id });
-    const refreshtoken = createRefreshToken({ id: user._id });
+    const accesstoken = await createAccessToken({ id: user._id.toString() });
+    const refreshtoken = await createRefreshToken({ id: user._id.toString() });
 
     res.cookie('refreshtoken', refreshtoken, {
       httpOnly: true,
@@ -85,17 +99,18 @@ export const logout = async (_req, res) => {
 };
 
 // Refresh token
-export const refreshToken = (req, res) => {
+export const refreshToken = async (req, res) => {
   try {
     const rf_token = req.cookies?.refreshtoken;
     if (!rf_token) return res.status(400).json({ msg: 'No Cookies Saved' });
 
-    jwt.verify(rf_token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-      if (err) return res.status(400).json({ msg: 'Verify error' });
-      const accesstoken = createAccessToken({ id: user.id });
-      res.json({ accesstoken });
-    });
+    const user = await verifyToken(rf_token, process.env.REFRESH_TOKEN_SECRET);
+    const accesstoken = await createAccessToken({ id: user.id });
+    res.json({ accesstoken });
   } catch (err) {
+    if (err.code?.startsWith('ERR_JWT')) {
+      return res.status(400).json({ msg: 'Verify error' });
+    }
     return res.status(500).json({ msg: err.message });
   }
 };

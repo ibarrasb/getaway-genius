@@ -11,15 +11,15 @@ const ExplorePage = () => {
           <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="gg-hero-title gg-title-lg text-slate-900">
-                Build your next move.
+                Compare trips by date.
               </h1>
               <p className="gg-lead mt-2 max-w-2xl">
-                Compare candidate trips, tune costs, and group winning ideas into focused wishlists.
+                Start with a travel window, add destination options, and compare the real links and prices side by side.
               </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800 lg:block">
-                Tip: Commit one trip instance to graduate it into your active mission view.
+                Tip: choose one option when you are ready to move it into your active trips.
               </div>
               <Link
                 to="/search"
@@ -28,7 +28,7 @@ const ExplorePage = () => {
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 5v14M5 12h14" strokeLinecap="round" />
                 </svg>
-                Create Trip
+                Create Board
               </Link>
             </div>
           </div>
@@ -36,7 +36,7 @@ const ExplorePage = () => {
 
         <section>
           <header className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Trip Workbench</h2>
+            <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Planning Boards</h2>
           </header>
           <ExploreGrid />
         </section>

@@ -26,6 +26,11 @@ const Landing = () => {
     <div className="gg-page relative overflow-hidden">
       <section className="gg-container grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="gg-glass gg-fade-up rounded-[2rem] border border-white/70 p-7 sm:p-10">
+          <img
+            src="/getaway-genius-logo.png"
+            alt="Getaway Genius"
+            className="mb-5 h-auto w-full max-w-xs object-contain sm:max-w-sm"
+          />
           <p className="gg-pill inline-flex">Trip intelligence for real people</p>
           <h1 className="gg-hero-title gg-title-xl mt-5 text-slate-900">
             Your next getaway

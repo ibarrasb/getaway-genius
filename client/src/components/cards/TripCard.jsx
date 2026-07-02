@@ -29,7 +29,11 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
   useEffect(() => setIsFavorite(Boolean(trip.isFavorite)), [trip]);
   useEffect(() => setImgSrc(trip?.image_url || PLACEHOLDER_IMG), [trip?.image_url]);
 
-  const displayData = instance || trip;
+  const displayData = instance || {
+    ...trip,
+    trip_start: trip.board_start || trip.trip_start,
+    trip_end: trip.board_end || trip.trip_end,
+  };
 
   const rangeLabel = useMemo(
     () => fmtRangeShort(displayData?.trip_start, displayData?.trip_end),
@@ -184,7 +188,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
           <img
             src={imgSrc}
             onError={onImgError}
-            alt={trip?.trip_location || trip?.location_address || "Trip photo"}
+            alt={trip?.board_title || trip?.trip_location || trip?.location_address || "Planning board"}
             className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
             loading="lazy"
           />
@@ -252,7 +256,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
               <circle cx="12" cy="10" r="3" />
             </svg>
             <span className="truncate text-sm font-semibold">
-              {trip?.location_address || trip?.trip_location || "Untitled Trip"}
+              {trip?.board_title || trip?.location_address || trip?.trip_location || "Untitled Board"}
             </span>
           </div>
         </div>
@@ -281,14 +285,16 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
                 <circle cx="12" cy="12" r="9" />
               </svg>
             )}
-            {trip.instances.length > 0 ? `${trip.instances.length} instance` : "Create Instance"}
+            {(trip.instances || []).length > 0
+              ? `${trip.instances.length} option${trip.instances.length === 1 ? "" : "s"}`
+              : "Add options"}
           </span>
           {instance && (
             <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-200">
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Committed
+              Chosen
             </span>
           )}
         </div>

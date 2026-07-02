@@ -8,6 +8,7 @@ import { useDataRefresh } from "@/hooks/useDataRefresh.js";
 import { useToast } from "@/context/ToastContext.jsx";
 import { MOCK_TRIPS } from "@/mocks/trips";
 import { toLocalDate, addDays, fmtRangeShort } from "../utils/localDates";
+import { getTripImageSrc } from "../utils/image";
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
 
@@ -43,13 +44,14 @@ const MyTrips = () => {
       try {
         setLoading(true);
         setError(null);
+        const headers = token ? { Authorization: token } : undefined;
         const res = await axios.get("/api/trips/getaway-trip", {
           params: { email },
+          headers,
           signal: controller.signal,
         });
         const allTrips = Array.isArray(res.data) ? res.data : [];
-        const committedTrips = allTrips.filter((t) => t.committedInstanceId);
-        setTrips(committedTrips);
+        setTrips(allTrips);
       } catch (err) {
         if (err.name !== "CanceledError") {
           console.error(err);
@@ -62,7 +64,7 @@ const MyTrips = () => {
     };
     run();
     return () => controller.abort();
-  }, [email]);
+  }, [email, token]);
 
   const removePost = async (id) => {
     if (!id || deletingIds.has(id)) return;
@@ -107,6 +109,22 @@ const MyTrips = () => {
     (Number(t.travel_expense) || 0) +
     (Number(t.other_expense) || 0);
 
+  const optionTotal = (instance) => {
+    const lineItems = (instance.cost_items || []).reduce(
+      (sum, item) =>
+        sum + (Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1),
+      0
+    );
+    return lineItems || totalCost(instance);
+  };
+
+  const handleImageError = (event) => {
+    const fallback = getTripImageSrc({});
+    if (event.currentTarget.src !== fallback) {
+      event.currentTarget.src = fallback;
+    }
+  };
+
   const nextTripCountdown = (start, end) => {
     const now = new Date();
     const s = toLocalDate(start);
@@ -140,7 +158,7 @@ const MyTrips = () => {
 
     const tripsWithCommittedInstance = trips
       .map((t) => {
-        const committedInstance = t.instances.find(
+        const committedInstance = (t.instances || []).find(
           (inst) => inst._id?.toString() === t.committedInstanceId?.toString()
         );
         return { ...t, committedInstance };
@@ -208,13 +226,13 @@ const MyTrips = () => {
     );
   }
 
-  const showEmpty = !featured && orderedYears.length === 0;
   const countdown = featured
     ? nextTripCountdown(
         featured.committedInstance.trip_start,
         featured.committedInstance.trip_end
       )
     : null;
+  const planningBoards = trips.filter((trip) => !trip.committedInstanceId);
 
   return (
     <div className="gg-page min-h-screen">
@@ -223,6 +241,88 @@ const MyTrips = () => {
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
+        )}
+
+        {planningBoards.length > 0 && (
+          <section className="mb-10">
+            <div className="mb-4 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">
+                  Planning
+                </p>
+                <h2 className="text-2xl font-bold text-slate-900">Comparison Boards</h2>
+              </div>
+              <Link
+                to="/explore"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Add Destination
+              </Link>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {planningBoards.map((trip) => {
+                const options = trip.instances || [];
+                const totals = options.map(optionTotal).filter((value) => value > 0);
+                const lowest = totals.length ? Math.min(...totals) : 0;
+                const topChoice = options.find((option) => option.status === "top_choice");
+
+                return (
+                  <Link
+                    key={trip._id}
+                    to={`/trips/${trip._id}`}
+                    className="gg-card overflow-hidden rounded-2xl transition hover:-translate-y-0.5 hover:shadow-lg"
+                  >
+                    <div className="aspect-[16/9] bg-slate-100">
+                      <img
+                        src={getTripImageSrc(trip)}
+                        alt={trip.board_title || trip.location_address || "Planning board"}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        onError={handleImageError}
+                      />
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-lg font-bold text-slate-900">
+                            {trip.board_title || trip.location_address}
+                          </h3>
+                          <p className="mt-1 text-sm text-slate-600">
+                            {fmtRangeShort(trip.board_start || trip.trip_start, trip.board_end || trip.trip_end) || "Dates not set"}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700 ring-1 ring-sky-200">
+                          Comparing
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <p className="text-slate-500">Lowest total</p>
+                          <p className="font-bold text-slate-900">
+                            {lowest
+                              ? lowest.toLocaleString("en-US", {
+                                  style: "currency",
+                                  currency: "USD",
+                                  maximumFractionDigits: 0,
+                                })
+                              : "Add prices"}
+                          </p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <p className="text-slate-500">Top choice</p>
+                          <p className="truncate font-bold text-slate-900">
+                            {topChoice?.destination || topChoice?.option_title || "Not picked"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         {/* Countdown above featured */}
@@ -252,10 +352,16 @@ const MyTrips = () => {
               {/* image */}
               <div className="relative h-64 w-full sm:h-80">
                 <img
-                  src={featured.image_url}
-                  alt={featured.location_address}
+                  src={getTripImageSrc(featured)}
+                  alt={
+                    featured.committedInstance.destination ||
+                    featured.board_title ||
+                    featured.location_address ||
+                    "Featured trip"
+                  }
                   className="h-full w-full object-cover"
                   loading="lazy"
+                  onError={handleImageError}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/10 to-transparent" />
               </div>
@@ -265,7 +371,9 @@ const MyTrips = () => {
                 <div className="flex flex-col gap-3 rounded-2xl bg-white/95 p-4 backdrop-blur shadow-md ring-1 ring-slate-200 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-xl font-extrabold text-slate-900">
-                      {featured.location_address}
+                      {featured.committedInstance.destination ||
+                        featured.board_title ||
+                        featured.location_address}
                     </h2>
                     <p className="text-sm text-slate-600">
                       {fmtRangeShort(
@@ -350,10 +458,10 @@ const MyTrips = () => {
             </section>
           ))
         ) : (
-          !featured && (
+          !featured && planningBoards.length === 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
               <p className="text-lg font-semibold text-slate-900">Start planning your trips!</p>
-              <p className="mt-1 text-slate-600">You don&apos;t have any upcoming committed trips yet.</p>
+              <p className="mt-1 text-slate-600">Add a destination to start comparing options.</p>
             </div>
           )
         )}

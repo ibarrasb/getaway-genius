@@ -48,19 +48,13 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 px-3 pt-3 sm:px-5">
       <div className="gg-glass mx-auto max-w-6xl rounded-3xl border border-white/70">
-        <div className="flex items-center justify-between gap-3 px-3 py-3 sm:px-5">
-          <Link to="/mytrips" className="group inline-flex items-center gap-3 rounded-2xl px-2 py-1">
-            <span className="relative grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-700/30">
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 7h10l2 3h6" strokeLinecap="round" />
-                <path d="M8 17h.01M17 17h.01" strokeLinecap="round" />
-                <path d="M7 17h-1a2 2 0 01-2-2V7a2 2 0 012-2h3l2 2h7a2 2 0 012 2v6a2 2 0 01-2 2h-1" strokeLinecap="round" />
-              </svg>
-            </span>
-            <div className="leading-none">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-teal-700">Getaway</p>
-              <p className="text-lg font-extrabold text-slate-900">Genius</p>
-            </div>
+        <div className="flex h-[72px] items-center justify-between gap-3 px-3 py-2 sm:h-[76px] sm:px-5">
+          <Link to="/mytrips" className="group inline-flex h-full items-center gap-3 rounded-2xl px-2">
+            <img
+              src="/getaway-genius-logo.png"
+              alt="Getaway Genius"
+              className="h-[60px] w-auto max-w-[240px] object-contain sm:h-[68px] sm:max-w-[300px]"
+            />
           </Link>
 
           <div className="hidden items-center gap-1 rounded-full border border-slate-200/70 bg-white/70 p-1 sm:flex">
