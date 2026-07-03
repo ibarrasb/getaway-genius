@@ -1,20 +1,81 @@
-// src/pages/mytrips/MyTrips.jsx
+// src/pages/mission/MyTrips.jsx
 import { useContext, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { GlobalState } from "@/context/GlobalState.jsx";
-import TripCard from "@/components/cards/TripCard.jsx";
 import { useDataRefresh } from "@/hooks/useDataRefresh.js";
 import { useToast } from "@/context/ToastContext.jsx";
+import { useConfirm } from "@/context/useConfirm";
 import { MOCK_TRIPS } from "@/mocks/trips";
 import { toLocalDate, addDays, fmtRangeShort } from "../utils/localDates";
 import { getTripImageSrc } from "../utils/image";
+import {
+  ArrowRight,
+  BedDouble,
+  CalendarDays,
+  Car,
+  ExternalLink,
+  MapPin,
+  Plane,
+  ReceiptText,
+  Ticket,
+  Trash2,
+  Users,
+  WalletCards,
+} from "lucide-react";
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true";
 
+const formatMoney = (value) => {
+  const amount = Number(value) || 0;
+  if (!amount) return "$0";
+  return amount.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  });
+};
+
+const selectedCostItems = (instance = {}) =>
+  (instance.cost_items || []).filter((item) => item && item.is_selected !== false);
+
+const costItemTotal = (item) =>
+  (Number(item?.price) || 0) * Math.max(1, Number(item?.quantity) || 1);
+
+const categoryTotal = (instance, categories) =>
+  selectedCostItems(instance).reduce((sum, item) => {
+    return categories.includes(item.category) ? sum + costItemTotal(item) : sum;
+  }, 0);
+
+const fallbackCategoryTotal = (instance, categories, fallbackValue) => {
+  const total = categoryTotal(instance, categories);
+  return total || Number(fallbackValue) || 0;
+};
+
+const getMissionImageSrc = (trip) =>
+  trip?.committedInstance?.image_url?.trim()
+    ? trip.committedInstance.image_url
+    : getTripImageSrc(trip);
+
+const missionTitle = (trip) =>
+  trip?.board_title || trip?.committedInstance?.destination || trip?.location_address || "Planned Trip";
+
+const missionSubtitle = (trip) =>
+  trip?.committedInstance?.option_title ||
+  trip?.committedInstance?.destination ||
+  trip?.location_address ||
+  "Trip option";
+
+const tripNightCount = (start, end) => {
+  const s = toLocalDate(start);
+  const e = toLocalDate(end);
+  if (!s || !e) return null;
+  const nights = Math.max(0, Math.round((e - s) / (1000 * 60 * 60 * 24)));
+  return nights;
+};
+
 const MyTrips = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const state = useContext(GlobalState);
   const api = state?.userAPI ?? state?.UserAPI;
   const [email] = api?.email ?? [""];
@@ -22,6 +83,7 @@ const MyTrips = () => {
   const [token] = state?.token ?? [null];
   const { refetchTrips, refetchWishlists } = useDataRefresh();
   const { success, error: showError } = useToast();
+  const { confirm } = useConfirm();
 
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +107,7 @@ const MyTrips = () => {
         setLoading(true);
         setError(null);
         const headers = token ? { Authorization: token } : undefined;
-        const res = await axios.get("/api/trips/getaway-trip", {
+        const res = await axios.get("/api/trips/boards", {
           params: { email },
           headers,
           signal: controller.signal,
@@ -66,43 +128,6 @@ const MyTrips = () => {
     return () => controller.abort();
   }, [email, token]);
 
-  const removePost = async (id) => {
-    if (!id || deletingIds.has(id)) return;
-    if (!confirm("Do you want to delete this trip?")) return;
-
-    setDeletingIds((prev) => new Set([...prev, id]));
-
-    try {
-      setTrips((prev) => prev.filter((t) => t._id !== id));
-
-      const headers = token ? { Authorization: token } : undefined;
-      await axios.delete(`/api/trips/getaway/${id}`, { headers });
-
-      if (location.pathname === `/trips/${id}`) {
-        navigate("/explore");
-      }
-
-      await Promise.all([refetchTrips(), refetchWishlists()]);
-      success("Trip deleted successfully");
-    } catch (err) {
-      console.error(err);
-      try {
-        const headers = token ? { Authorization: token } : undefined;
-        const res = await axios.get("/api/trips/getaway-trip", { headers });
-        setTrips(res.data || []);
-      } catch (refetchError) {
-        console.error("Error refetching trips:", refetchError);
-      }
-      showError("Failed to delete trip. Please try again.");
-    } finally {
-      setDeletingIds((prev) => {
-        const ns = new Set(prev);
-        ns.delete(id);
-        return ns;
-      });
-    }
-  };
-
   const totalCost = (t) =>
     (Number(t.stay_expense) || 0) +
     (Number(t.car_expense) || 0) +
@@ -110,11 +135,7 @@ const MyTrips = () => {
     (Number(t.other_expense) || 0);
 
   const optionTotal = (instance) => {
-    const lineItems = (instance.cost_items || []).reduce(
-      (sum, item) =>
-        sum + (Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1),
-      0
-    );
+    const lineItems = selectedCostItems(instance).reduce((sum, item) => sum + costItemTotal(item), 0);
     return lineItems || totalCost(instance);
   };
 
@@ -234,6 +255,45 @@ const MyTrips = () => {
     : null;
   const planningBoards = trips.filter((trip) => !trip.committedInstanceId);
 
+  const handleDeletePlannedOption = async (trip) => {
+    if (!trip?._id || !trip?.committedInstance?._id) return;
+
+    const ok = await confirm({
+      title: "Delete planned option?",
+      description: "This removes the planned option from this board. This cannot be undone.",
+      confirmLabel: "Delete Option",
+    });
+    if (!ok) return;
+
+    setDeletingIds((prev) => new Set([...prev, trip._id]));
+    try {
+      const headers = token ? { Authorization: token } : undefined;
+      const { data } = await axios.delete(
+        `/api/trips/boards/${trip._id}/options/${trip.committedInstance._id}`,
+        { headers }
+      );
+
+      setTrips((prev) =>
+        prev.map((item) =>
+          item._id === trip._id
+            ? { ...item, committedInstanceId: null, instances: data.instances || [] }
+            : item
+        )
+      );
+      await Promise.all([refetchTrips(), refetchWishlists()]);
+      success("Option deleted successfully");
+    } catch (err) {
+      console.error(err);
+      showError("Failed to delete option. Please try again.");
+    } finally {
+      setDeletingIds((prev) => {
+        const ns = new Set(prev);
+        ns.delete(trip._id);
+        return ns;
+      });
+    }
+  };
+
   return (
     <div className="gg-page min-h-screen">
       <div className="mx-auto max-w-6xl">
@@ -253,7 +313,7 @@ const MyTrips = () => {
                 <h2 className="text-2xl font-bold text-slate-900">Comparison Boards</h2>
               </div>
               <Link
-                to="/explore"
+                to="/workbench"
                 className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Add Destination
@@ -325,120 +385,212 @@ const MyTrips = () => {
           </section>
         )}
 
-        {/* Countdown above featured */}
-        {featured && countdown && (
-          <div className="mb-3 flex items-center gap-2">
-            <span
-              className={
-                "inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ring-1 " +
-                (countdown.tone === "emerald"
-                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                  : "bg-sky-50 text-sky-700 ring-sky-200")
-              }
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3 2" strokeLinecap="round" />
-              </svg>
-              {countdown.label}
-            </span>
-          </div>
-        )}
-
         {/* Featured trip */}
-        {featured && (
-          <section className="mb-10">
-            <div className="gg-glass relative overflow-hidden rounded-3xl border border-white/70">
-              {/* image */}
-              <div className="relative h-64 w-full sm:h-80">
-                <img
-                  src={getTripImageSrc(featured)}
-                  alt={
-                    featured.committedInstance.destination ||
-                    featured.board_title ||
-                    featured.location_address ||
-                    "Featured trip"
-                  }
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                  onError={handleImageError}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/10 to-transparent" />
+        {featured && (() => {
+          const option = featured.committedInstance;
+          const rangeLabel = fmtRangeShort(option.trip_start, option.trip_end) || "Dates not set";
+          const nights = tripNightCount(option.trip_start, option.trip_end);
+          const travelers = Math.max(1, Number(featured.travelers) || 1);
+          const total = optionTotal(option);
+          const links = selectedCostItems(option).filter((item) => item.url).slice(0, 4);
+          const breakdown = [
+            {
+              label: "Lodging",
+              value: fallbackCategoryTotal(option, ["lodging"], option.stay_expense),
+              Icon: BedDouble,
+            },
+            {
+              label: "Flights",
+              value: fallbackCategoryTotal(option, ["flight"], option.travel_expense),
+              Icon: Plane,
+            },
+            {
+              label: "Car",
+              value: fallbackCategoryTotal(option, ["car"], option.car_expense),
+              Icon: Car,
+            },
+            {
+              label: "Tickets",
+              value: categoryTotal(option, ["tickets"]),
+              Icon: Ticket,
+            },
+            {
+              label: "Other",
+              value: fallbackCategoryTotal(option, ["food", "other"], option.other_expense),
+              Icon: ReceiptText,
+            },
+          ];
+
+          return (
+            <section className="mb-10">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">
+                    Active Mission
+                  </p>
+                  <h1 className="text-3xl font-bold text-slate-950">Your Planned Trip</h1>
+                </div>
+                {countdown && (
+                  <span
+                    className={
+                      "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ring-1 " +
+                      (countdown.tone === "emerald"
+                        ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                        : "bg-sky-50 text-sky-700 ring-sky-200")
+                    }
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    {countdown.label}
+                  </span>
+                )}
               </div>
 
-              {/* content */}
-              <div className="relative -mt-16 px-5 pb-5 sm:-mt-20 sm:px-8">
-                <div className="flex flex-col gap-3 rounded-2xl bg-white/95 p-4 backdrop-blur shadow-md ring-1 ring-slate-200 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="text-xl font-extrabold text-slate-900">
-                      {featured.committedInstance.destination ||
-                        featured.board_title ||
-                        featured.location_address}
-                    </h2>
-                    <p className="text-sm text-slate-600">
-                      {fmtRangeShort(
-                        featured.committedInstance.trip_start,
-                        featured.committedInstance.trip_end
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-teal-50 px-4 py-2 text-teal-700 ring-1 ring-teal-200">
-                      <span className="text-xs uppercase tracking-wide">Est. Total</span>
-                      <div className="text-lg font-bold">
-                        {totalCost(featured.committedInstance) > 0
-                          ? `$${totalCost(featured.committedInstance).toFixed(0)}`
-                          : "—"}
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(420px,0.95fr)]">
+                  <div className="relative min-h-[300px] bg-slate-100 lg:min-h-[560px]">
+                    <img
+                      src={getMissionImageSrc(featured)}
+                      alt={missionTitle(featured)}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      loading="lazy"
+                      onError={handleImageError}
+                    />
+                    <div className="absolute inset-x-0 bottom-0 p-5">
+                      <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-black/10 backdrop-blur">
+                        <MapPin className="h-4 w-4 shrink-0 text-teal-700" />
+                        <span className="truncate">
+                          {option.destination || featured.location_address || featured.board_title || "Destination not set"}
+                        </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() =>
-                        navigate(
-                          `/trips/${featured._id}/instances/${featured.committedInstance._id}`
-                        )
-                      }
-                      className="rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-2 font-semibold text-white shadow-sm transition hover:brightness-105"
-                    >
-                      View
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!confirm("Do you want to delete this committed instance?")) return;
-                        setDeletingIds((prev) => new Set([...prev, featured._id]));
-                        try {
-                          const headers = token ? { Authorization: token } : undefined;
-                          await axios.delete(
-                            `/api/trips/getaway/${featured._id}/instances/${featured.committedInstance._id}`,
-                            { headers }
-                          );
-                          setTrips((prev) => prev.filter((t) => t._id !== featured._id));
-                          await Promise.all([refetchTrips(), refetchWishlists()]);
-                          success("Instance deleted successfully");
-                          navigate("/mytrips");
-                        } catch (err) {
-                          console.error(err);
-                          showError("Failed to delete instance. Please try again.");
-                        } finally {
-                          setDeletingIds((prev) => {
-                            const ns = new Set(prev);
-                            ns.delete(featured._id);
-                            return ns;
-                          });
-                        }
-                      }}
-                      disabled={deletingIds.has(featured._id)}
-                      className={`rounded-xl bg-rose-600/90 px-4 py-2 font-semibold text-white shadow-sm transition hover:bg-rose-600 ${
-                        deletingIds.has(featured._id) ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    >
-                      {deletingIds.has(featured._id) ? "Deleting..." : "Delete"}
-                    </button>
+                  </div>
+
+                  <div className="p-5 sm:p-7">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-200">
+                        Planned
+                      </span>
+                      {option.status && (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-700 ring-1 ring-slate-200">
+                          {String(option.status).replace("_", " ")}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-4">
+                      <h2 className="text-3xl font-extrabold leading-tight text-slate-950">
+                        {missionTitle(featured)}
+                      </h2>
+                      <p className="mt-2 text-lg font-semibold text-slate-700">
+                        {missionSubtitle(featured)}
+                      </p>
+                    </div>
+
+                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+                          <CalendarDays className="h-4 w-4" />
+                          Dates
+                        </div>
+                        <p className="mt-2 font-bold text-slate-950">{rangeLabel}</p>
+                        {nights !== null && (
+                          <p className="mt-1 text-sm text-slate-500">
+                            {nights} night{nights === 1 ? "" : "s"}
+                          </p>
+                        )}
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+                          <Users className="h-4 w-4" />
+                          Travelers
+                        </div>
+                        <p className="mt-2 font-bold text-slate-950">
+                          {travelers} traveler{travelers === 1 ? "" : "s"}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {total ? `${formatMoney(total / travelers)} per person` : "Cost pending"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 rounded-2xl border border-teal-200 bg-teal-50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-teal-700">
+                          <WalletCards className="h-4 w-4" />
+                          Estimated Total
+                        </div>
+                        <p className="text-2xl font-extrabold text-teal-900">
+                          {total ? formatMoney(total) : "Add prices"}
+                        </p>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                        {breakdown.map(({ label, value, Icon }) => (
+                          <div key={label} className="rounded-xl bg-white px-3 py-2 ring-1 ring-teal-100">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                              <Icon className="h-3.5 w-3.5" />
+                              {label}
+                            </div>
+                            <p className="mt-1 font-bold text-slate-900">{value ? formatMoney(value) : "$0"}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {(links.length > 0 || option.notes) && (
+                      <div className="mt-5 space-y-3">
+                        {links.length > 0 && (
+                          <div>
+                            <p className="mb-2 text-sm font-semibold text-slate-700">Saved details</p>
+                            <div className="flex flex-wrap gap-2">
+                              {links.map((item, index) => (
+                                <a
+                                  key={item._id || `${item.url}-${index}`}
+                                  href={item.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-200"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="truncate">{item.name || item.category || "Saved link"}</span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {option.notes && (
+                          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                            <p className="text-sm font-semibold text-slate-700">Notes</p>
+                            <p className="mt-1 text-sm leading-6 text-slate-600">{option.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <button
+                        onClick={() => navigate(`/trips/${featured._id}/options/${option._id}`)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                      >
+                        View Details
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeletePlannedOption(featured)}
+                        disabled={deletingIds.has(featured._id)}
+                        className={`inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 font-semibold text-rose-700 transition hover:bg-rose-50 ${
+                          deletingIds.has(featured._id) ? "cursor-not-allowed opacity-50" : ""
+                        }`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {deletingIds.has(featured._id) ? "Deleting..." : "Delete Option"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          );
+        })()}
 
         {/* Rest of upcoming trips (grouped by year) */}
         {orderedYears.length ? (
@@ -446,14 +598,93 @@ const MyTrips = () => {
             <section key={year} className="mb-10">
               <h3 className="mb-4 text-2xl font-bold text-slate-900">{year}</h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {groups[year].map((trip) => (
-                  <TripCard
-                    key={trip._id}
-                    trip={trip}
-                    instance={trip.committedInstance}
-                    onRemove={removePost}
-                  />
-                ))}
+                {groups[year].map((trip) => {
+                  const option = trip.committedInstance;
+                  const total = optionTotal(option);
+                  const travelers = Math.max(1, Number(trip.travelers) || 1);
+                  const links = selectedCostItems(option).filter((item) => item.url).length;
+
+                  return (
+                    <article
+                      key={trip._id}
+                      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      <div className="relative aspect-[16/10] bg-slate-100">
+                        <img
+                          src={getMissionImageSrc(trip)}
+                          alt={missionTitle(trip)}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          onError={handleImageError}
+                        />
+                        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                          Planned
+                        </span>
+                      </div>
+                      <div className="p-4">
+                        <h4 className="line-clamp-1 text-lg font-bold text-slate-950">
+                          {missionTitle(trip)}
+                        </h4>
+                        <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-600">
+                          {missionSubtitle(trip)}
+                        </p>
+
+                        <div className="mt-4 space-y-2 text-sm text-slate-600">
+                          <div className="flex items-center gap-2">
+                            <CalendarDays className="h-4 w-4 text-slate-400" />
+                            <span>{fmtRangeShort(option.trip_start, option.trip_end) || "Dates not set"}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-slate-400" />
+                            <span className="truncate">
+                              {option.destination || trip.location_address || "Destination not set"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-3 gap-2">
+                          <div className="rounded-xl bg-slate-50 p-2">
+                            <p className="text-[11px] font-semibold text-slate-500">Total</p>
+                            <p className="mt-0.5 font-bold text-slate-950">{total ? formatMoney(total) : "$0"}</p>
+                          </div>
+                          <div className="rounded-xl bg-slate-50 p-2">
+                            <p className="text-[11px] font-semibold text-slate-500">Per Person</p>
+                            <p className="mt-0.5 font-bold text-slate-950">
+                              {total ? formatMoney(total / travelers) : "$0"}
+                            </p>
+                          </div>
+                          <div className="rounded-xl bg-slate-50 p-2">
+                            <p className="text-[11px] font-semibold text-slate-500">Links</p>
+                            <p className="mt-0.5 font-bold text-slate-950">{links}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/trips/${trip._id}/options/${option._id}`)}
+                            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                          >
+                            View
+                            <ArrowRight className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePlannedOption(trip)}
+                            disabled={deletingIds.has(trip._id)}
+                            className={`inline-flex items-center justify-center rounded-xl border border-rose-200 px-3 py-2 text-rose-700 hover:bg-rose-50 ${
+                              deletingIds.has(trip._id) ? "cursor-not-allowed opacity-50" : ""
+                            }`}
+                            aria-label="Delete planned option"
+                            title="Delete planned option"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </section>
           ))

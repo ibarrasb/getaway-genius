@@ -19,7 +19,7 @@ const ExplorePage = () => {
             </div>
             <div className="flex items-center gap-3">
               <div className="hidden rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800 lg:block">
-                Tip: choose one option when you are ready to move it into your active trips.
+                Tip: set one option as the plan when you are ready to move it into your active trips.
               </div>
               <Link
                 to="/search"

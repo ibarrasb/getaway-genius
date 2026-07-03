@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react"
 import { GlobalState } from "@/context/GlobalState.jsx"
+import AppSelect from "@/components/ui/AppSelect"
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
@@ -46,15 +47,19 @@ const userToForm = (user) => ({
   zip: user?.zip ? String(user.zip) : "",
 })
 
-const FieldShell = ({ label, icon: Icon, children }) => (
-  <label className="block">
-    <span className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-      <Icon className="h-4 w-4 text-teal-700" />
-      {label}
-    </span>
-    {children}
-  </label>
-)
+const FieldShell = ({ label, icon, children }) => {
+  const ShellIcon = icon
+
+  return (
+    <label className="block">
+      <span className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+        <ShellIcon className="h-4 w-4 text-teal-700" />
+        {label}
+      </span>
+      {children}
+    </label>
+  )
+}
 
 const ReadOnlyValue = ({ children }) => (
   <div className="min-h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-800">
@@ -203,8 +208,8 @@ const Profile = () => {
         <div className="mx-auto max-w-xl py-16">
           <div className="gg-glass rounded-3xl border border-white/70 p-8 text-center">
             <p className="text-lg font-semibold text-slate-900">User not found</p>
-            <Link to="/mytrips" className="mt-4 inline-block rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-2 font-semibold text-white hover:brightness-105">
-              Back to My Trips
+            <Link to="/mission" className="mt-4 inline-block rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-2 font-semibold text-white hover:brightness-105">
+              Back to Mission
             </Link>
           </div>
         </div>
@@ -217,7 +222,7 @@ const Profile = () => {
       <main className="mx-auto max-w-5xl pb-16">
         <div className="mb-4 flex items-center justify-between gap-3">
           <Link
-            to="/mytrips"
+            to="/mission"
             className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -371,20 +376,17 @@ const Profile = () => {
                   )}
                 </FieldShell>
 
-                <FieldShell label="State" icon={MapPin}>
-                  {editMode ? (
-                    <select
-                      value={formData.state}
-                      onChange={(e) => onChange("state", e.target.value)}
-                      required
-                      className="block w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-300"
-                    >
-                      <option value="">Select State</option>
-                      {US_STATES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  ) : (
+	                <FieldShell label="State" icon={MapPin}>
+	                  {editMode ? (
+	                    <AppSelect
+	                      value={formData.state}
+	                      onChange={(value) => onChange("state", value)}
+	                      options={[
+	                        { value: "", label: "Select state" },
+	                        ...US_STATES.map((s) => ({ value: s, label: s })),
+	                      ]}
+	                    />
+	                  ) : (
                     <ReadOnlyValue>{formData.state}</ReadOnlyValue>
                   )}
                 </FieldShell>

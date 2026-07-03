@@ -3,6 +3,7 @@ import { useContext, useEffect, useState } from "react"
 import axios from "axios"
 import { Link } from "react-router-dom"
 import { GlobalState } from "@/context/GlobalState"
+import { useConfirm } from "@/context/useConfirm"
 import EmptyState from "@/components/empty/EmptyState"
 import { Trash2 } from "lucide-react"
 
@@ -29,6 +30,7 @@ const WishlistGrid = () => {
   const state = useContext(GlobalState)
   const api = state?.userAPI ?? state?.UserAPI
   const [email] = api?.email ?? [""]
+  const { confirm } = useConfirm()
 
   const [lists, setLists] = useState([])
   const [loading, setLoading] = useState(true)
@@ -68,7 +70,12 @@ const WishlistGrid = () => {
   }, [email])
 
   const handleDelete = async (wishlistId) => {
-    if (!confirm("Delete this wishlist? All trips in this wishlist will be unfavorited.")) return
+    const ok = await confirm({
+      title: "Delete wishlist?",
+      description: "The wishlist will be removed and trips inside it will be unfavorited.",
+      confirmLabel: "Delete Wishlist",
+    })
+    if (!ok) return
     
     try {
       setDeletingId(wishlistId)
@@ -77,7 +84,7 @@ const WishlistGrid = () => {
       const { trips } = response.data
       
       const updatePromises = trips.map(trip =>
-        axios.put(`/api/trips/getaway/${trip._id}`, { isFavorite: false })
+        axios.put(`/api/trips/boards/${trip._id}`, { isFavorite: false })
       )
       
       await Promise.all(updatePromises)

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Users from '../models/userModels.js';
-import Trips from '../models/tripModels.js';
+import TripBoard from '../models/tripBoardModel.js';
 import Wishlist from '../models/wishlistModel.js';
 
 dotenv.config();
@@ -28,7 +28,7 @@ const run = async () => {
   let tripsUpdated = 0;
   let wishlistsUpdated = 0;
 
-  const trips = await Trips.find(
+  const trips = await TripBoard.find(
     { $or: [{ userId: { $exists: false } }, { userId: null }] },
     { _id: 1, user_email: 1 }
   ).lean();
@@ -36,7 +36,7 @@ const run = async () => {
   for (const trip of trips) {
     const ownerId = emailToUserId.get(normalizeEmail(trip.user_email));
     if (!ownerId) continue;
-    const result = await Trips.updateOne(
+    const result = await TripBoard.updateOne(
       { _id: trip._id, $or: [{ userId: { $exists: false } }, { userId: null }] },
       { $set: { userId: ownerId } }
     );

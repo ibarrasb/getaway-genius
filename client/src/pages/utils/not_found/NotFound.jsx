@@ -9,10 +9,10 @@ const NotFound = () => {
 
       <div className="mt-6 flex gap-4">
         <Link
-          to="/mytrips"
+          to="/mission"
           className="rounded-xl bg-indigo-600 px-4 py-2 text-white shadow-sm transition hover:bg-indigo-700"
         >
-          My Trips
+          Mission
         </Link>
       
       </div>

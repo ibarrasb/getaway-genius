@@ -50,16 +50,16 @@ function Header() {
       //   navigate('/discover');
       //   break;
       case 0:
-        navigate('/home');
+        navigate('/mission');
         break;
       case 1:
-        navigate('/favorites');
+        navigate('/workbench');
         break;
       case 2: 
-      navigate('/previous-trips');
+      navigate('/archive');
         break;
       default:
-        navigate('/home');
+        navigate('/mission');
     }
   };
 
@@ -69,13 +69,13 @@ function Header() {
       // case '/discover':
       //   setValue(0);
       //   break;
-      case '/home':
+      case '/mission':
         setValue(0);
         break;
-      case '/favorites':
+      case '/workbench':
         setValue(1);
         break;
-      case '/previous-trips':
+      case '/archive':
         setValue(2);
         break;
       default:
@@ -87,7 +87,7 @@ function Header() {
     return (
       <div>
         <div className="container">
-          <button className="dv1" onClick={() => navigate('/home')}>
+          <button className="dv1" onClick={() => navigate('/mission')}>
             <span className="getaway">Getaway</span>
             <span className="genius">Genius</span>
           </button>
@@ -127,9 +127,9 @@ function Header() {
   //<Tab label="Discover" sx={{ minWidth: '80px' }} />
 >
   
-  <Tab label="Trips" sx={{ minWidth: '80px' }} />
-  <Tab label="Wishlists" sx={{ minWidth: '80px' }} />
-  <Tab label="Past" sx={{ minWidth: '80px' }} />
+  <Tab label="Mission" sx={{ minWidth: '80px' }} />
+  <Tab label="Workbench" sx={{ minWidth: '80px' }} />
+  <Tab label="Archive" sx={{ minWidth: '80px' }} />
 </Tabs>
 
           </ThemeProvider>

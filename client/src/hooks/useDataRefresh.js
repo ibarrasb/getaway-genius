@@ -11,7 +11,7 @@ export const useDataRefresh = () => {
   const refetchTrips = useCallback(async () => {
     try {
       const headers = token ? { Authorization: token } : undefined
-      const response = await axios.get('/api/trips/getaway-trip', { headers })
+      const response = await axios.get('/api/trips/boards', { headers })
       return response.data
     } catch (error) {
       console.error('Error refetching trips:', error)
@@ -36,7 +36,7 @@ export const useDataRefresh = () => {
   const refetchFavorites = useCallback(async () => {
     try {
       const headers = token ? { Authorization: token } : undefined
-      const response = await axios.get('/api/trips/favorites', { headers })
+      const response = await axios.get('/api/trips/boards/favorites', { headers })
       return response.data
     } catch (error) {
       console.error('Error refetching favorites:', error)

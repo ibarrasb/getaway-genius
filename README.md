@@ -110,11 +110,18 @@ The application automatically detects production environment and serves static f
   
 ## API Endpoints  
   
-### Trips  
-- `GET /api/trips/getaway-trip` - Get user trips  
-- `POST /api/trips/getaway-trip` - Create new trip  
-- `DELETE /api/trips/getaway/:id` - Delete trip  
-- `PUT /api/trips/getaway/:id` - Update trip  
+### Trips
+- `GET /api/trips/boards` - Get user planning boards
+- `POST /api/trips/boards` - Create a planning board
+- `GET /api/trips/boards/favorites` - Get favorite planning boards
+- `GET /api/trips/boards/:id` - Get a planning board
+- `PUT /api/trips/boards/:id` - Update a planning board
+- `DELETE /api/trips/boards/:id` - Delete a planning board
+- `POST /api/trips/boards/:id/options` - Add a trip option
+- `PUT /api/trips/boards/:id/options/:optionId` - Update a trip option
+- `PATCH /api/trips/boards/:id/options/:optionId/select` - Set a trip option as the plan
+- `DELETE /api/trips/boards/:id/options/:optionId/selection` - Clear the planned trip option
+- `DELETE /api/trips/boards/:id/options/:optionId` - Delete a trip option
   
 ### Wishlists  
 - `POST /api/wishlist/createlist` - Create wishlist  

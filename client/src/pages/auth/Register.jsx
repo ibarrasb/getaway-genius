@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import axios from "axios"
 import { GlobalState } from "../../context/GlobalState.jsx"
+import AppSelect from "@/components/ui/AppSelect"
 // If you have a Button component, use it. Otherwise the <button> below is styled already.
 
 const Register = () => {
@@ -25,7 +26,7 @@ const Register = () => {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (isLogged) navigate("/mytrips", { replace: true })
+    if (isLogged) navigate("/mission", { replace: true })
   }, [isLogged, navigate])
 
   const US_STATES = useMemo(
@@ -52,6 +53,10 @@ const Register = () => {
       setError("Zip code must be exactly 5 digits.")
       return
     }
+    if (!form.state) {
+      setError("Select a state.")
+      return
+    }
   
     try {
       setSubmitting(true)
@@ -71,16 +76,19 @@ const Register = () => {
   return (
     <div className="min-h-screen px-3 pt-3 sm:px-5">
       <header className="mx-auto max-w-6xl py-4">
-        <div className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-slate-900">
-          <span className="text-teal-700">Getaway</span>
-          <span>Genius</span>
-        </div>
+        <Link to="/" className="inline-flex rounded-2xl">
+          <img
+            src="/getaway-genius-logo.png"
+            alt="Getaway Genius"
+            className="h-16 w-auto object-contain sm:h-20"
+          />
+        </Link>
       </header>
 
       <main className="mx-auto flex max-w-6xl items-center justify-center py-8">
         <div className="gg-glass w-full max-w-xl rounded-3xl border border-white/70 p-8">
           <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
-          <p className="mt-1 text-sm text-slate-600">Set up your travel command center in a minute.</p>
+          <p className="mt-1 text-sm text-slate-600">Create a workspace for comparing options and planning what counts.</p>
 
           {error && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -180,18 +188,14 @@ const Register = () => {
 
             <div className="md:col-span-1">
               <label className="mb-1 block text-sm font-medium text-slate-700">State</label>
-              <select
-                name="state"
-                required
+              <AppSelect
                 value={form.state}
-                onChange={onChange}
-                className="block w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300"
-              >
-                <option value="">Select state</option>
-                {US_STATES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+                onChange={(value) => setForm((s) => ({ ...s, state: value }))}
+                options={[
+                  { value: "", label: "Select state" },
+                  ...US_STATES.map((s) => ({ value: s, label: s })),
+                ]}
+              />
             </div>
 
             <div className="md:col-span-2">
@@ -215,7 +219,7 @@ const Register = () => {
                 disabled={submitting}
                 className="mt-2 w-full rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-5 py-2.5 text-white shadow-md transition hover:brightness-105 disabled:opacity-60"
               >
-                {submitting ? "Creating account…" : "Register"}
+                {submitting ? "Creating account…" : "Create Account"}
               </button>
             </div>
           </form>

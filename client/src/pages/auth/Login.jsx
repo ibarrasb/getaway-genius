@@ -18,7 +18,7 @@ const Login = () => {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (isLogged) navigate("/mytrips", { replace: true })
+    if (isLogged) navigate("/mission", { replace: true })
   }, [isLogged, navigate])
 
   const onChange = (e) => {
@@ -41,7 +41,7 @@ const Login = () => {
       api?.refresh?.()
 
       // Go to your home page
-      navigate("/mytrips", { replace: true })
+      navigate("/mission", { replace: true })
     } catch (err) {
       const msg = err?.response?.data?.msg || "Login failed. Please try again."
       setError(msg)
@@ -53,16 +53,19 @@ const Login = () => {
   return (
     <div className="min-h-screen px-3 pt-3 sm:px-5">
       <header className="mx-auto max-w-6xl py-4">
-        <div className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-slate-900">
-          <span className="text-teal-700">Getaway</span>
-          <span>Genius</span>
-        </div>
+        <Link to="/" className="inline-flex rounded-2xl">
+          <img
+            src="/getaway-genius-logo.png"
+            alt="Getaway Genius"
+            className="h-16 w-auto object-contain sm:h-20"
+          />
+        </Link>
       </header>
 
       <main className="mx-auto flex max-w-6xl items-center justify-center py-8">
         <div className="gg-glass w-full max-w-md rounded-3xl border border-white/70 p-8">
           <h1 className="text-2xl font-bold text-slate-900">Welcome back</h1>
-          <p className="mt-1 text-sm text-slate-600">Pick up your planning board and launch the next getaway.</p>
+          <p className="mt-1 text-sm text-slate-600">Open Mission, Workbench, and Archive for your travel plans.</p>
 
           {error && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -109,7 +112,7 @@ const Login = () => {
               disabled={submitting}
               className="mt-2 w-full rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-5 py-2.5 text-white shadow-md transition hover:brightness-105 disabled:opacity-60"
             >
-              {submitting ? "Signing in…" : "Login"}
+              {submitting ? "Signing in…" : "Log In"}
             </Button>
           </form>
 

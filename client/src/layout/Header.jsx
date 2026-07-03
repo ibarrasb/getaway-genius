@@ -4,9 +4,9 @@ import axios from "axios";
 import { GlobalState } from "@/context/GlobalState.jsx";
 
 const NAV = [
-  { label: "Mission", to: "/mytrips" },
-  { label: "Workbench", to: "/explore" },
-  { label: "Archive", to: "/previous-trips" },
+  { label: "Mission", to: "/mission" },
+  { label: "Workbench", to: "/workbench" },
+  { label: "Archive", to: "/archive" },
 ];
 
 const Header = () => {
@@ -49,7 +49,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 px-3 pt-3 sm:px-5">
       <div className="gg-glass mx-auto max-w-6xl rounded-3xl border border-white/70">
         <div className="flex h-[72px] items-center justify-between gap-3 px-3 py-2 sm:h-[76px] sm:px-5">
-          <Link to="/mytrips" className="group inline-flex h-full items-center gap-3 rounded-2xl px-2">
+          <Link to="/mission" className="group inline-flex h-full items-center gap-3 rounded-2xl px-2">
             <img
               src="/getaway-genius-logo.png"
               alt="Getaway Genius"
@@ -62,7 +62,7 @@ const Header = () => {
               <NavLink
                 key={item.to}
                 to={item.to}
-                end={item.to === "/mytrips"}
+                end={item.to === "/mission"}
                 className={({ isActive }) =>
                   [
                     "rounded-full px-3 py-1.5 text-sm font-semibold transition",
@@ -111,7 +111,7 @@ const Header = () => {
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === "/mytrips"}
+                  end={item.to === "/mission"}
                   className={({ isActive }) =>
                     [
                       "rounded-xl px-4 py-2 text-sm font-semibold transition",

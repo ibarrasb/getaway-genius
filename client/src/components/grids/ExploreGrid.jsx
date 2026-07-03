@@ -32,7 +32,9 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
       if (!email && token && state?.userAPI?.refresh) {
         try {
           await state.userAPI.refresh()
-        } catch {}
+        } catch (refreshError) {
+          console.error("Failed to refresh user before loading trips:", refreshError)
+        }
       }
 
       if (!email) {
@@ -44,7 +46,7 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
       try {
         setLoading(true)
         setError(null)
-        const res = await axios.get("/api/trips/getaway-trip", {
+        const res = await axios.get("/api/trips/boards", {
           params: { email },
           signal: controller.signal,
         })
@@ -65,18 +67,9 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
     return () => controller.abort()
   }, [email, token, state?.userAPI])
 
-  const handleDelete = async (id) => {
+  const removeDeletedTrip = (id) => {
     if (!id) return
-    if (!confirm("Delete this trip?")) return
-    try {
-      const headers = token ? { Authorization: token } : undefined
-      const res = await axios.delete(`/api/trips/getaway/${id}`, { headers })
-      alert(res.data?.msg ?? "Deleted")
-      setItems((prev) => prev.filter((t) => t._id !== id))
-    } catch (e) {
-      console.error(e)
-      alert("Failed to delete trip.")
-    }
+    setItems((prev) => prev.filter((t) => t._id !== id))
   }
 
   const sorted = useMemo(() => {
@@ -118,7 +111,7 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
         <TripCard
           key={trip._id}
           trip={trip}
-          onRemove={handleDelete}
+          onRemove={removeDeletedTrip}
           onFavoriteAdded={onFavoriteAdded} // ✅ Pass down the callback
         />
       ))}

@@ -6,6 +6,7 @@ import { GlobalState } from "@/context/GlobalState.jsx";
 import WishlistModal from "@/components/modals/WishlistModal";
 import { useDataRefresh } from "@/hooks/useDataRefresh.js";
 import { useToast } from "@/context/ToastContext.jsx";
+import { useConfirm } from "@/context/useConfirm";
 import { fmtRangeShort } from "../../pages/utils/localDates"; 
 
 const PLACEHOLDER_IMG = "https://picsum.photos/seed/getaway/1200/800";
@@ -19,6 +20,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
   const location = useLocation();
   const { refetchTrips, refetchWishlists } = useDataRefresh();
   const { success, error } = useToast();
+  const { confirm } = useConfirm();
 
   const [isFavorite, setIsFavorite] = useState(Boolean(trip.isFavorite));
   const [showWishlistModal, setShowWishlistModal] = useState(false);
@@ -53,25 +55,32 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
   const handleRemove = useCallback(async () => {
     if (!trip?._id || isDeleting) return;
 
-    const deleteMessage = instance
-      ? "Do you want to delete this committed instance?"
-      : "Do you want to delete this trip?";
-    if (!confirm(deleteMessage)) return;
+    const ok = await confirm({
+      title: instance ? "Delete planned option?" : "Delete planning board?",
+      description: instance
+        ? "This removes the planned option from this board. This cannot be undone."
+        : "This removes the planning board and its options. This cannot be undone.",
+      confirmLabel: instance ? "Delete Option" : "Delete Board",
+    });
+    if (!ok) return;
 
     setIsDeleting(true);
     try {
       const headers = token ? { Authorization: token } : undefined;
 
       if (instance?._id) {
-        await axios.delete(`/api/trips/getaway/${trip._id}/instances/${instance._id}`, { headers });
-        if (location.pathname === `/trips/${trip._id}/instances/${instance._id}`) {
-          navigate("/mytrips");
+        await axios.delete(`/api/trips/boards/${trip._id}/options/${instance._id}`, { headers });
+        if (
+          location.pathname === `/trips/${trip._id}/options/${instance._id}` ||
+          location.pathname === `/trips/${trip._id}/instances/${instance._id}`
+        ) {
+          navigate("/mission");
         }
         success("Instance deleted successfully");
       } else {
-        await axios.delete(`/api/trips/getaway/${trip._id}`, { headers });
+        await axios.delete(`/api/trips/boards/${trip._id}`, { headers });
         if (location.pathname === `/trips/${trip._id}`) {
-          navigate("/explore");
+          navigate("/workbench");
         }
         success("Trip deleted successfully");
       }
@@ -96,6 +105,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
     refetchWishlists,
     success,
     error,
+    confirm,
   ]);
 
   const handleFavoriteToggle = useCallback(() => {
@@ -110,7 +120,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
     try {
       setIsFavorite(true);
       await axios.put(
-        `/api/trips/getaway/${trip._id}`,
+        `/api/trips/boards/${trip._id}`,
         { isFavorite: true },
         token ? { headers: { Authorization: token } } : undefined
       );
@@ -148,7 +158,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
       }
 
       await axios.put(
-        `/api/trips/getaway/${trip._id}`,
+        `/api/trips/boards/${trip._id}`,
         { isFavorite: false },
         token ? { headers: { Authorization: token } } : undefined
       );
@@ -294,7 +304,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Chosen
+              Planned
             </span>
           )}
         </div>
@@ -302,7 +312,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
         {/* Actions */}
         <div className="flex items-center gap-2">
           <Link
-            to={instance ? `/trips/${trip?._id}/instances/${instance._id}` : `/trips/${trip?._id}`}
+            to={instance ? `/trips/${trip?._id}/options/${instance._id}` : `/trips/${trip?._id}`}
             state={instance ? { trip, instance } : { trip }}
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500"
           >

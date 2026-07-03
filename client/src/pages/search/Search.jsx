@@ -55,12 +55,12 @@ const Search = () => {
         instances: [],
       };
 
-      const { data } = await axios.post("/api/trips/getaway-trip", payload, {
+      const { data } = await axios.post("/api/trips/boards", payload, {
         ...(token ? { headers: { Authorization: token } } : {}),
       });
 
       setCallback?.((v) => !v);
-      navigate(data?.trip?._id ? `/trips/${data.trip._id}` : "/explore", { replace: true });
+      navigate(data?.trip?._id ? `/trips/${data.trip._id}` : "/workbench", { replace: true });
     } catch (err) {
       console.error(err);
       setCreateMsg(err?.response?.data?.msg || "Error creating planning board");
@@ -73,7 +73,7 @@ const Search = () => {
     <div className="gg-page min-h-screen">
       <header className="gg-container py-4">
         <button
-          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/explore", { replace: true }))}
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/workbench", { replace: true }))}
           className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50"
         >
           <ArrowLeft className="h-4 w-4" />

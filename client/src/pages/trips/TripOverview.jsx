@@ -21,11 +21,16 @@ import {
   Table2,
 } from "lucide-react";
 import { GlobalState } from "../../context/GlobalState";
+import { useToast } from "@/context/ToastContext.jsx";
+import { useConfirm } from "@/context/useConfirm";
+import AppSelect from "@/components/ui/AppSelect";
 import TripDateRange from "@/components/TripDateRange"; // shared component
 import { fmtRangeShort, toYmdLocal } from "../utils/localDates"; // ✅ local date utils (no TZ shift)
 
 const TripOverview = () => {
   const state = useContext(GlobalState);
+  const { error: showError } = useToast();
+  const { confirm } = useConfirm();
   const token = state.token[0];
   const globalLoading = state.loading?.[0] ?? false;
   const { tripId } = useParams();
@@ -43,7 +48,7 @@ const TripOverview = () => {
   const [funPlacesLoading, setFunPlacesLoading] = useState(false);
   const [tripSuggestionsLoading, setTripSuggestionsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [committingId, setCommittingId] = useState(null);
+  const [selectionLoadingId, setSelectionLoadingId] = useState(null);
   const [viewMode, setViewMode] = useState("cards");
   const [statusFilter, setStatusFilter] = useState("all");
   const [createError, setCreateError] = useState("");
@@ -131,7 +136,10 @@ const TripOverview = () => {
   const lineItemTotal = (instance) =>
     (instance.cost_items || []).reduce(
       (sum, item) =>
-        sum + (Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1),
+        sum +
+        (item.is_selected === false
+          ? 0
+          : (Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1)),
       0
     );
 
@@ -149,7 +157,10 @@ const TripOverview = () => {
     if (lineItems.length) {
       return lineItems.reduce(
         (sum, item) =>
-          sum + (Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1),
+          sum +
+          (item.is_selected === false
+            ? 0
+            : (Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1)),
         0
       );
     }
@@ -373,7 +384,7 @@ const TripOverview = () => {
 
       try {
         setFetchError("");
-        const tripRes = await axios.get(`/api/trips/getaway/${tripId}`, {
+        const tripRes = await axios.get(`/api/trips/boards/${tripId}`, {
           headers: authHeaders,
         });
         applyTripData(tripRes.data);
@@ -404,7 +415,11 @@ const TripOverview = () => {
   // -------- actions --------
   const handleDeleteInstance = async (instanceId) => {
     if (!instanceId) return;
-    const ok = window.confirm("Delete this instance? This cannot be undone.");
+    const ok = await confirm({
+      title: "Delete this option?",
+      description: "This removes the option and all saved items inside it. This cannot be undone.",
+      confirmLabel: "Delete Option",
+    });
     if (!ok) return;
 
     try {
@@ -413,13 +428,17 @@ const TripOverview = () => {
         prev.filter((i) => (i._id || "").toString() !== instanceId.toString())
       );
 
-      await axios.delete(`/api/trips/getaway/${tripId}/instances/${instanceId}`, {
+      const { data } = await axios.delete(`/api/trips/boards/${tripId}/options/${instanceId}`, {
         headers: authHeaders,
       });
+      if (Array.isArray(data?.instances)) {
+        setTripInstances(data.instances);
+        setTrip((prev) => (prev ? { ...prev, instances: data.instances } : prev));
+      }
     } catch (err) {
       console.error("Error deleting instance:", err?.response?.data || err.message);
       setTripInstances((prev) => [...prev]); // optional revert
-      alert("Failed to delete instance. Try again.");
+      showError("Failed to delete option. Try again.");
     }
   };
 
@@ -428,7 +447,7 @@ const TripOverview = () => {
     setCreatingOption(true);
     try {
       const payload = {
-        // Keep local calendar dates exactly as chosen (yyyy-MM-dd; no UTC conversion)
+        // Keep local calendar dates exactly as selected (yyyy-MM-dd; no UTC conversion)
         trip_start: newInstance.trip_start || null,
         trip_end: newInstance.trip_end || null,
         option_title: newInstance.option_title,
@@ -442,11 +461,11 @@ const TripOverview = () => {
         cost_items: (newInstance.cost_items || []).filter(
           (item) => item.name || item.url || Number(item.price) > 0
         ),
-        notes: newInstance.notes,
+        notes: "",
       };
 
       const { data: refreshedTrip } = await axios.post(
-        `/api/trips/getaway/${tripId}/instances`,
+        `/api/trips/boards/${tripId}/options`,
         payload,
         {
           headers: {
@@ -501,30 +520,38 @@ const TripOverview = () => {
     };
   }, [rankedInstances, trip?.travelers]);
 
-  const handleCommitInstance = async (instanceId) => {
-    if (!instanceId || committingId) return;
+  const handleToggleOptionSelection = async (instance) => {
+    const instanceId = instance?._id;
+    if (!instanceId || selectionLoadingId) return;
 
-    setCommittingId(instanceId);
+    setSelectionLoadingId(instanceId);
 
     try {
-      const { data } = await axios.patch(
-        `/api/trips/getaway/${tripId}/instances/${instanceId}/commit`,
-        {},
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...(authHeaders || {}),
-          },
-        }
-      );
+      const requestConfig = {
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeaders || {}),
+        },
+      };
+
+      const { data } = instance.isCommitted
+        ? await axios.delete(
+            `/api/trips/boards/${tripId}/options/${instanceId}/selection`,
+            requestConfig
+          )
+        : await axios.patch(
+            `/api/trips/boards/${tripId}/options/${instanceId}/select`,
+            {},
+            requestConfig
+          );
 
       setTrip(data.trip);
       setTripInstances(data.trip.instances || []);
     } catch (err) {
-      console.error("Error committing instance:", err);
-      alert(err.response?.data?.msg || "Failed to commit instance. Try again.");
+      console.error("Error updating option selection:", err);
+      showError(err.response?.data?.msg || "Failed to update option selection. Try again.");
     } finally {
-      setCommittingId(null);
+      setSelectionLoadingId(null);
     }
   };
 
@@ -548,10 +575,10 @@ const TripOverview = () => {
             {fetchError || "Trip not found"}
           </h2>
           <Link
-            to={fetchError ? "/login" : "/explore"}
+            to={fetchError ? "/login" : "/workbench"}
             className="text-teal-700 hover:text-teal-800"
           >
-            {fetchError ? "Go to Login" : "Return to Explore"}
+            {fetchError ? "Go to Login" : "Return to Workbench"}
           </Link>
         </div>
       </div>
@@ -563,11 +590,11 @@ const TripOverview = () => {
       <div className="mx-auto max-w-6xl">
         <div className="mb-6">
           <Link
-            to="/explore"
+            to="/workbench"
             className="mb-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-600 transition hover:text-slate-800"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Explore
+            Back to Workbench
           </Link>
 
           <div className="gg-glass overflow-hidden rounded-3xl border border-white/70 p-6">
@@ -597,7 +624,7 @@ const TripOverview = () => {
                   </p>
                 </div>
                 <div className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200">
-                  <p className="text-slate-500">Chosen</p>
+                  <p className="text-slate-500">Planned</p>
                   <p className="text-xl font-bold text-slate-900">
                     {trip.committedInstanceId ? "Yes" : "No"}
                   </p>
@@ -878,7 +905,7 @@ const TripOverview = () => {
                 )}
 
                 <Link
-                  to={`/trips/${tripId}/instances/${instance._id || index}`}
+                  to={`/trips/${tripId}/options/${instance._id || index}`}
                   state={{ trip, instance }}
                   className="mt-4 block w-full rounded-xl border border-slate-200 bg-white py-2 text-center text-slate-700 transition hover:bg-slate-50"
                 >
@@ -886,20 +913,20 @@ const TripOverview = () => {
                 </Link>
 
                 <button
-                  onClick={() => handleCommitInstance(instance._id)}
-                  disabled={committingId === instance._id || instance.isCommitted}
+                  onClick={() => handleToggleOptionSelection(instance)}
+                  disabled={selectionLoadingId === instance._id}
                   className={`block w-full text-center py-2 rounded-lg transition-colors ${
                     instance.isCommitted
-                      ? "bg-green-100 text-green-700 ring-1 ring-green-300 cursor-default"
+                      ? "bg-green-100 text-green-700 ring-1 ring-green-300 hover:bg-green-200"
                       : "bg-gradient-to-r from-teal-600 to-blue-600 text-white hover:brightness-105"
-                  } ${committingId === instance._id ? "opacity-50 cursor-wait" : ""}`}
+                  } ${selectionLoadingId === instance._id ? "opacity-50 cursor-wait" : ""}`}
                   type="button"
                 >
-                  {committingId === instance._id
+                  {selectionLoadingId === instance._id
                     ? "Saving..."
                     : instance.isCommitted
-                    ? "Chosen"
-                    : "Choose This Option"}
+                    ? "Clear Plan"
+                    : "Set as Plan"}
                 </button>
               </div>
             ))}
@@ -992,7 +1019,7 @@ const TripOverview = () => {
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <Link
-                                to={`/trips/${tripId}/instances/${instance._id || index}`}
+                                to={`/trips/${tripId}/options/${instance._id || index}`}
                                 state={{ trip, instance }}
                                 className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                               >
@@ -1000,15 +1027,24 @@ const TripOverview = () => {
                               </Link>
                               <button
                                 type="button"
-                                onClick={() => handleCommitInstance(instance._id)}
-                                disabled={committingId === instance._id || instance.isCommitted}
+                                onClick={() => handleToggleOptionSelection(instance)}
+                                disabled={selectionLoadingId === instance._id}
                                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                                   instance.isCommitted
-                                    ? "bg-green-100 text-green-700 ring-1 ring-green-300"
+                                    ? "bg-green-100 text-green-700 ring-1 ring-green-300 hover:bg-green-200"
                                     : "bg-slate-900 text-white hover:bg-slate-800"
-                                } ${committingId === instance._id ? "opacity-50" : ""}`}
+                                } ${selectionLoadingId === instance._id ? "opacity-50" : ""}`}
                               >
-                                {instance.isCommitted ? "Chosen" : "Choose"}
+                                {instance.isCommitted ? "Clear Plan" : "Set Plan"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteInstance(instance._id)}
+                                className="rounded-lg px-2 py-1.5 text-rose-600 transition hover:bg-rose-50"
+                                aria-label="Delete option"
+                                title="Delete option"
+                              >
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
                           </td>
@@ -1165,19 +1201,16 @@ const TripOverview = () => {
                     <span className="mb-1 block text-sm font-medium text-slate-700">
                       Status
                     </span>
-                    <select
+                    <AppSelect
                       value={newInstance.status}
-                      onChange={(e) =>
-                        setNewInstance((prev) => ({ ...prev, status: e.target.value }))
+                      onChange={(value) =>
+                        setNewInstance((prev) => ({ ...prev, status: value }))
                       }
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                    >
-                      {Object.entries(statusLabels).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
+                      options={Object.entries(statusLabels).map(([value, label]) => ({
+                        value,
+                        label,
+                      }))}
+                    />
                   </label>
                 </div>
 
@@ -1193,20 +1226,6 @@ const TripOverview = () => {
                 <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
                   After saving this option, open it to add hotels, Airbnbs, flights, tickets, rental cars, links, prices, and the exact dates for each item.
                 </div>
-
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-slate-700">
-                    Notes
-                  </span>
-                  <textarea
-                    value={newInstance.notes}
-                    onChange={(e) =>
-                      setNewInstance((prev) => ({ ...prev, notes: e.target.value }))
-                    }
-                    className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-                    placeholder="Why this option is good, tradeoffs, cancellation notes, parking, fees..."
-                  />
-                </label>
 
                 {createError && (
                   <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
