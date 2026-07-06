@@ -70,8 +70,24 @@ app.get('/health', (_req, res) => res.status(200).send('ok'));
 //Static (Vite build) LAST, only in production
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(__dirname, 'client', 'dist');
+  const clientAssets = path.join(clientDist, 'assets');
+
+  app.use(
+    '/assets',
+    express.static(clientAssets, {
+      immutable: true,
+      maxAge: '1y',
+    })
+  );
+  app.use('/assets', (_req, res) => res.status(404).type('text/plain').send('Asset not found'));
+
   app.use(express.static(clientDist));
-  app.get('*', (_req, res) => {
+
+  app.get('*', (req, res) => {
+    if (path.extname(req.path)) {
+      return res.status(404).type('text/plain').send('Not found');
+    }
+
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
