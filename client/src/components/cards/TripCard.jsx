@@ -8,8 +8,27 @@ import { useDataRefresh } from "@/hooks/useDataRefresh.js";
 import { useToast } from "@/context/ToastContext.jsx";
 import { useConfirm } from "@/context/useConfirm";
 import { fmtRangeShort } from "../../pages/utils/localDates"; 
+import { Heart, Loader2, Trash2 } from "lucide-react";
 
 const PLACEHOLDER_IMG = "https://picsum.photos/seed/getaway/1200/800";
+
+const firstValidImage = (...sources) =>
+  sources.find((src) => typeof src === "string" && src.trim())?.trim() || "";
+
+const getCardImageSrc = (trip = {}, instance) => {
+  const instances = Array.isArray(trip.instances) ? trip.instances : [];
+  const committed = instances.find(
+    (item) => item?._id?.toString() === trip.committedInstanceId?.toString()
+  );
+  const firstOptionWithImage = instances.find((item) => item?.image_url?.trim());
+
+  return firstValidImage(
+    instance?.image_url,
+    committed?.image_url,
+    firstOptionWithImage?.image_url,
+    trip.image_url
+  ) || PLACEHOLDER_IMG;
+};
 
 const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
   const state = useContext(GlobalState);
@@ -24,12 +43,13 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
 
   const [isFavorite, setIsFavorite] = useState(Boolean(trip.isFavorite));
   const [showWishlistModal, setShowWishlistModal] = useState(false);
-  const [imgSrc, setImgSrc] = useState(trip?.image_url || PLACEHOLDER_IMG);
+  const resolvedImageSrc = useMemo(() => getCardImageSrc(trip, instance), [trip, instance]);
+  const [imgSrc, setImgSrc] = useState(resolvedImageSrc);
   const [isToggling, setIsToggling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => setIsFavorite(Boolean(trip.isFavorite)), [trip]);
-  useEffect(() => setImgSrc(trip?.image_url || PLACEHOLDER_IMG), [trip?.image_url]);
+  useEffect(() => setIsFavorite(Boolean(trip.isFavorite)), [trip.isFavorite]);
+  useEffect(() => setImgSrc(resolvedImageSrc), [resolvedImageSrc]);
 
   const displayData = instance || {
     ...trip,
@@ -108,7 +128,9 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
     confirm,
   ]);
 
-  const handleFavoriteToggle = useCallback(() => {
+  const handleFavoriteToggle = useCallback((event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
     if (isToggling) return;
     if (isFavorite) handleUnfavorite();
     else setShowWishlistModal(true);
@@ -212,36 +234,23 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
           type="button"
           onClick={handleFavoriteToggle}
           disabled={isToggling}
-          aria-label={isFavorite ? "Unfavorite" : "Add to wishlist"}
+          aria-label={isFavorite ? "Remove from saved shortlists" : "Save to shortlist"}
           aria-pressed={isFavorite}
-          className={`absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-slate-700 shadow-md ring-1 ring-black/5 transition hover:scale-105 hover:bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal-500 ${
+          className={`absolute right-3 top-3 z-20 grid h-11 w-11 place-items-center rounded-full bg-white/95 shadow-lg ring-1 ring-black/10 transition hover:scale-105 hover:bg-white focus:outline-none focus:ring-2 focus:ring-rose-300 active:scale-95 ${
+            isFavorite ? "text-rose-600" : "text-slate-700 hover:text-rose-600"
+          } ${
             isToggling ? "opacity-50 cursor-not-allowed" : ""
           }`}
-          title={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
+          title={isFavorite ? "Remove from saved shortlists" : "Save to shortlist"}
         >
           {isToggling ? (
-            <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <svg
-              className={`h-5 w-5 transition ${isFavorite ? "fill-rose-500 stroke-rose-500" : "stroke-slate-700"}`}
-              viewBox="0 0 24 24"
+            <Heart
+              className="h-5 w-5 transition"
               fill={isFavorite ? "currentColor" : "none"}
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 8.25c0-2.347-1.903-4.25-4.25-4.25-1.48 0-2.786.75-3.5 1.875A4.125 4.125 0 006.75 4C4.403 4 2.5 5.903 2.5 8.25c0 6.25 9.5 10 9.5 10s9.5-3.75 9.5-10z"
-              />
-            </svg>
+              strokeWidth={2.2}
+            />
           )}
         </button>
 
@@ -344,9 +353,7 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
               </>
             ) : (
               <>
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 6h18M8 6v12m8-12v12M5 6l1 14a2 2 0 002 2h8a2 2 0 002-2l1-14" strokeLinecap="round" />
-                </svg>
+                <Trash2 className="h-4 w-4" />
                 Delete
               </>
             )}

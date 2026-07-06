@@ -3,7 +3,6 @@ import { useState, useEffect, useContext, useMemo, useCallback, useRef } from "r
 import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
-  Save,
   Calendar as CalendarIcon,
   Clock3,
   Plus,
@@ -15,8 +14,12 @@ import {
   Ticket,
   Utensils,
   Package,
+  MapPin,
+  ReceiptText,
+  CheckCircle2,
 } from "lucide-react";
 import BackButton from "@/components/BackButton";
+import { TripOptionSkeleton } from "@/components/skeletons/AppSkeletons.jsx";
 import AppSelect from "@/components/ui/AppSelect";
 import {
   toYmdLocal,
@@ -45,12 +48,19 @@ const TripInstanceDetail = () => {
 
   const [trip, setTrip] = useState(stateData.trip || null);
   const [instance, setInstance] = useState(stateData.instance || null);
-  const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
   const [editingHeaderField, setEditingHeaderField] = useState(null);
+  const [activeCategory, setActiveCategory] = useState("lodging");
+  const [expandedItemKey, setExpandedItemKey] = useState(null);
   const [fetchLoading, setFetchLoading] = useState(!stateData.trip || !stateData.instance);
   const savedSignatureRef = useRef("");
+  const autoSaveTimerRef = useRef(null);
+  const saveSequenceRef = useRef(0);
+  const savingSignatureRef = useRef("");
+  const latestFormDataRef = useRef(null);
+  const latestSignatureRef = useRef("");
+  const hydratedInstanceSignatureRef = useRef("");
 
   const [formData, setFormData] = useState({
     option_title: "",
@@ -285,6 +295,24 @@ const TripInstanceDetail = () => {
     return "Other choice";
   }, []);
 
+  const compareSetLabel = (category) => {
+    if (category === "lodging") return "Stay option group";
+    if (category === "flight") return "Flight option group";
+    if (category === "car") return "Transportation option group";
+    if (category === "tickets") return "Ticket option group";
+    if (category === "food") return "Food option group";
+    return "Option group";
+  };
+
+  const compareSetHelp = (category) => {
+    if (category === "lodging") return "Name the set of places you are choosing between, like Hotel options or Beach stay.";
+    if (category === "flight") return "Name the set of flights you are choosing between, like Morning flight or Main route.";
+    if (category === "car") return "Name the set of transportation choices, like Rental car or Airport transfer.";
+    if (category === "tickets") return "Name the set of tickets you are choosing between, like Park tickets or Museum passes.";
+    if (category === "food") return "Name the food budget this belongs to, like Restaurants or Groceries.";
+    return "Name the set this item belongs to.";
+  };
+
   const normalizeGroupName = useCallback(
     (item) => String(item.group_name || defaultGroupName(item.category || "other")).trim(),
     [defaultGroupName]
@@ -301,66 +329,71 @@ const TripInstanceDetail = () => {
 
   const updateCostItem = (index, key, value) => {
     setSaveStatus("");
-    setFormData((prev) => ({
-      ...prev,
-      cost_items: (prev.cost_items || []).map((item, itemIndex) =>
-        itemIndex === index
-          ? (() => {
-              const nextCategory = key === "category" ? value : item.category;
-              const nextGroup =
-                key === "group_name"
-                  ? String(value || defaultGroupName(nextCategory)).trim()
-                  : normalizeGroupName({ ...item, category: nextCategory });
-              const nextBasis =
-                key === "category"
-                  ? defaultPriceBasis(value)
-                  : key === "price_basis"
-                  ? value
-                  : item.price_basis || defaultPriceBasis(nextCategory);
-              const nextItem = {
-                ...item,
-                [key]: value,
-                group_name: nextGroup,
-                ...(key === "category"
-                  ? {
-                      price_basis: nextBasis,
-                      item_type: defaultItemType(value),
-                    }
-                  : {}),
-                ...(key === "group_name" && item.is_selected === false
-                  ? {
-                      is_selected: !groupHasSelectedItem(
-                        prev.cost_items || [],
-                        nextCategory,
-                        nextGroup,
-                        index
-                      ),
-                    }
-                  : {}),
-              };
+    setFormData((prev) => {
+      const nextData = {
+        ...prev,
+        cost_items: (prev.cost_items || []).map((item, itemIndex) =>
+          itemIndex === index
+            ? (() => {
+                const nextCategory = key === "category" ? value : item.category;
+                const nextGroup =
+                  key === "group_name"
+                    ? String(value || defaultGroupName(nextCategory)).trim()
+                    : normalizeGroupName({ ...item, category: nextCategory });
+                const nextBasis =
+                  key === "category"
+                    ? defaultPriceBasis(value)
+                    : key === "price_basis"
+                    ? value
+                    : item.price_basis || defaultPriceBasis(nextCategory);
+                const nextItem = {
+                  ...item,
+                  [key]: value,
+                  group_name: nextGroup,
+                  ...(key === "category"
+                    ? {
+                        price_basis: nextBasis,
+                        item_type: defaultItemType(value),
+                      }
+                    : {}),
+                  ...(key === "group_name" && item.is_selected === false
+                    ? {
+                        is_selected: !groupHasSelectedItem(
+                          prev.cost_items || [],
+                          nextCategory,
+                          nextGroup,
+                          index
+                        ),
+                      }
+                    : {}),
+                };
 
-              if (key === "category" || key === "price_basis") {
-                nextItem.quantity = multiplierForBasis(nextCategory, nextBasis, nextItem);
-              }
-              if (
-                (key === "start_date" || key === "end_date") &&
-                ["per_night", "per_day"].includes(nextBasis)
-              ) {
-                nextItem.quantity = multiplierForBasis(nextCategory, nextBasis, nextItem);
-              }
+                if (key === "category" || key === "price_basis") {
+                  nextItem.quantity = multiplierForBasis(nextCategory, nextBasis, nextItem);
+                }
+                if (
+                  (key === "start_date" || key === "end_date") &&
+                  ["per_night", "per_day"].includes(nextBasis)
+                ) {
+                  nextItem.quantity = multiplierForBasis(nextCategory, nextBasis, nextItem);
+                }
 
-              return nextItem;
-            })()
-          : item
-      ),
-    }));
+                return nextItem;
+              })()
+            : item
+        ),
+      };
+      persistTripOption(nextData);
+      return nextData;
+    });
   };
 
   const addCostItem = (category = "other") => {
     setSaveStatus("");
-    setFormData((prev) => ({
-      ...prev,
-      cost_items: (() => {
+    setFormData((prev) => {
+      const nextData = {
+        ...prev,
+        cost_items: (() => {
         const existingItems = prev.cost_items || [];
         const existingCategoryItems = existingItems.filter((item) => item.category === category);
         const groupName = normalizeGroupName(
@@ -386,15 +419,22 @@ const TripInstanceDetail = () => {
           },
         ];
       })(),
-    }));
+      };
+      persistTripOption(nextData);
+      return nextData;
+    });
   };
 
   const removeCostItem = (index) => {
     setSaveStatus("");
-    setFormData((prev) => ({
-      ...prev,
-      cost_items: (prev.cost_items || []).filter((_, itemIndex) => itemIndex !== index),
-    }));
+    setFormData((prev) => {
+      const nextData = {
+        ...prev,
+        cost_items: (prev.cost_items || []).filter((_, itemIndex) => itemIndex !== index),
+      };
+      persistTripOption(nextData);
+      return nextData;
+    });
   };
 
   const setCostItemSelected = (index, selected) => {
@@ -405,7 +445,7 @@ const TripInstanceDetail = () => {
       if (!target) return prev;
 
       const targetGroup = normalizeGroupName(target);
-      return {
+      const nextData = {
         ...prev,
         cost_items: items.map((item, itemIndex) => {
           if (itemIndex === index) return { ...item, is_selected: selected };
@@ -419,6 +459,8 @@ const TripInstanceDetail = () => {
           return item;
         }),
       };
+      persistTripOption(nextData);
+      return nextData;
     });
   };
 
@@ -491,6 +533,47 @@ const TripInstanceDetail = () => {
   );
   const hasUnsavedChanges = Boolean(savedSignatureRef.current && currentSignature !== savedSignatureRef.current);
 
+  useEffect(() => {
+    latestFormDataRef.current = formData;
+    latestSignatureRef.current = currentSignature;
+  }, [currentSignature, formData]);
+
+  const persistTripOption = useCallback(
+    async (source) => {
+      const normalizedFormData = buildSavePayload(source);
+      const signature = JSON.stringify(normalizedFormData);
+      const requestId = saveSequenceRef.current + 1;
+      saveSequenceRef.current = requestId;
+      savingSignatureRef.current = signature;
+
+      setSaveStatus("Saving...");
+
+      try {
+        const { data } = await axios.put(
+          `/api/trips/boards/${tripId}/options/${instanceId}`,
+          normalizedFormData,
+          { headers: authHeaders }
+        );
+
+        if (requestId === saveSequenceRef.current) {
+          if (data?.trip) setTrip(data.trip);
+          savedSignatureRef.current = signature;
+          setSaveStatus(
+            latestSignatureRef.current === signature ? "Saved automatically" : "Saving..."
+          );
+          if (savingSignatureRef.current === signature) savingSignatureRef.current = "";
+        }
+      } catch (error) {
+        console.error("Error updating trip instance:", error);
+        if (requestId === saveSequenceRef.current) {
+          setSaveStatus(error?.response?.data?.msg || "Autosave failed");
+        }
+        if (savingSignatureRef.current === signature) savingSignatureRef.current = "";
+      }
+    },
+    [authHeaders, buildSavePayload, instanceId, tripId]
+  );
+
   // -------- fetch --------
   useEffect(() => {
     const fetchTripInstance = async () => {
@@ -500,23 +583,20 @@ const TripInstanceDetail = () => {
         return;
       }
 
-      if (!trip || !instance) {
-        try {
-          setFetchLoading(true);
-          const { data } = await axios.get(`/api/trips/boards/${tripId}/options/${instanceId}`, {
-            headers: authHeaders,
-          });
-          setTrip(data.trip);
-          setInstance(data.instance);
-        } catch (err) {
-          console.error("Error fetching trip instance:", err);
-        } finally {
-          setFetchLoading(false);
-        }
+      try {
+        const { data } = await axios.get(`/api/trips/boards/${tripId}/options/${instanceId}`, {
+          headers: authHeaders,
+        });
+        setTrip(data.trip);
+        setInstance(data.instance);
+      } catch (err) {
+        console.error("Error fetching trip instance:", err);
+      } finally {
+        setFetchLoading(false);
       }
     };
     fetchTripInstance();
-  }, [tripId, instanceId, trip, instance, token, globalLoading, authHeaders]);
+  }, [tripId, instanceId, token, globalLoading, authHeaders]);
 
   // normalize instance -> form (as yyyy-MM-dd strings; no UTC conversion)
   useEffect(() => {
@@ -553,8 +633,12 @@ const TripInstanceDetail = () => {
         notes: instance.notes || "",
         activities: instance.activities || [],
       };
+      const nextSignature = JSON.stringify(buildSavePayload(nextFormData));
+      if (hydratedInstanceSignatureRef.current === nextSignature) return;
+      hydratedInstanceSignatureRef.current = nextSignature;
+
       setFormData(nextFormData);
-      savedSignatureRef.current = JSON.stringify(buildSavePayload(nextFormData));
+      savedSignatureRef.current = nextSignature;
       setSaveStatus("");
       setFetchLoading(false);
     }
@@ -563,34 +647,40 @@ const TripInstanceDetail = () => {
     defaultGroupName,
     defaultItemType,
     instance,
+    instanceId,
     isAutoQuantityBasis,
     legacyPriceBasis,
     multiplierForBasis,
   ]);
 
+  useEffect(() => {
+    if (!hasUnsavedChanges || fetchLoading || !token) return undefined;
+    if (currentSignature === savingSignatureRef.current) return undefined;
+
+    setSaveStatus("Saving...");
+    autoSaveTimerRef.current = window.setTimeout(() => {
+      persistTripOption(latestFormDataRef.current);
+    }, 900);
+
+    return () => {
+      if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [currentSignature, fetchLoading, formData, hasUnsavedChanges, persistTripOption, token]);
+
+  useEffect(
+    () => () => {
+      if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current);
+    },
+    []
+  );
+
   // -------- submit --------
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      // Keep dates as 'yyyy-MM-dd' strings; let the server decide how to store them.
-      const normalizedFormData = buildSavePayload(formData);
-
-      const { data } = await axios.put(
-        `/api/trips/boards/${tripId}/options/${instanceId}`,
-        normalizedFormData,
-        { headers: authHeaders }
-      );
-      if (data?.trip) setTrip(data.trip);
-      savedSignatureRef.current = JSON.stringify(normalizedFormData);
-      setInstance(data?.instance || ((prev) => ({ ...prev, ...normalizedFormData })));
-      setSaveStatus("Saved");
-    } catch (error) {
-      console.error("Error updating trip instance:", error);
-      setSaveStatus(error?.response?.data?.msg || "Save failed");
-    } finally {
-      setLoading(false);
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
     }
+    await persistTripOption(formData);
   };
 
   const handleDeleteInstance = async () => {
@@ -617,14 +707,7 @@ const TripInstanceDetail = () => {
   };
 
   if (fetchLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent mx-auto mb-4" />
-          <p className="text-slate-600">Loading trip details...</p>
-        </div>
-      </div>
-    );
+    return <TripOptionSkeleton />;
   }
 
   if (!trip || !instance) {
@@ -638,45 +721,54 @@ const TripInstanceDetail = () => {
     );
   }
 
+  const activeCategoryConfig = configFor(activeCategory);
+  const ActiveCategoryIcon = activeCategoryConfig.icon;
+  const activeCategoryItems = (formData.cost_items || [])
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => item.category === activeCategory);
+  const selectedItemCount = (formData.cost_items || []).filter(itemCountsInTotal).length;
+  const totalItemCount = (formData.cost_items || []).length;
+  const destinationLabel = formData.destination || trip.location_address || trip.board_title;
+
   // -------- UI --------
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50/40 via-white to-slate-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="gg-page">
+      <div className="gg-container">
         <div className="mb-6">
           <BackButton label="Back" />
         </div>
 
-        <div className="relative rounded-[28px] bg-white shadow-[0_10px_40px_-10px_rgba(2,6,23,0.12)] ring-1 ring-slate-100 overflow-hidden">
-          {/* Banner */}
-          <div className="relative h-48">
+        <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/85 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur">
+          <div className="relative min-h-[22rem] overflow-hidden bg-slate-900">
             <img
               src={instance.image_url || trip.image_url || "/getaway-genius-logo.png"}
               alt={formData.destination || trip.location_address}
-              className="h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover opacity-80"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-slate-950/15" />
 
-            {/* Option actions */}
-            <div className="absolute top-4 right-4 flex gap-2">
-              <button
-                onClick={handleDeleteInstance}
-                disabled={deleteLoading}
-                className="rounded-xl bg-white/20 p-2 text-white backdrop-blur hover:bg-rose-500/80 disabled:opacity-50"
-                title="Delete option"
-                type="button"
-              >
-                {deleteLoading ? (
-                  <span className="block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
-              </button>
-            </div>
+            <div className="relative z-10 flex min-h-[22rem] flex-col justify-between p-5 sm:p-7 lg:p-8">
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-teal-800 shadow-sm">
+                  Trip option
+                </span>
+                <button
+                  onClick={handleDeleteInstance}
+                  disabled={deleteLoading}
+                  className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-rose-500/85 disabled:opacity-50"
+                  title="Delete option"
+                  type="button"
+                  aria-label="Delete option"
+                >
+                  {deleteLoading ? (
+                    <span className="block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
 
-            {/* Title + total */}
-            <div className="absolute bottom-4 left-6 right-6 flex items-end justify-between">
-              <div className="min-w-0 text-white">
-                <p className="text-xs tracking-[0.18em] font-semibold opacity-80">TRIP OPTION</p>
+              <div className="max-w-3xl text-white">
                 {editingHeaderField === "option_title" ? (
                   <input
                     type="text"
@@ -684,25 +776,26 @@ const TripInstanceDetail = () => {
                     onChange={(e) => updateOptionField("option_title", e.target.value)}
                     onBlur={() => setEditingHeaderField(null)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === "Escape") {
-                        e.currentTarget.blur();
-                      }
+                      if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
                     }}
                     autoFocus
-                    className="mt-1 w-full max-w-xl rounded-xl border border-white/40 bg-white/95 px-3 py-2 text-2xl font-bold leading-tight text-slate-950 shadow-sm outline-none md:text-3xl"
+                    className="w-full rounded-2xl border border-white/50 bg-white/95 px-4 py-3 text-3xl font-extrabold leading-tight text-slate-950 shadow-sm outline-none sm:text-5xl"
                     placeholder="Option name"
                   />
                 ) : (
-                  <h1
-                    className="mt-1 cursor-text truncate text-2xl font-bold leading-tight md:text-3xl"
+                  <button
+                    type="button"
+                    className="block max-w-full cursor-text text-left"
                     onDoubleClick={() => setEditingHeaderField("option_title")}
                     title="Double-click to edit"
                   >
-                    {formData.option_title || formData.destination || "Untitled option"}
-                  </h1>
+                    <h1 className="gg-hero-title text-4xl font-extrabold sm:text-5xl lg:text-6xl">
+                      {formData.option_title || destinationLabel || "Untitled option"}
+                    </h1>
+                  </button>
                 )}
 
-                <div className="mt-2 flex flex-wrap items-center gap-2">
+                <div className="mt-5 flex flex-wrap items-center gap-3">
                   {editingHeaderField === "status" ? (
                     <AppSelect
                       value={formData.status}
@@ -717,391 +810,425 @@ const TripInstanceDetail = () => {
                     <button
                       type="button"
                       onDoubleClick={() => setEditingHeaderField("status")}
-                      className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-900 shadow-sm ring-1 ring-white/50"
+                      className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-slate-900 shadow-sm"
                       title="Double-click to edit"
                     >
+                      <CheckCircle2 className="h-4 w-4 text-teal-700" />
                       {statusLabels[formData.status] || "Considering"}
                     </button>
                   )}
-                  <span className="truncate text-sm opacity-90">
-                    {trip.board_title || trip.location_address}
-                  </span>
+                  {destinationLabel && (
+                    <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-black/35 px-3 py-1.5 text-sm font-semibold text-white ring-1 ring-white/15 backdrop-blur">
+                      <MapPin className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{destinationLabel}</span>
+                    </span>
+                  )}
                 </div>
-              </div>
-              <div className="hidden md:block">
-                <span className="rounded-full bg-indigo-50/90 px-4 py-2 text-indigo-700 text-sm font-semibold shadow-sm">
-                  {formatCurrency0(total)} est.
-                </span>
               </div>
             </div>
           </div>
 
-          {/* Content */}
           <form
             id="trip-option-detail-form"
             onSubmit={handleSubmit}
-            className={`p-6 md:p-8 ${hasUnsavedChanges ? "pb-28 md:pb-32" : ""}`}
+                className="p-5 sm:p-7 lg:p-8"
           >
-            {/* Mobile total */}
-            <div className="md:hidden mb-4">
-              <span className="rounded-full bg-indigo-50 px-3 py-1.5 text-indigo-700 text-sm font-semibold shadow-sm">
-                {formatCurrency0(total)} est.
-              </span>
-            </div>
-
-            {/* ===== Dates section ===== */}
-            <div className="rounded-2xl ring-1 ring-slate-100 bg-gradient-to-r from-indigo-50 to-white p-5 shadow-sm">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-white shadow flex items-center justify-center ring-1 ring-slate-100">
-                    <CalendarIcon className="h-5 w-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Trip Dates</p>
-                    <p className="text-lg font-semibold text-slate-900">
-                      {formatMMDDYYYYLocal(formData.trip_start)} — {formatMMDDYYYYLocal(formData.trip_end)}
-                    </p>
-                    <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
-                      <Clock3 className="h-4 w-4" />
-                      <span>
-                        {nights !== null ? `${nights} ${nights === 1 ? "night" : "nights"}` : "Duration unknown"}
-                      </span>
-                    </div>
-                  </div>
+            <section className="-mt-16 grid gap-4 lg:grid-cols-[1fr_1fr_1fr]">
+              <div className="relative rounded-2xl border border-white/80 bg-white p-5 shadow-xl shadow-slate-900/10">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-teal-100">
+                  <ReceiptText className="h-5 w-5" />
                 </div>
+                <p className="text-sm font-semibold text-slate-500">Estimated total</p>
+                <p className="mt-1 text-3xl font-extrabold text-slate-950">{formatCurrency0(total)}</p>
+                <p className="mt-2 text-sm text-slate-500">
+                  {selectedItemCount} of {totalItemCount} saved item{totalItemCount === 1 ? "" : "s"} count in the plan.
+                </p>
               </div>
-            </div>
 
-            {/* ===== Saved links and costs ===== */}
-            <div className="mt-6">
-              <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="relative rounded-2xl border border-white/80 bg-white p-5 shadow-xl shadow-slate-900/10">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+                  <CalendarIcon className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-semibold text-slate-500">Trip dates</p>
+                <p className="mt-1 text-xl font-bold text-slate-950">
+                  {formatMMDDYYYYLocal(formData.trip_start)} - {formatMMDDYYYYLocal(formData.trip_end)}
+                </p>
+                <p className="mt-2 inline-flex items-center gap-2 text-sm text-slate-500">
+                  <Clock3 className="h-4 w-4" />
+                  {nights !== null ? `${nights} ${nights === 1 ? "night" : "nights"}` : "Duration unknown"}
+                </p>
+              </div>
+
+              <div className="relative rounded-2xl border border-white/80 bg-white p-5 shadow-xl shadow-slate-900/10">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-700 ring-1 ring-rose-100">
+                  <MapPin className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-semibold text-slate-500">Board</p>
+                <p className="mt-1 line-clamp-2 text-xl font-bold text-slate-950">
+                  {trip.board_title || trip.location_address || "Planning board"}
+                </p>
+                <p className="mt-2 text-sm text-slate-500">{formData.destination || "Destination details not set"}</p>
+              </div>
+            </section>
+
+            <section className="mt-8">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <h2 className="font-semibold text-slate-900">Saved links and costs</h2>
-                  <p className="text-sm text-slate-500">
-                    Keep hotels, Airbnbs, flights, tickets, rentals, and other links here.
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-2xl font-bold text-slate-950">Saved links and costs</h2>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                        saveStatus.toLowerCase().includes("failed")
+                          ? "bg-rose-50 text-rose-700 ring-1 ring-rose-100"
+                          : saveStatus === "Saving..."
+                          ? "bg-blue-50 text-blue-700 ring-1 ring-blue-100"
+                          : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                      }`}
+                    >
+                      {saveStatus || "Autosaves"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Pick a category, add the options you are comparing, and choose what counts in the total.
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => addCostItem(activeCategory)}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-900/15 transition hover:brightness-105"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add {activeCategoryConfig.singular}
+                </button>
               </div>
 
-              <div className="space-y-5">
-                {itemCategories.map((category) => {
-                  const config = configFor(category.value);
-                  const Icon = config.icon;
-                  const categoryItems = (formData.cost_items || [])
-                    .map((item, index) => ({ item, index }))
-                    .filter(({ item }) => item.category === category.value);
+              <div className="grid gap-5 lg:grid-cols-[17rem_1fr]">
+                <nav className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Cost categories">
+                  {itemCategories.map((category) => {
+                    const config = configFor(category.value);
+                    const Icon = config.icon;
+                    const categoryItems = (formData.cost_items || []).filter(
+                      (item) => item.category === category.value
+                    );
+                    const isActive = activeCategory === category.value;
 
-                  return (
-                    <section
-                      key={category.value}
-                      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-                    >
-                      <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className={`grid h-11 w-11 place-items-center rounded-xl ring-1 ${config.accent}`}>
-                            <Icon className="h-5 w-5" />
+                    return (
+                      <button
+                        key={category.value}
+                        type="button"
+                        onClick={() => setActiveCategory(category.value)}
+                        className={`mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition last:mb-0 ${
+                          isActive
+                            ? "bg-slate-950 text-white shadow-md"
+                            : "text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span
+                          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ring-1 ${
+                            isActive ? "bg-white/15 text-white ring-white/20" : config.accent
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-semibold">{config.label}</span>
+                          <span className={`block text-xs ${isActive ? "text-white/70" : "text-slate-500"}`}>
+                            {categoryItems.length} item{categoryItems.length === 1 ? "" : "s"} · {formatCurrency0(categoryTotal(category.value))}
                           </span>
-                          <div>
-                            <h3 className="font-semibold text-slate-900">{config.label}</h3>
-                            <p className="text-sm text-slate-500">{config.description}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 sm:justify-end">
-                          <p className="text-right">
-                            <span className="block text-xs font-medium text-slate-500">
-                              {categoryItems.length} item{categoryItems.length === 1 ? "" : "s"}
-                            </span>
-                            <span className="block text-lg font-bold text-slate-900">
-                              {formatCurrency0(categoryTotal(category.value))}
-                            </span>
-                          </p>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </nav>
+
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/80 p-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <span className={`grid h-12 w-12 place-items-center rounded-2xl ring-1 ${activeCategoryConfig.accent}`}>
+                        <ActiveCategoryIcon className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-950">{activeCategoryConfig.label}</h3>
+                        <p className="mt-1 text-sm text-slate-500">{activeCategoryConfig.description}</p>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl bg-white px-4 py-3 text-left shadow-sm ring-1 ring-slate-200 sm:text-right">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Category total</p>
+                      <p className="text-2xl font-extrabold text-slate-950">{formatCurrency0(categoryTotal(activeCategory))}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 p-4">
+                    {activeCategoryItems.map(({ item, index }) => {
+                      const itemKey = item._id || `${activeCategory}-${index}`;
+                      const isExpanded = expandedItemKey === itemKey;
+
+                      return (
+                        <article
+                          key={itemKey}
+                          className={`overflow-hidden rounded-2xl border bg-white transition ${
+                            isExpanded
+                              ? "border-slate-300 shadow-md"
+                              : "border-slate-200 shadow-sm hover:border-slate-300"
+                          }`}
+                        >
                           <button
                             type="button"
-                            onClick={() => addCostItem(category.value)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                            onClick={() => setExpandedItemKey(isExpanded ? null : itemKey)}
+                            className="grid w-full gap-3 p-4 text-left sm:grid-cols-[minmax(0,1fr)_120px_120px_auto]"
                           >
-                            <Plus className="h-4 w-4" />
-                            Add
+                            <span className="min-w-0">
+                              <span className="block truncate text-base font-bold text-slate-950">
+                                {item.name || `New ${activeCategoryConfig.singular}`}
+                              </span>
+                              <span className="mt-1 block truncate text-sm text-slate-500">
+                                {itemSummary(item) || normalizeGroupName(item)}
+                              </span>
+                            </span>
+                            <span className="flex items-center sm:justify-end">
+                              <span
+                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
+                                  itemCountsInTotal(item)
+                                    ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                                    : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
+                                }`}
+                              >
+                                {itemCountsInTotal(item) ? "Included" : "Not included"}
+                              </span>
+                            </span>
+                            <span className="text-left sm:text-right">
+                              <span className="block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                                Total
+                              </span>
+                              <span className="text-base font-extrabold text-slate-950">
+                                {formatCurrency0(itemTotal(item))}
+                              </span>
+                            </span>
+                            <span className="flex items-center gap-2 sm:justify-end">
+                              {item.url && (
+                                <a
+                                  href={item.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(event) => event.stopPropagation()}
+                                  className="grid h-9 w-9 place-items-center rounded-full text-slate-500 ring-1 ring-slate-200 transition hover:bg-blue-50 hover:text-blue-700"
+                                  aria-label="Open link"
+                                  title="Open link"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              )}
+                              <span className="rounded-full px-3 py-1.5 text-xs font-bold text-slate-500 ring-1 ring-slate-200">
+                                {isExpanded ? "Close" : "Edit"}
+                              </span>
+                            </span>
                           </button>
-                        </div>
-                      </div>
 
-                      <div className="grid gap-4 p-4 lg:grid-cols-2">
-                        {categoryItems.map(({ item, index }) => (
-                          <article
-                            key={item._id || index}
-                            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-                          >
-                            <div className="mb-4 flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="truncate text-base font-semibold text-slate-900">
-                                  {item.name || `New ${config.singular}`}
-                                </p>
-	                                <p className="mt-0.5 text-xs text-slate-500">
-	                                  {itemSummary(item) || "Details not set"}
-	                                </p>
-	                                <span
-	                                  className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-	                                    itemCountsInTotal(item)
-	                                      ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
-	                                      : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
-	                                  }`}
-	                                >
-	                                  {itemCountsInTotal(item) ? "Counts in total" : "Compare only"}
-	                                </span>
-	                              </div>
-                              <div className="flex items-center gap-2">
-                                <p className="mr-1 text-right">
-                                  <span className="block text-xs text-slate-500">Item total</span>
-                                  <span className="block font-semibold text-slate-900">
-                                    {formatCurrency0(itemTotal(item))}
-                                  </span>
-                                </p>
-                                {item.url && (
-                                  <a
-                                    href={item.url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-indigo-50 hover:text-indigo-700"
-                                    aria-label="Open link"
-                                    title="Open link"
-                                  >
-                                    <ExternalLink className="h-4 w-4" />
-                                  </a>
-                                )}
+                          {isExpanded && (
+                            <div className="border-t border-slate-100 bg-slate-50/70 p-3 sm:p-4">
+                              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-bold text-slate-950">Edit item</p>
+                                  <p className="text-xs text-slate-500">{normalizeGroupName(item)}</p>
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => removeCostItem(index)}
-                                  className="grid h-9 w-9 place-items-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                                  aria-label="Remove item"
-                                  title="Remove item"
+                                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-rose-600 ring-1 ring-rose-100 transition hover:bg-rose-50"
                                 >
                                   <Trash2 className="h-4 w-4" />
+                                  Remove
                                 </button>
                               </div>
-	                            </div>
 
-	                            <div className="mb-4 grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_170px]">
-	                              <label className="block">
-	                                <span className="mb-1 block text-xs font-semibold text-slate-500">
-	                                  {category.value === "lodging" ? "Stay segment" : "Comparison group"}
-	                                </span>
-	                                <input
-	                                  type="text"
-	                                  value={normalizeGroupName(item)}
-	                                  onChange={(e) => updateCostItem(index, "group_name", e.target.value)}
-	                                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-	                                  placeholder={defaultGroupName(category.value)}
-	                                />
-	                              </label>
-	                              <AppSelect
-	                                label="Total behavior"
-	                                value={itemCountsInTotal(item) ? "selected" : "candidate"}
-	                                onChange={(value) => setCostItemSelected(index, value === "selected")}
-	                                options={[
-	                                  { value: "selected", label: "Counts in total" },
-	                                  { value: "candidate", label: "Compare only" },
-	                                ]}
-	                              />
-	                            </div>
+                              <div className="rounded-2xl bg-white p-3 ring-1 ring-slate-200 sm:p-4">
+                                <div className="space-y-4">
+                                  <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
+                                  <label className="block">
+                                    <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                      {activeCategoryConfig.label === "Flights" ? "Airline or route" : "Name"}
+                                    </span>
+                                    <input
+                                      type="text"
+                                      value={item.name}
+                                      onChange={(e) => updateCostItem(index, "name", e.target.value)}
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                      placeholder={activeCategoryConfig.namePlaceholder}
+                                    />
+                                  </label>
 
-	                            <div className="grid gap-3 sm:grid-cols-2">
-                              <label className="block sm:col-span-2">
-                                <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                  {config.label === "Flights" ? "Airline or route" : "Name"}
-                                </span>
-                                <input
-                                  type="text"
-                                  value={item.name}
-                                  onChange={(e) => updateCostItem(index, "name", e.target.value)}
-                                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                                  placeholder={config.namePlaceholder}
-                                />
-                              </label>
+                                  <label className="block">
+                                    <span className="mb-1 block text-xs font-semibold text-slate-500">Link</span>
+                                    <input
+                                      type="url"
+                                      value={item.url}
+                                      onChange={(e) => updateCostItem(index, "url", e.target.value)}
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                      placeholder="https://..."
+                                    />
+                                  </label>
+                                  </div>
 
-                              <label className="block">
-                                <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                  {config.priceLabel}
-                                </span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={item.price}
-                                  onChange={(e) => updateCostItem(index, "price", e.target.value)}
-                                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                                  placeholder="0.00"
-                                />
-                              </label>
+                                  <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-3">
+                                  <label className="block">
+                                    <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                      {activeCategoryConfig.priceLabel}
+                                    </span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={item.price}
+                                      onChange={(e) => updateCostItem(index, "price", e.target.value)}
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                      placeholder="0.00"
+                                    />
+                                  </label>
 
-                              <label className="block">
-                                <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                  {quantityLabelFor(
-                                    config,
-                                    item.price_basis || defaultPriceBasis(category.value)
-                                  )}
-                                </span>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  step="1"
-                                  value={isAutoQuantityBasis(item.price_basis || defaultPriceBasis(category.value))
-                                    ? multiplierForBasis(
-                                        category.value,
-                                        item.price_basis || defaultPriceBasis(category.value),
-                                        item
-                                      )
-                                    : item.quantity}
-                                  onChange={(e) => updateCostItem(index, "quantity", e.target.value)}
-                                  disabled={isAutoQuantityBasis(item.price_basis || defaultPriceBasis(category.value))}
-                                  className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${
-                                    isAutoQuantityBasis(item.price_basis || defaultPriceBasis(category.value))
-                                      ? "bg-slate-100 text-slate-400"
-                                      : ""
-                                  }`}
-                                  placeholder="1"
-                                />
-                              </label>
+                                  <label className="block">
+                                    <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                      {quantityLabelFor(
+                                        activeCategoryConfig,
+                                        item.price_basis || defaultPriceBasis(activeCategory)
+                                      )}
+                                    </span>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      step="1"
+                                      value={isAutoQuantityBasis(item.price_basis || defaultPriceBasis(activeCategory))
+                                        ? multiplierForBasis(
+                                            activeCategory,
+                                            item.price_basis || defaultPriceBasis(activeCategory),
+                                            item
+                                          )
+                                        : item.quantity}
+                                      onChange={(e) => updateCostItem(index, "quantity", e.target.value)}
+                                      disabled={isAutoQuantityBasis(item.price_basis || defaultPriceBasis(activeCategory))}
+                                      className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${
+                                        isAutoQuantityBasis(item.price_basis || defaultPriceBasis(activeCategory))
+                                          ? "bg-slate-100 text-slate-400"
+                                          : ""
+                                      }`}
+                                      placeholder="1"
+                                    />
+                                  </label>
 
-                              <label className="block">
-                                <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                  Price basis
-                                </span>
-                                <AppSelect
-                                  value={item.price_basis || defaultPriceBasis(category.value)}
-                                  onChange={(value) => updateCostItem(index, "price_basis", value)}
-                                  options={config.priceBasisOptions}
-                                />
-                              </label>
+                                  <AppSelect
+                                    label="Price basis"
+                                    value={item.price_basis || defaultPriceBasis(activeCategory)}
+                                    onChange={(value) => updateCostItem(index, "price_basis", value)}
+                                    options={activeCategoryConfig.priceBasisOptions}
+                                  />
+                                  </div>
 
-                              <label className="block">
-                                <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                  Type
-                                </span>
-                                <AppSelect
-                                  value={item.item_type || defaultItemType(category.value)}
-                                  onChange={(value) => updateCostItem(index, "item_type", value)}
-                                  options={config.itemTypeOptions}
-                                />
-                              </label>
+                                  <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2">
+                                  <label className="block">
+                                    <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                      Start date
+                                    </span>
+                                    <input
+                                      type="date"
+                                      min={boardStartYmd || undefined}
+                                      max={item.end_date || boardEndYmd || undefined}
+                                      value={item.start_date || ""}
+                                      onChange={(e) => updateCostItem(index, "start_date", e.target.value)}
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    />
+                                  </label>
+
+                                  <label className="block">
+                                    <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                      End date
+                                    </span>
+                                    <input
+                                      type="date"
+                                      min={item.start_date || boardStartYmd || undefined}
+                                      max={boardEndYmd || undefined}
+                                      value={item.end_date || ""}
+                                      onChange={(e) => updateCostItem(index, "end_date", e.target.value)}
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                    />
+                                  </label>
+                                  </div>
+
+                                  <div className="grid gap-3 lg:grid-cols-[1fr_170px_170px]">
+                                    <label className="block">
+                                      <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                        {compareSetLabel(activeCategory)}
+                                      </span>
+                                      <input
+                                        type="text"
+                                        value={normalizeGroupName(item)}
+                                        onChange={(e) => updateCostItem(index, "group_name", e.target.value)}
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                        placeholder={defaultGroupName(activeCategory)}
+                                      />
+                                      <span className="mt-1 block text-[11px] leading-4 text-slate-500">
+                                        {compareSetHelp(activeCategory)}
+                                      </span>
+                                    </label>
+
+                                    <AppSelect
+                                      label="Estimate"
+                                      value={itemCountsInTotal(item) ? "selected" : "candidate"}
+                                      onChange={(value) => setCostItemSelected(index, value === "selected")}
+                                      options={[
+                                        { value: "selected", label: "Included" },
+                                        { value: "candidate", label: "Not included" },
+                                      ]}
+                                    />
+
+                                    <AppSelect
+                                      label="Type"
+                                      value={item.item_type || defaultItemType(activeCategory)}
+                                      onChange={(value) => updateCostItem(index, "item_type", value)}
+                                      options={activeCategoryConfig.itemTypeOptions}
+                                    />
+                                  </div>
+
+                                  <label className="block">
+                                    <span className="mb-1 block text-xs font-semibold text-slate-500">Notes</span>
+                                    <input
+                                      type="text"
+                                      value={item.notes}
+                                      onChange={(e) => updateCostItem(index, "notes", e.target.value)}
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                      placeholder="Fees, cancellation, inclusions..."
+                                    />
+                                  </label>
+                                </div>
+                              </div>
                             </div>
+                          )}
+                        </article>
+                      );
+                    })}
 
-                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                              <label className="block">
-                                <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                  {config.dateLabel} start
-                                </span>
-                                <input
-                                  type="date"
-                                  min={boardStartYmd || undefined}
-                                  max={item.end_date || boardEndYmd || undefined}
-                                  value={item.start_date || ""}
-                                  onChange={(e) => updateCostItem(index, "start_date", e.target.value)}
-                                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                                />
-                              </label>
-                              <label className="block">
-                                <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                  {config.dateLabel} end
-                                </span>
-                                <input
-                                  type="date"
-                                  min={item.start_date || boardStartYmd || undefined}
-                                  max={boardEndYmd || undefined}
-                                  value={item.end_date || ""}
-                                  onChange={(e) => updateCostItem(index, "end_date", e.target.value)}
-                                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                                />
-                              </label>
-                              <label className="block">
-                                <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                  Link
-                                </span>
-                                <input
-                                  type="url"
-                                  value={item.url}
-                                  onChange={(e) => updateCostItem(index, "url", e.target.value)}
-                                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                                  placeholder="https://..."
-                                />
-                              </label>
-                              <label className="block">
-                                <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                  Notes
-                                </span>
-                                <input
-                                  type="text"
-                                  value={item.notes}
-                                  onChange={(e) => updateCostItem(index, "notes", e.target.value)}
-                                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                                  placeholder="Fees, cancellation, inclusions..."
-                                />
-                              </label>
-                            </div>
-                          </article>
-                        ))}
-
-                        {!categoryItems.length && (
-                          <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-sm text-slate-500">
-                            No {config.label.toLowerCase()} items yet.
-                          </div>
-                        )}
+                    {!activeCategoryItems.length && (
+                      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center xl:col-span-2">
+                        <div className={`mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl ring-1 ${activeCategoryConfig.accent}`}>
+                          <ActiveCategoryIcon className="h-5 w-5" />
+                        </div>
+                        <p className="font-semibold text-slate-950">No {activeCategoryConfig.label.toLowerCase()} items yet</p>
+                        <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+                          Add one when you have a link, price, or estimate to compare for this option.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => addCostItem(activeCategory)}
+                          className="mt-5 inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add {activeCategoryConfig.singular}
+                        </button>
                       </div>
-                    </section>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
-              {saveStatus && (
-                <p
-                  className={`text-sm font-medium ${
-                    saveStatus === "Saved" ? "text-emerald-700" : "text-rose-700"
-                  }`}
-                >
-                  {saveStatus}
-                </p>
-              )}
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-white hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {loading ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                Save Items
-              </button>
-            </div>
-
-            {hasUnsavedChanges && (
-              <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-10px_30px_-20px_rgba(15,23,42,0.35)] backdrop-blur">
-                <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Unsaved changes</p>
-                    <p className="text-xs text-slate-500">
-                      {formatCurrency0(total)} estimated total
-                    </p>
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                  >
-                    {loading ? (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    ) : (
-                      <Save className="h-4 w-4" />
                     )}
-                    Save
-                  </button>
-                </div>
+                  </div>
+                </section>
               </div>
-            )}
+            </section>
+
           </form>
         </div>
       </div>

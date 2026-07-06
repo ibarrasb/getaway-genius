@@ -5,6 +5,8 @@ export const TripOptionSchema = new mongoose.Schema(
     option_title: { type: String, default: '' },
     destination: { type: String, default: '' },
     image_url: { type: String, default: '' },
+    image_provider: { type: String, default: '' },
+    image_attribution: { type: mongoose.Schema.Types.Mixed, default: {} },
     status: {
       type: String,
       enum: ['considering', 'top_choice', 'eliminated', 'booked'],
@@ -58,6 +60,8 @@ export const TripBoardSchema = new mongoose.Schema(
     car_expense: Number,
     other_expense: Number,
     image_url: String,
+    image_provider: { type: String, default: '' },
+    image_attribution: { type: mongoose.Schema.Types.Mixed, default: {} },
     cloudinaryUploaded: { type: Boolean, default: false },
     isFavorite: { type: Boolean, default: false },
     activities: [String],

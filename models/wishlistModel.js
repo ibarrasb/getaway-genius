@@ -1,5 +1,25 @@
 import mongoose from 'mongoose';
 
+const wishlistTripSchema = new mongoose.Schema(
+  {
+    tripId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TripBoard',
+      index: true,
+      default: null,
+    },
+    snapshot: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+    addedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { strict: false }
+);
+
 const wishlistSchema = new mongoose.Schema(
   {
     userId: {
@@ -13,7 +33,7 @@ const wishlistSchema = new mongoose.Schema(
       required: true,
     },
     trips: {
-      type: [Object], // array of arbitrary objects
+      type: [wishlistTripSchema],
       default: [],
     },
     email: {

@@ -5,8 +5,7 @@ import axios from "axios"
 import { GlobalState } from "@/context/GlobalState.jsx"
 import { useDataRefresh } from "@/hooks/useDataRefresh.js"
 import { useToast } from "@/context/ToastContext.jsx"
-
-const initialState = { list_name: "", trips: [], email: "" }
+import SkeletonBlock from "@/components/skeletons/AppSkeletons.jsx"
 
 const WishlistModal = ({ show, onClose, onSave, trip }) => {
   const state = useContext(GlobalState)
@@ -20,7 +19,6 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
   const [newWishlistName, setNewWishlistName] = useState("")
   const [selectedWishlistId, setSelectedWishlistId] = useState("")
   const [selectedWishlistName, setSelectedWishlistName] = useState("")
-  const [sentObject, setSentObject] = useState(initialState)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -49,7 +47,6 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
     setNewWishlistName("")
     setSelectedWishlistId("")
     setSelectedWishlistName("")
-    setSentObject(initialState)
     setError(null)
 
     const controller = new AbortController()
@@ -118,7 +115,6 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
           trips: [trip],
           email: trip.user_email || email,
         }
-        setSentObject(setObj)
         await axios.post(
           "/api/wishlist/createlist",
           setObj,
@@ -171,8 +167,10 @@ const WishlistModal = ({ show, onClose, onSave, trip }) => {
         <div className="mt-5 space-y-5">
           {/* Existing wishlists */}
           {loading ? (
-            <div className="animate-pulse rounded-lg border border-slate-200 bg-white px-3 py-4 text-sm text-slate-600">
-              Loading lists…
+            <div className="space-y-2" aria-label="Loading wishlists">
+              <SkeletonBlock className="h-12" />
+              <SkeletonBlock className="h-12" />
+              <SkeletonBlock className="h-12" />
             </div>
           ) : wishlists.length > 0 ? (
             <div>

@@ -3,7 +3,16 @@
 import { Router } from 'express';
 import { createHash } from 'crypto';
 import OpenAI from 'openai';
-import { getExistingCloudinaryUrl } from '../services/cloudinary.js';
+import { getExistingCloudinaryUrl, uploadImageBuffer } from '../services/cloudinary.js';
+import ApiCache from '../models/apiCacheModel.js';
+import auth from '../middleware/auth.js';
+import { requireBody, requireStringBody, requireStringQuery } from '../middleware/validate.js';
+import {
+  pickBestImageCandidate,
+  searchPexelsImages,
+  searchUnsplashImages,
+  trackUnsplashDownload,
+} from '../services/destinationImages.js';
 
 const router = Router();
 
@@ -13,7 +22,26 @@ const openai = new OpenAI({
 });
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const AI_CACHE_TTL_MS = Number(process.env.AI_CACHE_TTL_MS || 1000 * 60 * 60 * 6); // 6h default
-const aiCache = new Map();
+const EXTERNAL_RATE_LIMIT_WINDOW_MS = Number(process.env.EXTERNAL_RATE_LIMIT_WINDOW_MS || 60_000);
+const EXTERNAL_RATE_LIMIT_MAX = Number(process.env.EXTERNAL_RATE_LIMIT_MAX || 60);
+const externalRateHits = new Map();
+
+const rateLimitExternal = (req, res, next) => {
+  const userId = req.user?.id || req.ip;
+  const now = Date.now();
+  const windowStart = now - EXTERNAL_RATE_LIMIT_WINDOW_MS;
+  const existing = (externalRateHits.get(userId) || []).filter((ts) => ts > windowStart);
+
+  if (existing.length >= EXTERNAL_RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: 'Too many external API requests. Try again shortly.' });
+  }
+
+  existing.push(now);
+  externalRateHits.set(userId, existing);
+  return next();
+};
+
+const paidRoute = [auth, rateLimitExternal];
 
 const parseJsonSafe = (text) => {
   if (!text || typeof text !== 'string') return null;
@@ -79,25 +107,102 @@ const normalizeLocationKey = (location) =>
     .toLowerCase()
     .replace(/\s+/g, ' ');
 
-const readFromCache = (bucket, location) => {
-  const key = `${bucket}:${normalizeLocationKey(location)}`;
-  const hit = aiCache.get(key);
-  if (!hit) return null;
+const cacheKey = (bucket, location) => `${bucket}:${normalizeLocationKey(location)}`;
 
-  if (Date.now() > hit.expiresAt) {
-    aiCache.delete(key);
-    return null;
-  }
+const readFromCache = async (bucket, location) => {
+  const hit = await ApiCache.findOne({
+    key: cacheKey(bucket, location),
+    expiresAt: { $gt: new Date() },
+  }).lean();
+  if (!hit) return null;
   return hit.value;
 };
 
-const writeToCache = (bucket, location, value) => {
-  const key = `${bucket}:${normalizeLocationKey(location)}`;
-  aiCache.set(key, { value, expiresAt: Date.now() + AI_CACHE_TTL_MS });
+const writeToCache = async (bucket, location, value) => {
+  await ApiCache.findOneAndUpdate(
+    { key: cacheKey(bucket, location) },
+    {
+      key: cacheKey(bucket, location),
+      value,
+      expiresAt: new Date(Date.now() + AI_CACHE_TTL_MS),
+    },
+    { upsert: true, setDefaultsOnInsert: true }
+  );
+};
+
+const googlePhotoCandidate = async ({ placeid, photoreference, location }) => {
+  const apiKey = process.env.GOOGLEAPIKEY;
+  let photoRef = photoreference;
+  let width = 0;
+  let height = 0;
+  let attribution = {};
+
+  if (!apiKey) return null;
+
+  if (!photoRef && placeid) {
+    const detailsUrl = `https://places.googleapis.com/v1/places/${encodeURIComponent(
+      placeid
+    )}?fields=id,displayName,photos&key=${apiKey}`;
+
+    const detailsResp = await fetch(detailsUrl);
+    if (!detailsResp.ok) return null;
+    const details = await detailsResp.json();
+    const photos = Array.isArray(details?.photos) ? details.photos : [];
+    const bestPhoto = photos
+      .map((photo) => ({
+        ...photo,
+        score: (Number(photo.widthPx) || 0) + (Number(photo.heightPx) || 0),
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+
+    photoRef = bestPhoto?.name;
+    width = Number(bestPhoto?.widthPx) || 0;
+    height = Number(bestPhoto?.heightPx) || 0;
+    attribution = {
+      provider: 'Google Places',
+      authorAttributions: bestPhoto?.authorAttributions || [],
+    };
+  }
+
+  if (!photoRef) return null;
+
+  const shortHash = createHash('sha256').update(photoRef).digest('hex').slice(0, 32);
+  const existingUrl = await getExistingCloudinaryUrl(shortHash).catch(() => null);
+  if (existingUrl) {
+    return {
+      provider: 'google',
+      providerId: photoRef,
+      url: existingUrl,
+      width,
+      height,
+      alt: location,
+      description: `${location} travel destination`,
+      location,
+      attribution,
+    };
+  }
+
+  const mediaUrl = `https://places.googleapis.com/v1/${photoRef}/media?key=${apiKey}&maxWidthPx=2400&maxHeightPx=1600`;
+  const mediaResp = await fetch(mediaUrl);
+  if (!mediaResp.ok) return null;
+  const buffer = Buffer.from(await mediaResp.arrayBuffer());
+  const cloudinaryUrl = await uploadImageBuffer(buffer, shortHash);
+
+  return {
+    provider: 'google',
+    providerId: photoRef,
+    url: cloudinaryUrl,
+    width,
+    height,
+    alt: location,
+    description: `${location} travel destination`,
+    location,
+    attribution,
+  };
 };
 
 // Google Places: Place Details
-router.get('/places-details', async (req, res) => {
+router.get('/places-details', ...paidRoute, requireStringQuery('placeid', { max: 300 }), async (req, res) => {
   try {
     const apiKey = process.env.GOOGLEAPIKEY;
     const placeid = req.query.placeid;
@@ -129,7 +234,7 @@ router.get('/places-details', async (req, res) => {
 });
 
 // Google Places: Photo preview - returns Cloudinary URL if exists, otherwise Google media URL (no upload)
-router.get('/places-pics', async (req, res) => {
+router.get('/places-pics', ...paidRoute, requireStringQuery('photoreference', { max: 600 }), async (req, res) => {
   try {
     const apiKey = process.env.GOOGLEAPIKEY;
     const photoreference = req.query.photoreference; 
@@ -156,8 +261,57 @@ router.get('/places-pics', async (req, res) => {
   }
 });
 
+router.get('/destination-image', ...paidRoute, requireStringQuery('location', { max: 300 }), async (req, res) => {
+  const { location, placeid, photoreference } = req.query;
+
+  try {
+    const cacheBucket = 'destination-image';
+    const cacheLocation = `${location}:${placeid || ''}:${photoreference || ''}`;
+    const cached = await readFromCache(cacheBucket, cacheLocation);
+    if (cached) return res.json(cached);
+
+    const candidates = [];
+
+    try {
+      candidates.push(...await searchUnsplashImages(location));
+    } catch (error) {
+      console.warn('Unsplash destination image search failed:', error?.message || error);
+    }
+
+    try {
+      candidates.push(...await searchPexelsImages(location));
+    } catch (error) {
+      console.warn('Pexels destination image search failed:', error?.message || error);
+    }
+
+    const googleCandidate = await googlePhotoCandidate({ placeid, photoreference, location });
+    if (googleCandidate) candidates.push(googleCandidate);
+
+    const best = pickBestImageCandidate(candidates, location);
+    if (!best) return res.status(404).json({ error: 'No destination image found' });
+
+    if (best.provider === 'unsplash') await trackUnsplashDownload(best);
+
+    const payload = {
+      url: best.url,
+      provider: best.provider,
+      providerId: best.providerId,
+      width: best.width,
+      height: best.height,
+      alt: best.alt || location,
+      attribution: best.attribution || {},
+    };
+
+    await writeToCache(cacheBucket, cacheLocation, payload);
+    return res.json(payload);
+  } catch (error) {
+    console.error('Destination image error:', error);
+    return res.status(500).json({ error: 'Failed to fetch destination image' });
+  }
+});
+
 // OpenWeather current conditions
-router.get('/weather', async (req, res) => {
+router.get('/weather', ...paidRoute, requireStringQuery('city', { max: 120 }), async (req, res) => {
   try {
     const { city, state, country } = req.query;
     const apiKey = process.env.OPENWEATHERAPIKEY;
@@ -194,13 +348,13 @@ router.get('/weather', async (req, res) => {
 });
 
 //  ChatGPT: Fun places
-router.post('/chatgpt/fun-places', async (req, res) => {
+router.post('/chatgpt/fun-places', ...paidRoute, requireBody, requireStringBody('location'), async (req, res) => {
   const location = req.body?.location || '';
   try {
     if (!openai.apiKey) throw new Error('OPENAI_API_KEY not set');
     if (!location) return res.status(400).json({ error: 'location is required' });
 
-    const cached = readFromCache('fun-places', location);
+    const cached = await readFromCache('fun-places', location);
     if (cached) return res.json(cached);
 
     const response = await createChatCompletion({
@@ -212,7 +366,7 @@ router.post('/chatgpt/fun-places', async (req, res) => {
 
     const list = response.choices?.[0]?.message?.content?.trim() ?? '';
     const payload = { funPlaces: list };
-    writeToCache('fun-places', location, payload);
+    await writeToCache('fun-places', location, payload);
     return res.json(payload);
   } catch (error) {
     const msg = getOpenAIErrorMessage(error);
@@ -231,13 +385,13 @@ router.post('/chatgpt/fun-places', async (req, res) => {
 });
 
 //ChatGPT: Trip suggestion windows
-router.post('/chatgpt/trip-suggestion', async (req, res) => {
+router.post('/chatgpt/trip-suggestion', ...paidRoute, requireBody, requireStringBody('location'), async (req, res) => {
   try {
     const { location } = req.body || {};
     if (!openai.apiKey) throw new Error('OPENAI_API_KEY not set');
     if (!location) return res.status(400).json({ error: 'location is required' });
 
-    const cached = readFromCache('trip-suggestion', location);
+    const cached = await readFromCache('trip-suggestion', location);
     if (cached) return res.json(cached);
 
     const response = await createChatCompletion({
@@ -294,7 +448,7 @@ router.post('/chatgpt/trip-suggestion', async (req, res) => {
     }
 
     const payload = { suggestions: parsed.suggestions };
-    writeToCache('trip-suggestion', location, payload);
+    await writeToCache('trip-suggestion', location, payload);
     return res.json(payload);
   } catch (error) {
     const msg = getOpenAIErrorMessage(error);
@@ -327,13 +481,13 @@ router.post('/chatgpt/trip-suggestion', async (req, res) => {
 });
 
 // ChatGPT: quick destination brief for search flow
-router.post('/chatgpt/location-brief', async (req, res) => {
+router.post('/chatgpt/location-brief', ...paidRoute, requireBody, requireStringBody('location'), async (req, res) => {
   const location = req.body?.location || '';
   try {
     if (!openai.apiKey) throw new Error('OPENAI_API_KEY not set');
     if (!location) return res.status(400).json({ error: 'location is required' });
 
-    const cached = readFromCache('location-brief', location);
+    const cached = await readFromCache('location-brief', location);
     if (cached) return res.json(cached);
 
     const response = await createChatCompletion({
@@ -385,7 +539,7 @@ router.post('/chatgpt/location-brief', async (req, res) => {
       throw new Error('AI returned invalid location brief format');
     }
 
-    writeToCache('location-brief', location, parsed);
+    await writeToCache('location-brief', location, parsed);
     return res.json(parsed);
   } catch (error) {
     const msg = getOpenAIErrorMessage(error);

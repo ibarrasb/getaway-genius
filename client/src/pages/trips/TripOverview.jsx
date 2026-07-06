@@ -25,6 +25,7 @@ import { useToast } from "@/context/ToastContext.jsx";
 import { useConfirm } from "@/context/useConfirm";
 import AppSelect from "@/components/ui/AppSelect";
 import TripDateRange from "@/components/TripDateRange"; // shared component
+import SkeletonBlock, { TripBoardSkeleton } from "@/components/skeletons/AppSkeletons.jsx";
 import { fmtRangeShort, toYmdLocal } from "../utils/localDates"; // ✅ local date utils (no TZ shift)
 
 const TripOverview = () => {
@@ -34,7 +35,6 @@ const TripOverview = () => {
   const token = state.token[0];
   const globalLoading = state.loading?.[0] ?? false;
   const { tripId } = useParams();
-  const autocompleteServiceRef = useRef(null);
   const autocompleteSessionRef = useRef(null);
 
   const [trip, setTrip] = useState(null);
@@ -54,12 +54,16 @@ const TripOverview = () => {
   const [createError, setCreateError] = useState("");
   const [creatingOption, setCreatingOption] = useState(false);
   const [destinationSearch, setDestinationSearch] = useState("");
+  const [selectedDestination, setSelectedDestination] = useState("");
   const [placePredictions, setPlacePredictions] = useState([]);
   const [placesLoading, setPlacesLoading] = useState(false);
+  const [destinationImageLoading, setDestinationImageLoading] = useState(false);
   const [newInstance, setNewInstance] = useState({
     option_title: "",
     destination: "",
     image_url: "",
+    image_provider: "",
+    image_attribution: {},
     status: "considering",
     trip_start: "",
     trip_end: "",
@@ -100,6 +104,8 @@ const TripOverview = () => {
     option_title: "",
     destination: "",
     image_url: "",
+    image_provider: "",
+    image_attribution: {},
     status: "considering",
     trip_start: toYmdLocal(sourceTrip?.board_start || sourceTrip?.trip_start),
     trip_end: toYmdLocal(sourceTrip?.board_end || sourceTrip?.trip_end),
@@ -197,40 +203,129 @@ const TripOverview = () => {
     setTripInstances(Array.isArray(nextTrip.instances) ? nextTrip.instances : []);
   }, []);
 
-  const getPlacePhotoURL = useCallback(async (placeid) => {
-    if (!placeid) return "";
+  const getDestinationImage = useCallback(async ({ placeid, location }) => {
+    if (!location) return null;
 
-    const detailsRes = await fetch(
-      `/api/places-details?placeid=${encodeURIComponent(placeid)}`
-    );
-    if (!detailsRes.ok) return "";
+    const queryParams = new URLSearchParams({ location });
+    if (placeid) queryParams.append("placeid", placeid);
 
-    const details = await detailsRes.json();
-    const photoRef = details?.photos?.[0]?.name;
-    if (!photoRef) return "";
+    const response = await fetch(`/api/destination-image?${queryParams.toString()}`, {
+      headers: authHeaders,
+    });
+    if (!response.ok) return null;
 
-    const photoRes = await fetch(
-      `/api/places-pics?photoreference=${encodeURIComponent(photoRef)}`
-    );
-    if (!photoRes.ok) return "";
-
-    const photoData = await photoRes.json();
-    return photoData?.url || "";
-  }, []);
+    return response.json();
+  }, [authHeaders]);
 
   useEffect(() => {
     if (!showCreateModal) return;
-    if (!window.google?.maps?.places?.AutocompleteService) return;
+    if (!window.google?.maps?.places?.AutocompleteSessionToken) return;
 
-    autocompleteServiceRef.current ||= new window.google.maps.places.AutocompleteService();
     autocompleteSessionRef.current ||= new window.google.maps.places.AutocompleteSessionToken();
   }, [showCreateModal]);
+
+  const normalizeAutocompleteSuggestion = (suggestion) => {
+    const prediction = suggestion?.placePrediction || suggestion;
+    if (!prediction) return null;
+
+    const mainText =
+      prediction.mainText?.text ||
+      prediction.structured_formatting?.main_text ||
+      prediction.text?.text ||
+      prediction.description ||
+      "";
+    const secondaryText =
+      prediction.secondaryText?.text ||
+      prediction.structured_formatting?.secondary_text ||
+      "";
+    const description =
+      prediction.text?.text ||
+      prediction.description ||
+      [mainText, secondaryText].filter(Boolean).join(", ");
+    const placeId = prediction.placeId || prediction.place_id || "";
+
+    if (!description || !placeId) return null;
+
+    return {
+      place_id: placeId,
+      description,
+      structured_formatting: {
+        main_text: mainText || description,
+        secondary_text: secondaryText,
+      },
+      placePrediction: prediction,
+    };
+  };
+
+  const fetchPlacePredictions = useCallback((query, onComplete) => {
+    const places = window.google?.maps?.places;
+    if (!places) {
+      onComplete([]);
+      return;
+    }
+
+    if (places.AutocompleteSuggestion?.fetchAutocompleteSuggestions) {
+      places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: query,
+        includedPrimaryTypes: [
+          'locality',
+          'administrative_area_level_1',
+          'administrative_area_level_2',
+          'country',
+        ],
+        sessionToken: autocompleteSessionRef.current,
+      })
+        .then(({ suggestions = [] } = {}) => {
+          onComplete(
+            suggestions
+              .map(normalizeAutocompleteSuggestion)
+              .filter(Boolean)
+              .slice(0, 5)
+          );
+        })
+        .catch((error) => {
+          console.error("Autocomplete suggestion lookup failed:", error);
+          onComplete([]);
+        });
+      return;
+    }
+
+    if (!places.AutocompleteService) {
+      onComplete([]);
+      return;
+    }
+
+    const legacyService = new places.AutocompleteService();
+    legacyService.getPlacePredictions(
+      {
+        input: query,
+        types: ["(regions)"],
+        sessionToken: autocompleteSessionRef.current,
+      },
+      (predictions, status) => {
+        if (
+          status !== places.PlacesServiceStatus.OK ||
+          !Array.isArray(predictions)
+        ) {
+          onComplete([]);
+          return;
+        }
+        onComplete(predictions.slice(0, 5));
+      }
+    );
+  }, []);
 
   useEffect(() => {
     if (!showCreateModal) return;
     const query = destinationSearch.trim();
 
-    if (!query || query.length < 2 || !autocompleteServiceRef.current) {
+    if (query && query === selectedDestination) {
+      setPlacePredictions([]);
+      setPlacesLoading(false);
+      return;
+    }
+
+    if (!query || query.length < 2) {
       setPlacePredictions([]);
       setPlacesLoading(false);
       return;
@@ -240,56 +335,53 @@ const TripOverview = () => {
     setPlacesLoading(true);
 
     const timer = window.setTimeout(() => {
-      autocompleteServiceRef.current.getPlacePredictions(
-        {
-          input: query,
-          types: ["(cities)"],
-          componentRestrictions: { country: "us" },
-          sessionToken: autocompleteSessionRef.current,
-        },
-        (predictions, status) => {
-          if (canceled) return;
-          setPlacesLoading(false);
-          if (
-            status !== window.google.maps.places.PlacesServiceStatus.OK ||
-            !Array.isArray(predictions)
-          ) {
-            setPlacePredictions([]);
-            return;
-          }
-          setPlacePredictions(predictions.slice(0, 5));
-        }
-      );
+      fetchPlacePredictions(query, (predictions) => {
+        if (canceled) return;
+        setPlacesLoading(false);
+        setPlacePredictions(predictions);
+      });
     }, 180);
 
     return () => {
       canceled = true;
       window.clearTimeout(timer);
     };
-  }, [destinationSearch, showCreateModal]);
+  }, [destinationSearch, selectedDestination, showCreateModal, fetchPlacePredictions]);
 
   const handleSelectPlacePrediction = async (prediction) => {
     const destination = prediction.description || prediction.structured_formatting?.main_text || "";
 
     setDestinationSearch(destination);
+    setSelectedDestination(destination);
     setPlacePredictions([]);
+    setPlacesLoading(false);
     setNewInstance((prev) => ({
       ...prev,
       destination,
+      image_url: "",
+      image_provider: "",
+      image_attribution: {},
     }));
 
     try {
-      const imageUrl = await getPlacePhotoURL(prediction.place_id);
-      if (imageUrl) {
+      setDestinationImageLoading(true);
+      const image = await getDestinationImage({
+        placeid: prediction.place_id,
+        location: destination,
+      });
+      if (image?.url) {
         setNewInstance((prev) => ({
           ...prev,
-          image_url: imageUrl,
+          image_url: image.url,
+          image_provider: image.provider || "",
+          image_attribution: image.attribution || {},
         }));
       }
     } catch (error) {
-      console.error("Places photo lookup failed:", error);
+      console.error("Destination image lookup failed:", error);
       setCreateError("Destination saved, but the place photo could not be loaded.");
     } finally {
+      setDestinationImageLoading(false);
       autocompleteSessionRef.current = window.google?.maps?.places?.AutocompleteSessionToken
         ? new window.google.maps.places.AutocompleteSessionToken()
         : null;
@@ -308,7 +400,9 @@ const TripOverview = () => {
       if (country) queryParams.append("country", country);
       queryParams.append("units", "metric");
 
-      const response = await fetch(`/api/weather?${queryParams.toString()}`);
+      const response = await fetch(`/api/weather?${queryParams.toString()}`, {
+        headers: authHeaders,
+      });
       if (response.ok) {
         const data = await response.json();
         setWeatherData(data);
@@ -318,7 +412,7 @@ const TripOverview = () => {
     } finally {
       setWeatherLoading(false);
     }
-  }, []);
+  }, [authHeaders]);
 
   const fetchFunPlaces = useCallback(async (locationAddress) => {
     setFunPlacesLoading(true);
@@ -329,7 +423,7 @@ const TripOverview = () => {
 
       const response = await fetch("/api/chatgpt/fun-places", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(authHeaders || {}) },
         body: JSON.stringify({ location }),
       });
 
@@ -342,7 +436,7 @@ const TripOverview = () => {
     } finally {
       setFunPlacesLoading(false);
     }
-  }, []);
+  }, [authHeaders]);
 
   const fetchTripSuggestions = useCallback(async (locationAddress) => {
     setTripSuggestionsLoading(true);
@@ -353,7 +447,7 @@ const TripOverview = () => {
 
       const response = await fetch("/api/chatgpt/trip-suggestion", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(authHeaders || {}) },
         body: JSON.stringify({ location }),
       });
 
@@ -371,7 +465,7 @@ const TripOverview = () => {
     } finally {
       setTripSuggestionsLoading(false);
     }
-  }, []);
+  }, [authHeaders]);
 
   useEffect(() => {
     const fetchTripData = async () => {
@@ -453,6 +547,8 @@ const TripOverview = () => {
         option_title: newInstance.option_title,
         destination: newInstance.destination,
         image_url: newInstance.image_url,
+        image_provider: newInstance.image_provider,
+        image_attribution: newInstance.image_attribution,
         status: newInstance.status,
         stay_expense: Number(newInstance.stay_expense || 0),
         travel_expense: Number(newInstance.travel_expense || 0),
@@ -557,14 +653,7 @@ const TripOverview = () => {
 
   // -------- UI --------
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-teal-600 border-t-transparent"></div>
-          <p className="text-slate-600">Loading trip details...</p>
-        </div>
-      </div>
-    );
+    return <TripBoardSkeleton />;
   }
 
   if (!trip) {
@@ -639,9 +728,12 @@ const TripOverview = () => {
                     Current Weather
                   </h3>
                   {weatherLoading ? (
-                    <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600"></div>
-                      <span className="text-slate-600">Loading weather...</span>
+                    <div className="flex items-center gap-4" aria-label="Loading weather">
+                      <SkeletonBlock className="h-14 w-14 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <SkeletonBlock className="h-5 w-40" />
+                        <SkeletonBlock className="h-7 w-24" />
+                      </div>
                     </div>
                   ) : weatherData ? (
                     <div className="flex items-center gap-4">
@@ -668,9 +760,11 @@ const TripOverview = () => {
                     Suggestions
                   </h3>
                   {funPlacesLoading ? (
-                    <div className="flex items-center gap-3">
-                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600"></div>
-                      <span className="text-slate-600">Loading suggestions...</span>
+                    <div className="space-y-2" aria-label="Loading suggestions">
+                      <SkeletonBlock className="h-4 w-full" />
+                      <SkeletonBlock className="h-4 w-11/12" />
+                      <SkeletonBlock className="h-4 w-4/5" />
+                      <SkeletonBlock className="h-4 w-2/3" />
                     </div>
                   ) : funPlaces ? (
                     <div className="text-slate-700 space-y-1">
@@ -1080,7 +1174,13 @@ const TripOverview = () => {
           {tripSuggestionsLoading ? (
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="gg-skeleton h-36" />
+                <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <SkeletonBlock className="h-3 w-24" />
+                  <SkeletonBlock className="mt-3 h-5 w-32" />
+                  <SkeletonBlock className="mt-4 h-4 w-full" />
+                  <SkeletonBlock className="mt-2 h-4 w-5/6" />
+                  <SkeletonBlock className="mt-4 h-3 w-2/3" />
+                </div>
               ))}
             </div>
           ) : tripSuggestions.length ? (
@@ -1129,10 +1229,14 @@ const TripOverview = () => {
                         onChange={(e) => {
                           const value = e.target.value;
                           setDestinationSearch(value);
+                          setSelectedDestination("");
+                          setDestinationImageLoading(false);
                           setNewInstance((prev) => ({
                             ...prev,
                             destination: value,
                             image_url: value === prev.destination ? prev.image_url : "",
+                            image_provider: value === prev.destination ? prev.image_provider : "",
+                            image_attribution: value === prev.destination ? prev.image_attribution : {},
                           }));
                         }}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
@@ -1171,13 +1275,34 @@ const TripOverview = () => {
                     <p className="mt-2 text-xs text-slate-500">
                       Pick a Google result for a cleaner name and photo, or keep your typed destination.
                     </p>
-                    {newInstance.image_url && (
-                      <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-                        <img
-                          src={newInstance.image_url}
-                          alt={newInstance.destination || "Selected destination"}
-                          className="h-36 w-full object-cover"
-                        />
+                    {destinationImageLoading ? (
+                      <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
+                        <div className="relative grid aspect-[16/9] w-full place-items-center">
+                          <div className="absolute inset-0 gg-skeleton rounded-none border-0" />
+                          <div className="relative z-10 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200">
+                            Loading destination image...
+                          </div>
+                        </div>
+                      </div>
+                    ) : newInstance.image_url && (
+                      <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
+                        <div className="relative aspect-[16/9] w-full">
+                          <img
+                            src={newInstance.image_url}
+                            alt={newInstance.destination || "Selected destination"}
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/70 to-transparent p-3">
+                            <p className="truncate text-sm font-semibold text-white">
+                              {newInstance.destination || "Selected destination"}
+                            </p>
+                            {newInstance.image_provider && (
+                              <p className="mt-0.5 text-xs capitalize text-white/80">
+                                Image from {newInstance.image_provider}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </label>

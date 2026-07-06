@@ -3,6 +3,7 @@ import axios from "axios"
 import TripCard from "@/components/cards/TripCard"
 import { GlobalState } from "@/context/GlobalState"
 import EmptyState from "@/components/empty/EmptyState"
+import { CardGridSkeleton } from "@/components/skeletons/AppSkeletons.jsx"
 import { MOCK_TRIPS } from "@/mocks/trips"
 import { toLocalDate } from "@/pages/utils/localDates"
 
@@ -12,7 +13,10 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
   const state = useContext(GlobalState)
   const api = state?.userAPI ?? state?.UserAPI
   const [email] = api?.email ?? [""]
+  const [userLoading] = api?.loading ?? [false]
+  const [userError] = api?.error ?? [null]
   const [token] = state?.token ?? [null]
+  const [globalLoading] = state?.loading ?? [false]
 
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -26,6 +30,11 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
         console.log("📦 Mock trips:", MOCK_TRIPS)
         setItems(MOCK_TRIPS)
         setLoading(false)
+        return
+      }
+
+      if (globalLoading || userLoading || (token && !email && !userError)) {
+        setLoading(true)
         return
       }
 
@@ -46,8 +55,10 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
       try {
         setLoading(true)
         setError(null)
+        const headers = token ? { Authorization: token } : undefined
         const res = await axios.get("/api/trips/boards", {
           params: { email },
+          headers,
           signal: controller.signal,
         })
         const all = Array.isArray(res.data) ? res.data : []
@@ -65,7 +76,7 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
 
     run()
     return () => controller.abort()
-  }, [email, token, state?.userAPI])
+  }, [email, token, globalLoading, userLoading, userError, state?.userAPI])
 
   const removeDeletedTrip = (id) => {
     if (!id) return
@@ -81,13 +92,7 @@ const ExploreGrid = ({ onFavoriteAdded }) => {
   }, [items])
 
   if (loading) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="gg-skeleton h-56" />
-        ))}
-      </div>
-    )
+    return <CardGridSkeleton count={6} />
   }
 
   if (error) {

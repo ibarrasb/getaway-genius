@@ -2,6 +2,8 @@
 
 import Wishlist from '../models/wishlistModel.js';
 import Users from '../models/userModels.js';
+import mongoose from 'mongoose';
+import { isPlainObject } from '../middleware/validate.js';
 
 const getAuthContext = async (req) => {
   if (!req.user?.id) return null;
@@ -12,6 +14,44 @@ const getAuthContext = async (req) => {
 
 const buildWishlistOwnershipFilter = ({ userId }) => ({ userId });
 
+const normalizeWishlistTrip = (trip = {}) => {
+  const source = isPlainObject(trip?.snapshot) ? trip.snapshot : trip;
+  const rawId = trip?.tripId || source?._id;
+  const tripId = mongoose.isValidObjectId(rawId) ? rawId : null;
+
+  return {
+    tripId,
+    snapshot: isPlainObject(source) ? source : {},
+    addedAt: trip?.addedAt || new Date(),
+  };
+};
+
+const normalizeWishlistTrips = (trips) =>
+  (Array.isArray(trips) ? trips : [])
+    .filter(Boolean)
+    .map(normalizeWishlistTrip);
+
+const serializeWishlistTrip = (trip = {}) => {
+  const snapshot = isPlainObject(trip.snapshot) ? trip.snapshot : trip;
+  const id = trip.tripId || snapshot._id || trip._id;
+
+  return {
+    ...snapshot,
+    _id: id?.toString?.() || id,
+    wishlistTripId: trip._id?.toString?.(),
+    addedAt: trip.addedAt,
+  };
+};
+
+const serializeWishlist = (wishlist) => {
+  const plain = typeof wishlist?.toObject === 'function' ? wishlist.toObject() : wishlist;
+  if (!plain) return plain;
+  return {
+    ...plain,
+    trips: (plain.trips || []).map(serializeWishlistTrip),
+  };
+};
+
 // Create a new wishlist
 export const createWishlist = async (req, res) => {
   try {
@@ -19,11 +59,14 @@ export const createWishlist = async (req, res) => {
     if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
 
     const { list_name, trips } = req.body;
+    if (!String(list_name || '').trim()) {
+      return res.status(400).json({ msg: 'Wishlist name is required' });
+    }
 
     const wishlist = new Wishlist({
       userId: authCtx.userId,
-      list_name,
-      trips,
+      list_name: String(list_name).trim(),
+      trips: normalizeWishlistTrips(trips),
       email: authCtx.userEmail,
     });
 
@@ -41,8 +84,8 @@ export const fetchLists = async (req, res) => {
     const authCtx = await getAuthContext(req);
     if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
 
-    const wishlists = await Wishlist.find(buildWishlistOwnershipFilter(authCtx));
-    res.status(200).json(wishlists);
+    const wishlists = await Wishlist.find(buildWishlistOwnershipFilter(authCtx)).sort({ createdAt: -1 });
+    res.status(200).json(wishlists.map(serializeWishlist));
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
@@ -56,10 +99,18 @@ export const updateList = async (req, res) => {
 
     const { id } = req.params;
     const { list_name, trips } = req.body; // use list_name to be consistent
+    if (!String(list_name || '').trim()) {
+      return res.status(400).json({ msg: 'Wishlist name is required' });
+    }
 
     const wishlist = await Wishlist.findOneAndUpdate(
       { _id: id, ...buildWishlistOwnershipFilter(authCtx) },
-      { userId: authCtx.userId, email: authCtx.userEmail, list_name, trips },
+      {
+        userId: authCtx.userId,
+        email: authCtx.userEmail,
+        list_name: String(list_name).trim(),
+        trips: normalizeWishlistTrips(trips),
+      },
       { new: true }
     );
 
@@ -67,7 +118,7 @@ export const updateList = async (req, res) => {
       return res.status(404).json({ message: 'Wishlist not found' });
     }
 
-    res.status(200).json(wishlist);
+    res.status(200).json(serializeWishlist(wishlist));
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
@@ -86,7 +137,7 @@ export const addTripToWishlist = async (req, res) => {
       { _id: id, ...buildWishlistOwnershipFilter(authCtx) },
       {
         $set: { userId: authCtx.userId, email: authCtx.userEmail },
-        $push: { trips: trip },
+        $push: { trips: normalizeWishlistTrip(trip) },
       },
       { new: true }
     );
@@ -97,7 +148,7 @@ export const addTripToWishlist = async (req, res) => {
 
     res.status(200).json({
       message: 'Trip added to wishlist successfully',
-      wishlist: updatedWishlist,
+      wishlist: serializeWishlist(updatedWishlist),
     });
   } catch (error) {
     res.status(500).json({ message: 'Error adding trip to wishlist', error });
@@ -116,7 +167,15 @@ export const removeTripFromWishlist = async (req, res) => {
       { _id: wishlistId, ...buildWishlistOwnershipFilter(authCtx) },
       {
         $set: { userId: authCtx.userId, email: authCtx.userEmail },
-        $pull: { trips: { _id: tripId } },
+        $pull: {
+          trips: {
+            $or: [
+              { tripId },
+              { _id: tripId },
+              { 'snapshot._id': tripId },
+            ],
+          },
+        },
       },
       { new: true }
     );
@@ -129,7 +188,10 @@ export const removeTripFromWishlist = async (req, res) => {
 
     res
       .status(200)
-      .json({ message: 'Trip removed from wishlist successfully', updatedWishlist });
+      .json({
+        message: 'Trip removed from wishlist successfully',
+        updatedWishlist: serializeWishlist(updatedWishlist),
+      });
   } catch (error) {
     res.status(500).json({ message: 'Error removing trip from wishlist', error });
   }
@@ -165,7 +227,7 @@ export const fetchWishlist = async (req, res) => {
     });
     if (!detailedWishlist) return res.status(404).json({ msg: 'Wishlist not found' });
 
-    res.json(detailedWishlist);
+    res.json(serializeWishlist(detailedWishlist));
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }

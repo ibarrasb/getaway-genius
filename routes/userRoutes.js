@@ -1,16 +1,17 @@
 import { Router } from 'express';
 import * as userCtrl from '../controllers/userCtrl.js';
 import auth from '../middleware/auth.js';
+import { requireBody, validateObjectIdParam } from '../middleware/validate.js';
 
 const router = Router();
 
 // Register a new user
 router.route('/register')
-  .post(userCtrl.register);
+  .post(requireBody, userCtrl.register);
 
 // Login a user
 router.route('/login')
-  .post(userCtrl.login);
+  .post(requireBody, userCtrl.login);
 
 // Logout a user
 router.route('/logout')
@@ -25,7 +26,7 @@ router.route('/infor')
   .get(auth, userCtrl.getUser);
 
 router.route('/profile/:id')
-  .get(auth, userCtrl.getLoggedUser)
-  .put(auth, userCtrl.updateUser);
+  .get(auth, validateObjectIdParam('id'), userCtrl.getLoggedUser)
+  .put(auth, validateObjectIdParam('id'), requireBody, userCtrl.updateUser);
 
 export default router;

@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { GlobalState } from "@/context/GlobalState.jsx"
 import AppSelect from "@/components/ui/AppSelect"
+import { ProfileSkeleton } from "@/components/skeletons/AppSkeletons.jsx"
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
@@ -74,6 +75,7 @@ const Profile = () => {
   const api = state?.userAPI ?? state?.UserAPI
   const [currentUserID] = api?.userID ?? [""]
   const [token] = state?.token ?? [null]
+  const [globalLoading] = state?.loading ?? [false]
 
   const isOwnProfile = currentUserID && currentUserID === id
 
@@ -106,6 +108,17 @@ const Profile = () => {
     const controller = new AbortController()
 
     const run = async () => {
+      if (globalLoading) {
+        setLoading(true)
+        return
+      }
+
+      if (!token) {
+        setUserDetails(null)
+        setLoading(false)
+        return
+      }
+
       setLoading(true)
       setError(null)
       setSuccess(null)
@@ -135,7 +148,7 @@ const Profile = () => {
       cancel = true
       controller.abort()
     }
-  }, [id, token])
+  }, [id, token, globalLoading])
 
   const onChange = (key, val) => {
     setFormData((s) => ({ ...s, [key]: val }))
@@ -185,21 +198,7 @@ const Profile = () => {
   }
 
   if (loading) {
-    return (
-      <div className="gg-page min-h-screen">
-        <div className="mx-auto max-w-5xl py-6">
-          <div className="gg-glass animate-pulse rounded-3xl border border-white/70 p-6">
-            <div className="h-32 rounded-2xl bg-slate-200" />
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="h-16 rounded-2xl bg-slate-200" />
-              <div className="h-16 rounded-2xl bg-slate-200" />
-              <div className="h-16 rounded-2xl bg-slate-200" />
-              <div className="h-16 rounded-2xl bg-slate-200" />
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+    return <ProfileSkeleton />
   }
 
   if (!userDetails) {

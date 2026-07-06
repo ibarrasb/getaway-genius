@@ -5,6 +5,7 @@ import { CalendarDays, MapPin, ArrowRight } from "lucide-react";
 import { GlobalState } from "@/context/GlobalState.jsx";
 import { fmtRangeShort, toLocalDate, addDays } from "../utils/localDates";
 import { getTripImageSrc } from "../utils/image";
+import { CardGridSkeleton, HeroPanelSkeleton } from "@/components/skeletons/AppSkeletons.jsx";
 
 const formatMoney = (value) =>
   (Number(value) || 0).toLocaleString("en-US", {
@@ -37,7 +38,10 @@ const PreviousTrips = () => {
   const state = useContext(GlobalState);
   const api = state?.userAPI ?? state?.UserAPI;
   const [email] = api?.email ?? [""];
+  const [userLoading] = api?.loading ?? [false];
+  const [userError] = api?.error ?? [null];
   const [token] = state?.token ?? [null];
+  const [globalLoading] = state?.loading ?? [false];
 
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +51,10 @@ const PreviousTrips = () => {
     const controller = new AbortController();
 
     const run = async () => {
+      if (globalLoading || userLoading || (token && !email && !userError)) {
+        setLoading(true);
+        return;
+      }
       if (!email) {
         setTrips([]);
         setLoading(false);
@@ -75,7 +83,7 @@ const PreviousTrips = () => {
 
     run();
     return () => controller.abort();
-  }, [email, token]);
+  }, [email, token, globalLoading, userLoading, userError]);
 
   const archivedTrips = useMemo(() => {
     const now = new Date();
@@ -97,10 +105,9 @@ const PreviousTrips = () => {
   if (loading) {
     return (
       <div className="gg-page">
-        <div className="gg-container">
-          <div className="animate-pulse rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            Loading archive...
-          </div>
+        <div className="gg-container space-y-8">
+          <HeroPanelSkeleton />
+          <CardGridSkeleton count={3} />
         </div>
       </div>
     );

@@ -16,13 +16,35 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+const parseAllowedOrigins = () => {
+  const configured = (process.env.CLIENT_ORIGIN || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (configured.length) return configured;
+  if (process.env.NODE_ENV === 'production') return [];
+
+  return [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ];
+};
+
+const allowedOrigins = parseAllowedOrigins();
+
 //Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    // In prod, consider setting a specific origin via CLIENT_ORIGIN
-    origin: process.env.CLIENT_ORIGIN || true,
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   })
 );

@@ -23,6 +23,14 @@ const createAccessToken = (user) =>
 const createRefreshToken = (user) =>
   createToken(user, process.env.REFRESH_TOKEN_SECRET, '7d');
 
+const refreshCookieOptions = {
+  httpOnly: true,
+  path: '/api/user/refresh_token',
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.REFRESH_COOKIE_SAMESITE || 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
 // Register
 export const register = async (req, res) => {
   try {
@@ -45,14 +53,7 @@ export const register = async (req, res) => {
     const accesstoken = await createAccessToken({ id: newUser._id.toString() });
     const refreshtoken = await createRefreshToken({ id: newUser._id.toString() });
 
-    res.cookie('refreshtoken', refreshtoken, {
-      httpOnly: true,
-      path: '/api/user/refresh_token',
-      // optional hardening:
-      // secure: process.env.NODE_ENV === 'production',
-      // sameSite: 'strict',
-      // maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('refreshtoken', refreshtoken, refreshCookieOptions);
 
     res.json({ accesstoken });
   } catch (err) {
@@ -74,13 +75,7 @@ export const login = async (req, res) => {
     const accesstoken = await createAccessToken({ id: user._id.toString() });
     const refreshtoken = await createRefreshToken({ id: user._id.toString() });
 
-    res.cookie('refreshtoken', refreshtoken, {
-      httpOnly: true,
-      path: '/api/user/refresh_token',
-      // secure: process.env.NODE_ENV === 'production',
-      // sameSite: 'strict',
-      // maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('refreshtoken', refreshtoken, refreshCookieOptions);
 
     res.json({ accesstoken });
   } catch (err) {
@@ -91,7 +86,7 @@ export const login = async (req, res) => {
 // Logout
 export const logout = async (_req, res) => {
   try {
-    res.clearCookie('refreshtoken', { path: '/api/user/refresh_token' });
+    res.clearCookie('refreshtoken', refreshCookieOptions);
     return res.json({ msg: 'Logged out' });
   } catch (error) {
     return res.status(500).json({ msg: error.message });

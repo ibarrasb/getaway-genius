@@ -49,6 +49,14 @@ MONGODB_URL=your_mongodb_connection_string
 ACCESS_TOKEN_SECRET=your_jwt_access_secret  
 REFRESH_TOKEN_SECRET=your_jwt_refresh_secret  
 CLIENT_ORIGIN=http://localhost:3000  
+GOOGLEAPIKEY=your_google_places_api_key
+OPENWEATHERAPIKEY=your_openweather_api_key
+OPENAI_API_KEY=your_openai_api_key
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+UNSPLASH_ACCESS_KEY=optional_unsplash_access_key_for_city_images
+PEXELS_API_KEY=optional_pexels_api_key_for_city_images
 ```  
   
 ### Installation  

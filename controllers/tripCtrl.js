@@ -4,6 +4,7 @@ import Users from '../models/userModels.js';
 import mongoose from 'mongoose';
 import { createHash } from 'crypto';
 import { uploadImageBuffer } from '../services/cloudinary.js';
+import { isPlainObject, parsePositiveInt } from '../middleware/validate.js';
 
 const getAuthContext = async (req) => {
   if (!req.user?.id) return null;
@@ -15,6 +16,61 @@ const getAuthContext = async (req) => {
 const buildTripOwnershipFilter = ({ userId }) => ({ userId });
 
 const buildWishlistOwnershipFilter = ({ userId }) => ({ userId });
+
+const listProjection = [
+  'userId',
+  'user_email',
+  'board_title',
+  'board_start',
+  'board_end',
+  'travelers',
+  'location_address',
+  'trip_start',
+  'trip_end',
+  'stay_expense',
+  'travel_expense',
+  'car_expense',
+  'other_expense',
+  'image_url',
+  'image_provider',
+  'image_attribution',
+  'cloudinaryUploaded',
+  'isFavorite',
+  'activities',
+  'instances',
+  'committedInstanceId',
+  'createdAt',
+  'updatedAt',
+].join(' ');
+
+const getListOptions = (req) => {
+  const page = parsePositiveInt(req.query.page, 1, { min: 1, max: 10_000 });
+  const limit = parsePositiveInt(req.query.limit, 50, { min: 1, max: 100 });
+  const includeInstances = req.query.includeInstances !== 'false';
+  return { page, limit, skip: (page - 1) * limit, includeInstances };
+};
+
+const sendPaginatedTrips = async (res, query, options) => {
+  const projection = options.includeInstances
+    ? listProjection
+    : listProjection.replace('instances', '');
+
+  const [trips, total] = await Promise.all([
+    TripBoard.find(query)
+      .select(projection)
+      .sort({ createdAt: -1 })
+      .skip(options.skip)
+      .limit(options.limit)
+      .lean(),
+    TripBoard.countDocuments(query),
+  ]);
+
+  res.set('X-Total-Count', String(total));
+  res.set('X-Page', String(options.page));
+  res.set('X-Limit', String(options.limit));
+  res.set('X-Has-More', String(options.skip + trips.length < total));
+  return res.json(trips);
+};
 
 const findOwnedTrip = async (tripId, authCtx) => {
   if (!mongoose.isValidObjectId(tripId)) return null;
@@ -34,7 +90,27 @@ const num = (v, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-const sanitizeCostItems = (items) =>
+const validateTripBoardBody = (body = {}) => {
+  if (!isPlainObject(body)) return 'Request body must be an object';
+  if (body.board_title !== undefined && String(body.board_title).length > 160) {
+    return 'Board title is too long';
+  }
+  if (body.location_address !== undefined && String(body.location_address).length > 300) {
+    return 'Location address is too long';
+  }
+  if (body.travelers !== undefined && Math.max(1, num(body.travelers, 1)) > 50) {
+    return 'Travelers must be 50 or fewer';
+  }
+  if (body.activities !== undefined && !Array.isArray(body.activities)) {
+    return 'Activities must be an array';
+  }
+  if (body.instances !== undefined && !Array.isArray(body.instances)) {
+    return 'Trip options must be an array';
+  }
+  return null;
+};
+
+export const sanitizeCostItems = (items) =>
   (Array.isArray(items) ? items : [])
     .filter(Boolean)
     .map((item) => {
@@ -57,10 +133,12 @@ const sanitizeCostItems = (items) =>
       return sanitized;
     });
 
-const sanitizeTripOptionPayload = (body = {}) => ({
+export const sanitizeTripOptionPayload = (body = {}) => ({
   option_title: String(body.option_title || ''),
   destination: String(body.destination || ''),
   image_url: String(body.image_url || ''),
+  image_provider: String(body.image_provider || ''),
+  image_attribution: isPlainObject(body.image_attribution) ? body.image_attribution : {},
   status: ['considering', 'top_choice', 'eliminated', 'booked'].includes(body.status)
     ? body.status
     : 'considering',
@@ -74,14 +152,96 @@ const sanitizeTripOptionPayload = (body = {}) => ({
   notes: String(body.notes || ''),
 });
 
+export const buildTripOptionReplacement = (existingOption = {}, body = {}) => {
+  const existing =
+    typeof existingOption.toObject === 'function'
+      ? existingOption.toObject()
+      : existingOption;
+  const sanitized = sanitizeTripOptionPayload({
+    ...existing,
+    ...body,
+  });
+
+  return {
+    ...sanitized,
+    _id: existing._id,
+    isCommitted: Boolean(existing.isCommitted),
+    createdAt: existing.createdAt || new Date(),
+  };
+};
+
+export const buildTripOptionCreatePayload = (
+  body = {},
+  {
+    id = new mongoose.Types.ObjectId(),
+    createdAt = new Date(),
+  } = {}
+) => ({
+  _id: id,
+  ...sanitizeTripOptionPayload(body),
+  createdAt,
+  isCommitted: false,
+});
+
+export const buildTripOptionSelectionState = (instances = [], optionId) => {
+  const selectedId = optionId?.toString();
+  const hasSelected = instances.some((inst) => inst._id?.toString() === selectedId);
+  if (!hasSelected) return null;
+
+  return {
+    instances: instances.map((inst) => {
+      if (typeof inst.set === 'function') {
+        inst.set('isCommitted', inst._id.toString() === selectedId);
+        return inst;
+      }
+      return {
+        ...inst,
+        isCommitted: inst._id?.toString() === selectedId,
+      };
+    }),
+    committedInstanceId: new mongoose.Types.ObjectId(String(optionId)),
+  };
+};
+
+export const buildTripOptionSelectionClearState = (instances = [], optionId, committedInstanceId) => {
+  const selectedId = optionId?.toString();
+  const hasOption = instances.some((inst) => inst._id?.toString() === selectedId);
+  if (!hasOption) return null;
+
+  return {
+    instances: instances.map((inst) => {
+      if (inst._id?.toString() !== selectedId) return inst;
+      if (typeof inst.set === 'function') {
+        inst.set('isCommitted', false);
+        return inst;
+      }
+      return { ...inst, isCommitted: false };
+    }),
+    committedInstanceId: committedInstanceId?.toString() === selectedId ? null : committedInstanceId,
+  };
+};
+
+export const buildTripOptionDeletionState = (instances = [], optionId, committedInstanceId) => {
+  const deletedId = optionId?.toString();
+  const remainingInstances = instances.filter((inst) => inst._id?.toString() !== deletedId);
+
+  return {
+    instances: remainingInstances,
+    committedInstanceId: committedInstanceId?.toString() === deletedId ? null : committedInstanceId,
+  };
+};
+
 // GET /boards
 export const listTripBoards = async (req, res) => {
   try {
     const authCtx = await getAuthContext(req);
     if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
 
-    const trips = await TripBoard.find(buildTripOwnershipFilter(authCtx));
-    res.json(trips);
+    return sendPaginatedTrips(
+      res,
+      buildTripOwnershipFilter(authCtx),
+      getListOptions(req)
+    );
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
@@ -93,8 +253,11 @@ export const listFavoriteTripBoards = async (req, res) => {
     const authCtx = await getAuthContext(req);
     if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
 
-    const trips = await TripBoard.find({ ...buildTripOwnershipFilter(authCtx), isFavorite: true });
-    res.json(trips);
+    return sendPaginatedTrips(
+      res,
+      { ...buildTripOwnershipFilter(authCtx), isFavorite: true },
+      getListOptions(req)
+    );
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
@@ -105,6 +268,9 @@ export const createTripBoard = async (req, res) => {
   try {
     const authCtx = await getAuthContext(req);
     if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
+
+    const validationError = validateTripBoardBody(req.body);
+    if (validationError) return res.status(400).json({ msg: validationError });
 
     let {
       board_title,
@@ -119,12 +285,16 @@ export const createTripBoard = async (req, res) => {
       car_expense,
       other_expense,
       image_url,
+      image_provider,
+      image_attribution,
       isFavorite,
       activities,
       instances,
     } = req.body;
 
     image_url = image_url || '';
+    image_provider = image_provider || '';
+    image_attribution = isPlainObject(image_attribution) ? image_attribution : {};
 
     let cloudinaryUploaded = false;
 
@@ -138,7 +308,7 @@ export const createTripBoard = async (req, res) => {
           const shortHash = createHash('sha256').update(photoreference).digest('hex').slice(0, 32);
           
           const apiKey = process.env.GOOGLEAPIKEY;
-          const googleMediaUrl = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=400&maxWidthPx=400`;
+          const googleMediaUrl = `https://places.googleapis.com/v1/${photoreference}/media?key=${apiKey}&maxHeightPx=1600&maxWidthPx=2400`;
           
           const resp = await fetch(googleMediaUrl);
           if (resp.ok) {
@@ -170,6 +340,8 @@ export const createTripBoard = async (req, res) => {
       car_expense,
       other_expense,
       image_url,
+      image_provider,
+      image_attribution,
       cloudinaryUploaded,
       isFavorite,
       activities,
@@ -199,9 +371,18 @@ export const deleteTripBoard = async (req, res) => {
     await Wishlist.updateMany(  
       {
         ...buildWishlistOwnershipFilter(authCtx),
-        "trips._id": tripId,
       },  
-      { $pull: { trips: { _id: tripId } } }  
+      {
+        $pull: {
+          trips: {
+            $or: [
+              { tripId: trip._id },
+              { _id: tripId },
+              { 'snapshot._id': tripId },
+            ],
+          },
+        },
+      }
     );  
       
     // Delete the trip itself  
@@ -219,6 +400,9 @@ export const updateTripBoard = async (req, res) => {
     const authCtx = await getAuthContext(req);
     if (!authCtx) return res.status(401).json({ msg: 'Invalid Authentication' });
 
+    const validationError = validateTripBoardBody(req.body);
+    if (validationError) return res.status(400).json({ msg: validationError });
+
     const existingTrip = await findOwnedTrip(req.params.id, authCtx);
     if (!existingTrip) return res.status(404).json({ msg: 'Trip not found' });
 
@@ -235,10 +419,31 @@ export const updateTripBoard = async (req, res) => {
       car_expense,
       other_expense,
       image_url,
+      image_provider,
+      image_attribution,
       isFavorite,
       activities,
       instances,
     } = req.body;
+
+    const currentTrip = existingTrip.toObject();
+    board_title = board_title ?? currentTrip.board_title;
+    board_start = board_start ?? currentTrip.board_start;
+    board_end = board_end ?? currentTrip.board_end;
+    travelers = travelers ?? currentTrip.travelers;
+    location_address = location_address ?? currentTrip.location_address;
+    trip_start = trip_start ?? currentTrip.trip_start;
+    trip_end = trip_end ?? currentTrip.trip_end;
+    stay_expense = stay_expense ?? currentTrip.stay_expense;
+    travel_expense = travel_expense ?? currentTrip.travel_expense;
+    car_expense = car_expense ?? currentTrip.car_expense;
+    other_expense = other_expense ?? currentTrip.other_expense;
+    image_url = image_url ?? currentTrip.image_url;
+    image_provider = image_provider ?? currentTrip.image_provider;
+    image_attribution = image_attribution ?? currentTrip.image_attribution;
+    isFavorite = isFavorite ?? currentTrip.isFavorite;
+    activities = activities ?? currentTrip.activities;
+    instances = instances ?? currentTrip.instances;
 
     if (Array.isArray(instances)) {
       instances = instances.map((instance) => ({
@@ -266,6 +471,8 @@ export const updateTripBoard = async (req, res) => {
         car_expense,
         other_expense,
         image_url,
+        image_provider: image_provider || '',
+        image_attribution: isPlainObject(image_attribution) ? image_attribution : {},
         isFavorite,
         activities,
         instances,
@@ -303,12 +510,7 @@ export const createTripOption = async (req, res) => {
     const trip = await findOwnedTrip(id, authCtx);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
-    const instance = {
-      _id: new mongoose.Types.ObjectId(),
-      ...sanitizeTripOptionPayload(req.body),
-      createdAt: new Date(),
-      isCommitted: false,
-    };
+    const instance = buildTripOptionCreatePayload(req.body);
 
     const updated = await TripBoard.findByIdAndUpdate(
       trip._id,
@@ -339,17 +541,9 @@ export const selectTripOption = async (req, res) => {
     const trip = await findOwnedTrip(id, authCtx);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
-    const instanceExists = trip.instances.some(
-      (inst) => inst._id.toString() === optionId
-    );
-    if (!instanceExists) {
-      return res.status(404).json({ msg: 'Trip option not found' });
-    }
-
-    trip.instances.forEach((inst) => {
-      inst.isCommitted = inst._id.toString() === optionId;
-    });
-    trip.committedInstanceId = new mongoose.Types.ObjectId(String(optionId));
+    const nextState = buildTripOptionSelectionState(trip.instances, optionId);
+    if (!nextState) return res.status(404).json({ msg: 'Trip option not found' });
+    trip.committedInstanceId = nextState.committedInstanceId;
 
     await trip.save();
 
@@ -373,14 +567,13 @@ export const clearTripOptionSelection = async (req, res) => {
     const trip = await findOwnedTrip(id, authCtx);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
-    const instance = trip.instances.id(optionId);
-    if (!instance) return res.status(404).json({ msg: 'Trip option not found' });
-
-    instance.isCommitted = false;
-
-    if (trip.committedInstanceId?.toString() === optionId) {
-      trip.committedInstanceId = null;
-    }
+    const nextState = buildTripOptionSelectionClearState(
+      trip.instances,
+      optionId,
+      trip.committedInstanceId
+    );
+    if (!nextState) return res.status(404).json({ msg: 'Trip option not found' });
+    trip.committedInstanceId = nextState.committedInstanceId;
 
     await trip.save();
 
@@ -432,23 +625,28 @@ export const updateTripOption = async (req, res) => {
     const trip = await findOwnedTrip(id, authCtx);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
-    const instance = trip.instances.id(optionId);
-    if (!instance) return res.status(404).json({ msg: 'Trip option not found' });
+    const existingInstance = trip.instances.id(optionId);
+    if (!existingInstance) return res.status(404).json({ msg: 'Trip option not found' });
 
-    const sanitized = sanitizeTripOptionPayload({
-      ...instance.toObject(),
-      ...req.body,
-    });
-    Object.assign(instance, sanitized);
-    instance.isCommitted = Boolean(instance.isCommitted);
-    instance.createdAt = instance.createdAt || new Date();
+    const replacement = buildTripOptionReplacement(existingInstance, req.body);
+    const updatedTrip = await TripBoard.findOneAndUpdate(
+      {
+        _id: trip._id,
+        ...buildTripOwnershipFilter(authCtx),
+        'instances._id': optionId,
+      },
+      { $set: { 'instances.$': replacement } },
+      { new: true, runValidators: true }
+    );
 
-    await trip.save();
+    if (!updatedTrip) return res.status(404).json({ msg: 'Trip option not found' });
+
+    const updatedInstance = updatedTrip.instances.id(optionId);
 
     return res.status(200).json({
       msg: 'Trip option updated',
-      trip,
-      instance,
+      trip: updatedTrip,
+      instance: updatedInstance,
     });
   } catch (err) {
     console.error('updateTripOption error:', err);
@@ -470,13 +668,13 @@ export const deleteTripOption = async (req, res) => {
     const trip = await findOwnedTrip(id, authCtx);
     if (!trip) return res.status(404).json({ msg: 'Trip not found' });
 
-    if (trip.committedInstanceId?.toString() === optionId) {
-      trip.committedInstanceId = null;
-    }
-
-    trip.instances = trip.instances.filter(
-      (inst) => inst._id.toString() !== optionId
+    const nextState = buildTripOptionDeletionState(
+      trip.instances,
+      optionId,
+      trip.committedInstanceId
     );
+    trip.instances = nextState.instances;
+    trip.committedInstanceId = nextState.committedInstanceId;
 
     await trip.save();
 

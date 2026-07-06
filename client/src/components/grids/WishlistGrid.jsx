@@ -5,6 +5,7 @@ import { Link } from "react-router-dom"
 import { GlobalState } from "@/context/GlobalState"
 import { useConfirm } from "@/context/useConfirm"
 import EmptyState from "@/components/empty/EmptyState"
+import { CardGridSkeleton } from "@/components/skeletons/AppSkeletons.jsx"
 import { Trash2 } from "lucide-react"
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === "true"
@@ -30,6 +31,10 @@ const WishlistGrid = () => {
   const state = useContext(GlobalState)
   const api = state?.userAPI ?? state?.UserAPI
   const [email] = api?.email ?? [""]
+  const [userLoading] = api?.loading ?? [false]
+  const [userError] = api?.error ?? [null]
+  const [token] = state?.token ?? [null]
+  const [globalLoading] = state?.loading ?? [false]
   const { confirm } = useConfirm()
 
   const [lists, setLists] = useState([])
@@ -46,11 +51,22 @@ const WishlistGrid = () => {
         setLoading(false)
         return
       }
+      if (globalLoading || userLoading || (token && !email && !userError)) {
+        setLoading(true)
+        return
+      }
+      if (!email) {
+        setLists([])
+        setLoading(false)
+        return
+      }
       try {
         setLoading(true)
         setError(null)
+        const headers = token ? { Authorization: token } : undefined
         const res = await axios.get("/api/wishlist/getlists", {
           params: { email },
+          headers,
           signal: controller.signal,
         })
         setLists(Array.isArray(res.data) ? res.data : [])
@@ -67,7 +83,7 @@ const WishlistGrid = () => {
 
     run()
     return () => controller.abort()
-  }, [email])
+  }, [email, token, globalLoading, userLoading, userError])
 
   const handleDelete = async (wishlistId) => {
     const ok = await confirm({
@@ -79,17 +95,18 @@ const WishlistGrid = () => {
     
     try {
       setDeletingId(wishlistId)
+      const headers = token ? { Authorization: token } : undefined
       
-      const response = await axios.get(`/api/wishlist/spec-wishlist/${wishlistId}`)
+      const response = await axios.get(`/api/wishlist/spec-wishlist/${wishlistId}`, { headers })
       const { trips } = response.data
       
       const updatePromises = trips.map(trip =>
-        axios.put(`/api/trips/boards/${trip._id}`, { isFavorite: false })
+        axios.put(`/api/trips/boards/${trip._id}`, { isFavorite: false }, { headers })
       )
       
       await Promise.all(updatePromises)
       
-      await axios.delete(`/api/wishlist/removewishlist/${wishlistId}`)
+      await axios.delete(`/api/wishlist/removewishlist/${wishlistId}`, { headers })
       
       setLists(prevLists => prevLists.filter(wishlist => wishlist._id !== wishlistId))
     } catch (error) {
@@ -101,13 +118,7 @@ const WishlistGrid = () => {
   }
 
   if (loading) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="gg-skeleton h-40" />
-        ))}
-      </div>
-    )
+    return <CardGridSkeleton count={3} image={false} />
   }
 
   if (error) {

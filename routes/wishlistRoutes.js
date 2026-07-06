@@ -1,29 +1,30 @@
 import { Router } from 'express';
 import * as wishCtrl from '../controllers/wishCtrl.js';
 import auth from '../middleware/auth.js';
+import { requireBody, validateObjectIdParam } from '../middleware/validate.js';
 
 const router = Router();
 
 // Routes for managing wishlists
 router.route('/createlist')
-  .post(auth, wishCtrl.createWishlist);
+  .post(auth, requireBody, wishCtrl.createWishlist);
 
 router.route('/getlists')
   .get(auth, wishCtrl.fetchLists);
 
 router.route('/spec-wishlist/:id')
-  .get(auth, wishCtrl.fetchWishlist);
+  .get(auth, validateObjectIdParam('id'), wishCtrl.fetchWishlist);
 
 router.route('/editlist/:id')
-  .put(auth, wishCtrl.updateList);
+  .put(auth, validateObjectIdParam('id'), requireBody, wishCtrl.updateList);
 
 router.route('/addtrip/:id')
-  .post(auth, wishCtrl.addTripToWishlist);
+  .post(auth, validateObjectIdParam('id'), requireBody, wishCtrl.addTripToWishlist);
 
 router.route('/:wishlistId/remove-trip/:tripId')
-  .delete(auth, wishCtrl.removeTripFromWishlist);
+  .delete(auth, validateObjectIdParam('wishlistId'), validateObjectIdParam('tripId'), wishCtrl.removeTripFromWishlist);
 
 router.route('/removewishlist/:id')
-  .delete(auth, wishCtrl.removeWishlist);
+  .delete(auth, validateObjectIdParam('id'), wishCtrl.removeWishlist);
 
 export default router;

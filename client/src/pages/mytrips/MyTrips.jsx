@@ -6,6 +6,7 @@ import { GlobalState } from "@/context/GlobalState.jsx";
 import { useDataRefresh } from "@/hooks/useDataRefresh.js";
 import { useToast } from "@/context/ToastContext.jsx";
 import { useConfirm } from "@/context/useConfirm";
+import { MissionSkeleton } from "@/components/skeletons/AppSkeletons.jsx";
 import { MOCK_TRIPS } from "@/mocks/trips";
 import { toLocalDate, addDays, fmtRangeShort } from "../utils/localDates";
 import { getTripImageSrc } from "../utils/image";
@@ -80,26 +81,38 @@ const MyTrips = () => {
   const api = state?.userAPI ?? state?.UserAPI;
   const [email] = api?.email ?? [""];
   const [isLogged] = api?.isLogged ?? [false];
+  const [userLoading] = api?.loading ?? [false];
+  const [userError] = api?.error ?? [null];
   const [token] = state?.token ?? [null];
+  const [globalLoading] = state?.loading ?? [false];
   const { refetchTrips, refetchWishlists } = useDataRefresh();
   const { success, error: showError } = useToast();
   const { confirm } = useConfirm();
 
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedTrips, setHasLoadedTrips] = useState(false);
   const [deletingIds, setDeletingIds] = useState(new Set());
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
+    setHasLoadedTrips(false);
+
     const run = async () => {
       if (USE_MOCKS) {
         setTrips(MOCK_TRIPS);
+        setHasLoadedTrips(true);
         setLoading(false);
+        return;
+      }
+      if (globalLoading || userLoading || (token && !email && !userError)) {
+        setLoading(true);
         return;
       }
       if (!email) {
         setTrips([]);
+        setHasLoadedTrips(false);
         setLoading(false);
         return;
       }
@@ -114,11 +127,13 @@ const MyTrips = () => {
         });
         const allTrips = Array.isArray(res.data) ? res.data : [];
         setTrips(allTrips);
+        setHasLoadedTrips(true);
       } catch (err) {
         if (err.name !== "CanceledError") {
           console.error(err);
           setError("Failed to load trips.");
           setTrips([]);
+          setHasLoadedTrips(false);
         }
       } finally {
         setLoading(false);
@@ -126,7 +141,7 @@ const MyTrips = () => {
     };
     run();
     return () => controller.abort();
-  }, [email, token]);
+  }, [email, token, globalLoading, userLoading, userError]);
 
   const totalCost = (t) =>
     (Number(t.stay_expense) || 0) +
@@ -226,23 +241,21 @@ const MyTrips = () => {
     return { featured: f, groups: byYear, orderedYears: years };
   }, [trips]);
 
+  const authPending =
+    !USE_MOCKS &&
+    (globalLoading || userLoading || (token && !email && !userError) || (isLogged && !token));
+
+  if (loading || authPending || (!hasLoadedTrips && Boolean(email))) {
+    return <MissionSkeleton />;
+  }
+
   // if not logged in (and not using mocks), show prompt
-  if (!isLogged && !USE_MOCKS) {
+  if (!isLogged && !token && !USE_MOCKS) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-16">
         <p className="rounded-xl border border-slate-200 bg-white p-6 text-slate-700 shadow-sm">
           Please log in to view your trips.
         </p>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-16">
-        <div className="animate-pulse rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          Loading trips…
-        </div>
       </div>
     );
   }
@@ -689,7 +702,7 @@ const MyTrips = () => {
             </section>
           ))
         ) : (
-          !featured && planningBoards.length === 0 && (
+          hasLoadedTrips && !featured && planningBoards.length === 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
               <p className="text-lg font-semibold text-slate-900">Start planning your trips!</p>
               <p className="mt-1 text-slate-600">Add a destination to start comparing options.</p>

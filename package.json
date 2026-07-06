@@ -12,6 +12,7 @@
     "client-install": "cd client && npm install",
     "install-all": "concurrently \"npm run server-install\" \"npm run client-install\"",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "test": "node --test",
     "heroku-postbuild": "npm --prefix client ci --include=dev && npm --prefix client run build",
     "migrate:user-ownership": "node scripts/backfill-user-ownership.js"
   },
