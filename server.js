@@ -81,13 +81,23 @@ if (process.env.NODE_ENV === 'production') {
   );
   app.use('/assets', (_req, res) => res.status(404).type('text/plain').send('Asset not found'));
 
-  app.use(express.static(clientDist));
+  app.use(
+    express.static(clientDist, {
+      index: false,
+      setHeaders(res, filePath) {
+        if (path.basename(filePath) === 'index.html') {
+          res.setHeader('Cache-Control', 'no-cache');
+        }
+      },
+    })
+  );
 
   app.get('*', (req, res) => {
     if (path.extname(req.path)) {
       return res.status(404).type('text/plain').send('Not found');
     }
 
+    res.setHeader('Cache-Control', 'no-cache');
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
