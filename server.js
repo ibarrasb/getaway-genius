@@ -8,6 +8,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -15,6 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const shouldLogHttpRequests = process.env.NODE_ENV === 'production' || process.env.LOG_HTTP_REQUESTS === 'true';
 
 const parseAllowedOrigins = () => {
   const configured = (process.env.CLIENT_ORIGIN || '')
@@ -52,6 +54,22 @@ app.use(
 // Helpful behind proxies (Heroku/Render) for secure cookies, req.ip, etc.
 app.set('trust proxy', 1);
 
+if (shouldLogHttpRequests) {
+  app.use((req, res, next) => {
+    const startedAt = Date.now();
+
+    res.on('finish', () => {
+      const durationMs = Date.now() - startedAt;
+      const contentType = res.getHeader('content-type') || 'none';
+      console.log(
+        `[request] ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms content-type="${contentType}" referer="${req.get('referer') || ''}" user-agent="${req.get('user-agent') || ''}"`
+      );
+    });
+
+    next();
+  });
+}
+
 //Import routes AFTER dotenv has populated process.env
 const externalRoutes = (await import('./routes/externalRoutes.js')).default;
 const tripsRouter    = (await import('./routes/tripsRoutes.js')).default;
@@ -71,6 +89,10 @@ app.get('/health', (_req, res) => res.status(200).send('ok'));
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(__dirname, 'client', 'dist');
   const clientAssets = path.join(clientDist, 'assets');
+
+  console.log(
+    `[static] clientDist="${clientDist}" exists=${fs.existsSync(clientDist)} assets="${clientAssets}" assetsExists=${fs.existsSync(clientAssets)}`
+  );
 
   app.use(
     '/assets',
@@ -101,6 +123,23 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
+
+app.use((err, req, res, next) => {
+  console.error(
+    `[error] ${req.method} ${req.originalUrl} status=${err.status || 500} message="${err.message}" stack="${err.stack || ''}"`
+  );
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  const status = err.status || 500;
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(status).json({ error: status === 500 ? 'Internal server error' : err.message });
+  }
+
+  return res.status(status).type('text/plain').send(status === 500 ? 'Internal server error' : err.message);
+});
 
 const PORT = process.env.PORT || 5001;
 const MONGO_URI = process.env.MONGODB_URL;
