@@ -36,20 +36,21 @@ const parseAllowedOrigins = () => {
 };
 
 const allowedOrigins = parseAllowedOrigins();
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    const error = new Error(`Not allowed by CORS: ${origin}`);
+    error.status = 403;
+    return callback(error);
+  },
+  credentials: true,
+};
 
 //Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-  })
-);
 
 // Helpful behind proxies (Heroku/Render) for secure cookies, req.ip, etc.
 app.set('trust proxy', 1);
@@ -77,6 +78,16 @@ const usersRouter    = (await import('./routes/userRoutes.js')).default;
 const wishlistRoutes = (await import('./routes/wishlistRoutes.js')).default;
 
 //Routes (API first)
+app.use('/api', (req, res, next) => {
+  const origin = req.get('origin');
+  const requestOrigin = `${req.protocol}://${req.get('host')}`;
+
+  if (!origin || origin === requestOrigin) {
+    return next();
+  }
+
+  return cors(corsOptions)(req, res, next);
+});
 app.use('/api', externalRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/trips', tripsRouter);
