@@ -85,6 +85,16 @@ const parseDate = (v) => {
   return isNaN(d.getTime()) ? null : d;
 };
 
+const parseDateList = (values) =>
+  (Array.isArray(values) ? values : [])
+    .map(parseDate)
+    .filter(Boolean);
+
+const timeString = (v) => {
+  const value = String(v || '').trim();
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value) ? value : '';
+};
+
 const num = (v, fallback = 0) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
@@ -126,6 +136,17 @@ export const sanitizeCostItems = (items) =>
         is_selected: item.is_selected === undefined ? true : Boolean(item.is_selected),
         start_date: parseDate(item.start_date),
         end_date: parseDate(item.end_date),
+        check_in_time: timeString(item.check_in_time),
+        check_out_time: timeString(item.check_out_time),
+        depart_time: timeString(item.depart_time),
+        arrive_time: timeString(item.arrive_time),
+        return_depart_time: timeString(item.return_depart_time),
+        return_arrive_time: timeString(item.return_arrive_time),
+        ticket_day_mode: ['one_day', 'multi_range', 'exact_days'].includes(item.ticket_day_mode)
+          ? item.ticket_day_mode
+          : '',
+        ticket_days: Math.max(1, num(item.ticket_days, 1)),
+        selected_dates: parseDateList(item.selected_dates),
         notes: String(item.notes || ''),
       };
 

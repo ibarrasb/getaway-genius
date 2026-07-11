@@ -27,6 +27,15 @@ test('sanitizeCostItems normalizes category item payloads', () => {
       is_selected: false,
       start_date: '2026-07-10',
       end_date: '2026-07-12',
+      check_in_time: '15:30',
+      check_out_time: '10:00',
+      depart_time: '08:15',
+      arrive_time: '11:45',
+      return_depart_time: '18:20',
+      return_arrive_time: '21:55',
+      ticket_day_mode: 'exact_days',
+      ticket_days: '2',
+      selected_dates: ['2026-07-10', '2026-07-12', 'bad-date'],
       notes: 'Airport pickup',
     },
   ]);
@@ -38,6 +47,16 @@ test('sanitizeCostItems normalizes category item payloads', () => {
   assert.equal(item.is_selected, false);
   assert.ok(item.start_date instanceof Date);
   assert.ok(item.end_date instanceof Date);
+  assert.equal(item.check_in_time, '15:30');
+  assert.equal(item.check_out_time, '10:00');
+  assert.equal(item.depart_time, '08:15');
+  assert.equal(item.arrive_time, '11:45');
+  assert.equal(item.return_depart_time, '18:20');
+  assert.equal(item.return_arrive_time, '21:55');
+  assert.equal(item.ticket_day_mode, 'exact_days');
+  assert.equal(item.ticket_days, 2);
+  assert.equal(item.selected_dates.length, 2);
+  assert.ok(item.selected_dates[0] instanceof Date);
 });
 
 test('buildTripOptionReplacement persists deleted cost items from the incoming payload', () => {

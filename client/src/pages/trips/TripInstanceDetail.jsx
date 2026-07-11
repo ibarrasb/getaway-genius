@@ -320,8 +320,11 @@ const TripInstanceDetail = () => {
     (item) => String(item.group_name || defaultGroupName(item.category || "other")).trim(),
     [defaultGroupName]
   );
+  const categoryAllowsMultipleIncluded = (category) =>
+    ["tickets", "food", "other"].includes(category);
 
   const groupHasSelectedItem = (items, category, groupName, ignoredIndex = -1) =>
+    !categoryAllowsMultipleIncluded(category) &&
     items.some(
       (item, index) =>
         index !== ignoredIndex &&
@@ -380,6 +383,19 @@ const TripInstanceDetail = () => {
                 ) {
                   nextItem.quantity = multiplierForBasis(nextCategory, nextBasis, nextItem);
                 }
+                if (key === "ticket_day_mode") {
+                  nextItem.ticket_days = Math.max(1, Number(nextItem.ticket_days) || 1);
+                  nextItem.selected_dates =
+                    value === "exact_days" ? nextItem.selected_dates || [""] : [];
+                  if (value === "one_day") nextItem.end_date = "";
+                }
+                if (key === "ticket_days") {
+                  const nextCount = Math.max(1, Number(value) || 1);
+                  nextItem.ticket_days = nextCount;
+                  nextItem.selected_dates = Array.from({ length: nextCount }, (_, dateIndex) =>
+                    nextItem.selected_dates?.[dateIndex] || ""
+                  );
+                }
 
                 return nextItem;
               })()
@@ -403,6 +419,7 @@ const TripInstanceDetail = () => {
           existingCategoryItems[0] || { category, group_name: defaultGroupName(category) }
         );
         const isSelected = !groupHasSelectedItem(existingItems, category, groupName);
+        const allowsMultiple = categoryAllowsMultipleIncluded(category);
 
         return [
           ...existingItems,
@@ -415,9 +432,18 @@ const TripInstanceDetail = () => {
           price_basis: defaultPriceBasis(category),
           item_type: defaultItemType(category),
           group_name: groupName,
-          is_selected: isSelected,
+          is_selected: allowsMultiple ? true : isSelected,
           start_date: "",
           end_date: "",
+          check_in_time: "",
+          check_out_time: "",
+          depart_time: "",
+          arrive_time: "",
+          return_depart_time: "",
+          return_arrive_time: "",
+          ticket_day_mode: category === "tickets" ? "one_day" : "",
+          ticket_days: 1,
+          selected_dates: [],
           notes: "",
           },
         ];
@@ -454,12 +480,32 @@ const TripInstanceDetail = () => {
           if (itemIndex === index) return { ...item, is_selected: selected };
           if (
             selected &&
+            !categoryAllowsMultipleIncluded(target.category) &&
             item.category === target.category &&
             normalizeGroupName(item) === targetGroup
           ) {
             return { ...item, is_selected: false };
           }
           return item;
+        }),
+      };
+      persistTripOption(nextData);
+      return nextData;
+    });
+  };
+
+  const updateCostItemSelectedDate = (index, dateIndex, value) => {
+    setSaveStatus("");
+    setFormData((prev) => {
+      const nextData = {
+        ...prev,
+        cost_items: (prev.cost_items || []).map((item, itemIndex) => {
+          if (itemIndex !== index) return item;
+          const ticketDays = Math.max(1, Number(item.ticket_days) || 1);
+          const selectedDates = Array.from({ length: ticketDays }, (_, currentIndex) =>
+            currentIndex === dateIndex ? value : item.selected_dates?.[currentIndex] || ""
+          );
+          return { ...item, selected_dates: selectedDates };
         }),
       };
       persistTripOption(nextData);
@@ -495,7 +541,13 @@ const TripInstanceDetail = () => {
     const type =
       config.itemTypeOptions.find((option) => option.value === item.item_type)?.label ||
       config.itemTypeOptions[0]?.label;
-    return [type, basis, fmtRangeShort(item.start_date, item.end_date)]
+    const ticketMode =
+      item.category === "tickets" && item.ticket_day_mode === "exact_days"
+        ? `${Math.max(1, Number(item.ticket_days) || 1)} exact day${Number(item.ticket_days) === 1 ? "" : "s"}`
+        : item.category === "tickets" && item.ticket_day_mode === "multi_range"
+        ? `${Math.max(1, Number(item.ticket_days) || 1)} day ticket`
+        : "";
+    return [type, basis, ticketMode, fmtRangeShort(item.start_date, item.end_date)]
       .filter(Boolean)
       .join(" · ");
   };
@@ -515,6 +567,8 @@ const TripInstanceDetail = () => {
           item_type: item.item_type || defaultItemType(item.category || "other"),
           group_name: normalizeGroupName(item),
           is_selected: item.is_selected !== false,
+          selected_dates: Array.isArray(item.selected_dates) ? item.selected_dates.filter(Boolean) : [],
+          ticket_days: Math.max(1, Number(item.ticket_days) || 1),
           quantity: isAutoQuantityBasis(basis)
             ? multiplierForBasis(item.category || "other", basis, item)
             : item.quantity,
@@ -625,6 +679,17 @@ const TripInstanceDetail = () => {
             is_selected: item.is_selected === undefined ? true : Boolean(item.is_selected),
             start_date: toYmdLocal(item.start_date),
             end_date: toYmdLocal(item.end_date),
+            check_in_time: item.check_in_time || "",
+            check_out_time: item.check_out_time || "",
+            depart_time: item.depart_time || "",
+            arrive_time: item.arrive_time || "",
+            return_depart_time: item.return_depart_time || "",
+            return_arrive_time: item.return_arrive_time || "",
+            ticket_day_mode: item.ticket_day_mode || (category === "tickets" ? "one_day" : ""),
+            ticket_days: Math.max(1, Number(item.ticket_days) || 1),
+            selected_dates: Array.isArray(item.selected_dates)
+              ? item.selected_dates.map(toYmdLocal).filter(Boolean)
+              : [],
           };
           return {
             ...normalizedItem,
@@ -1195,35 +1260,184 @@ const TripInstanceDetail = () => {
                                   />
                                   </div>
 
+                                  {(activeCategory !== "tickets" || (item.ticket_day_mode || "one_day") !== "exact_days") && (
                                   <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2">
-                                  <label className="block">
-                                    <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                      Start date
-                                    </span>
-                                    <input
-                                      type="date"
-                                      min={boardStartYmd || undefined}
-                                      max={item.end_date || boardEndYmd || undefined}
-                                      value={item.start_date || ""}
-                                      onChange={(e) => updateCostItem(index, "start_date", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
-                                    />
-                                  </label>
+                                    <label className="block">
+                                      <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                        {activeCategory === "tickets"
+                                          ? item.ticket_day_mode === "multi_range"
+                                            ? "Valid from"
+                                            : "Start day"
+                                          : "Start date"}
+                                      </span>
+                                      <input
+                                        type="date"
+                                        min={boardStartYmd || undefined}
+                                        max={item.end_date || boardEndYmd || undefined}
+                                        value={item.start_date || ""}
+                                        onChange={(e) => updateCostItem(index, "start_date", e.target.value)}
+                                        className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                      />
+                                    </label>
 
-                                  <label className="block">
-                                    <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                      End date
-                                    </span>
-                                    <input
-                                      type="date"
-                                      min={item.start_date || boardStartYmd || undefined}
-                                      max={boardEndYmd || undefined}
-                                      value={item.end_date || ""}
-                                      onChange={(e) => updateCostItem(index, "end_date", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
-                                    />
-                                  </label>
+                                    {activeCategory !== "tickets" || item.ticket_day_mode === "multi_range" ? (
+                                      <label className="block">
+                                        <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                          {activeCategory === "tickets" ? "Valid through" : "End date"}
+                                        </span>
+                                        <input
+                                          type="date"
+                                          min={item.start_date || boardStartYmd || undefined}
+                                          max={boardEndYmd || undefined}
+                                          value={item.end_date || ""}
+                                          onChange={(e) => updateCostItem(index, "end_date", e.target.value)}
+                                          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                        />
+                                      </label>
+                                    ) : null}
                                   </div>
+                                  )}
+
+                                  {activeCategory === "lodging" && (
+                                    <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2">
+                                      <label className="block">
+                                        <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                          Check-in time
+                                        </span>
+                                        <input
+                                          type="time"
+                                          value={item.check_in_time || ""}
+                                          onChange={(e) => updateCostItem(index, "check_in_time", e.target.value)}
+                                          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                        />
+                                      </label>
+
+                                      <label className="block">
+                                        <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                          Check-out time
+                                        </span>
+                                        <input
+                                          type="time"
+                                          value={item.check_out_time || ""}
+                                          onChange={(e) => updateCostItem(index, "check_out_time", e.target.value)}
+                                          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                        />
+                                      </label>
+                                    </div>
+                                  )}
+
+                                  {activeCategory === "flight" && (
+                                    <div className="space-y-3 rounded-xl bg-slate-50 p-3">
+                                      <div className="grid gap-3 sm:grid-cols-2">
+                                        <label className="block">
+                                          <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                            Depart time
+                                          </span>
+                                          <input
+                                            type="time"
+                                            value={item.depart_time || ""}
+                                            onChange={(e) => updateCostItem(index, "depart_time", e.target.value)}
+                                            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                          />
+                                        </label>
+
+                                        <label className="block">
+                                          <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                            Land time
+                                          </span>
+                                          <input
+                                            type="time"
+                                            value={item.arrive_time || ""}
+                                            onChange={(e) => updateCostItem(index, "arrive_time", e.target.value)}
+                                            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                          />
+                                        </label>
+                                      </div>
+
+                                      {(item.item_type || defaultItemType(activeCategory)) !== "one_way" && (
+                                        <div className="grid gap-3 sm:grid-cols-2">
+                                          <label className="block">
+                                            <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                              Return depart
+                                            </span>
+                                            <input
+                                              type="time"
+                                              value={item.return_depart_time || ""}
+                                              onChange={(e) => updateCostItem(index, "return_depart_time", e.target.value)}
+                                              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                            />
+                                          </label>
+
+                                          <label className="block">
+                                            <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                              Return land
+                                            </span>
+                                            <input
+                                              type="time"
+                                              value={item.return_arrive_time || ""}
+                                              onChange={(e) => updateCostItem(index, "return_arrive_time", e.target.value)}
+                                              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                            />
+                                          </label>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {activeCategory === "tickets" && (
+                                    <div className="space-y-3 rounded-xl bg-slate-50 p-3">
+                                      <div className="grid gap-3 sm:grid-cols-2">
+                                        <AppSelect
+                                          label="Ticket dates"
+                                          value={item.ticket_day_mode || "one_day"}
+                                          onChange={(value) => updateCostItem(index, "ticket_day_mode", value)}
+                                          options={[
+                                            { value: "one_day", label: "One day" },
+                                            { value: "multi_range", label: "Multi-day range" },
+                                            { value: "exact_days", label: "Exact days" },
+                                          ]}
+                                        />
+
+                                        {(item.ticket_day_mode || "one_day") !== "one_day" && (
+                                          <label className="block">
+                                            <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                              Park days
+                                            </span>
+                                            <input
+                                              type="number"
+                                              min="1"
+                                              step="1"
+                                              value={Math.max(1, Number(item.ticket_days) || 1)}
+                                              onChange={(e) => updateCostItem(index, "ticket_days", e.target.value)}
+                                              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                            />
+                                          </label>
+                                        )}
+                                      </div>
+
+                                      {(item.ticket_day_mode || "one_day") === "exact_days" && (
+                                        <div className="grid gap-3 sm:grid-cols-2">
+                                          {Array.from({ length: Math.max(1, Number(item.ticket_days) || 1) }, (_, dateIndex) => (
+                                            <label key={dateIndex} className="block">
+                                              <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                                Day {dateIndex + 1}
+                                              </span>
+                                              <input
+                                                type="date"
+                                                min={boardStartYmd || undefined}
+                                                max={boardEndYmd || undefined}
+                                                value={item.selected_dates?.[dateIndex] || ""}
+                                                onChange={(e) =>
+                                                  updateCostItemSelectedDate(index, dateIndex, e.target.value)
+                                                }
+                                                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                              />
+                                            </label>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
 
                                   <div className="grid gap-3 lg:grid-cols-[1fr_170px_170px]">
                                     <label className="block">
