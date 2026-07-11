@@ -296,15 +296,21 @@ const googlePhotoCandidate = async ({ placeid, photoreference, location }) => {
   }
 
   const mediaUrl = `https://places.googleapis.com/v1/${photoRef}/media?key=${apiKey}&maxWidthPx=2400&maxHeightPx=1600`;
-  const mediaResp = await fetch(mediaUrl);
-  if (!mediaResp.ok) return null;
-  const buffer = Buffer.from(await mediaResp.arrayBuffer());
-  const cloudinaryUrl = await uploadImageBuffer(buffer, shortHash);
+  let imageUrl = mediaUrl;
+
+  try {
+    const mediaResp = await fetch(mediaUrl);
+    if (!mediaResp.ok) return null;
+    const buffer = Buffer.from(await mediaResp.arrayBuffer());
+    imageUrl = await uploadImageBuffer(buffer, shortHash);
+  } catch (error) {
+    console.warn('Google photo Cloudinary upload failed, using Google media URL:', error?.message || error);
+  }
 
   return {
     provider: 'google',
     providerId: photoRef,
-    url: cloudinaryUrl,
+    url: imageUrl,
     width,
     height,
     alt: location,
@@ -397,8 +403,12 @@ router.get('/destination-image', ...paidRoute, requireStringQuery('location', { 
       console.warn('Pexels destination image search failed:', error?.message || error);
     }
 
-    const googleCandidate = await googlePhotoCandidate({ placeid, photoreference, location });
-    if (googleCandidate) candidates.push(googleCandidate);
+    try {
+      const googleCandidate = await googlePhotoCandidate({ placeid, photoreference, location });
+      if (googleCandidate) candidates.push(googleCandidate);
+    } catch (error) {
+      console.warn('Google destination image search failed:', error?.message || error);
+    }
 
     const best = pickBestImageCandidate(candidates, location);
     if (!best) return res.status(404).json({ error: 'No destination image found' });

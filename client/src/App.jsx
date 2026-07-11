@@ -6,6 +6,7 @@ import { ToastContainer } from './components/ui/Toast.jsx'
 import Header from './layout/Header'
 import Footer from './layout/Footer'
 import MainPages from './pages/MainPages'
+import ScrollToTop from './components/routing/ScrollToTop'
 
 const App = () => {
   return (
@@ -13,6 +14,7 @@ const App = () => {
       <ToastProvider>
         <ConfirmProvider>
           <Router>
+            <ScrollToTop />
             <div className="gg-shell gg-grid-overlay min-h-screen flex flex-col justify-between text-[var(--gg-ink)]">
               <Header />
               <main className="flex-1">

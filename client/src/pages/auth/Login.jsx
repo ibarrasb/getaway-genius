@@ -51,21 +51,21 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen px-3 pt-3 sm:px-5">
-      <header className="mx-auto max-w-6xl py-4">
+    <div className="min-h-screen px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-5">
+      <header className="mx-auto flex max-w-6xl justify-center py-6 sm:justify-start sm:py-4">
         <Link to="/" className="inline-flex rounded-2xl">
           <img
             src="/getaway-genius-logo.png"
             alt="Getaway Genius"
-            className="h-16 w-auto object-contain sm:h-20"
+            className="h-24 w-auto max-w-[82vw] object-contain sm:h-20 md:h-24"
           />
         </Link>
       </header>
 
-      <main className="mx-auto flex max-w-6xl items-center justify-center py-8">
-        <div className="gg-glass w-full max-w-md rounded-3xl border border-white/70 p-8">
-          <h1 className="text-2xl font-bold text-slate-900">Welcome back</h1>
-          <p className="mt-1 text-sm text-slate-600">Open Mission, Workbench, and Archive for your travel plans.</p>
+      <main className="mx-auto flex max-w-6xl items-center justify-center pb-8 pt-2 sm:py-8">
+        <div className="gg-glass w-full max-w-md rounded-3xl border border-white/70 p-6 sm:p-8">
+          <h1 className="text-center text-2xl font-bold text-slate-900 sm:text-left">Welcome back</h1>
+          <p className="mt-1 text-center text-sm text-slate-600 sm:text-left">Open Mission, Workbench, and Archive for your travel plans.</p>
 
           {error && (
             <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

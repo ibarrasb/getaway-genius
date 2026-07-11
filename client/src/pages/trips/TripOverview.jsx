@@ -962,6 +962,11 @@ const TripOverview = () => {
                       alt={instance.destination || "Destination"}
                       className="h-full w-full object-cover"
                       loading="lazy"
+                      onError={(event) => {
+                        event.currentTarget.src = "/getaway-genius-logo.png";
+                        event.currentTarget.classList.remove("object-cover");
+                        event.currentTarget.classList.add("object-contain", "p-8");
+                      }}
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center px-6 text-center text-sm font-semibold text-slate-400">
@@ -1469,6 +1474,13 @@ const TripOverview = () => {
                             src={newInstance.image_url}
                             alt={newInstance.destination || "Selected destination"}
                             className="absolute inset-0 h-full w-full object-cover"
+                            onError={() =>
+                              setNewInstance((prev) => ({
+                                ...prev,
+                                image_url: "",
+                                image_provider: "",
+                              }))
+                            }
                           />
                           <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/70 to-transparent p-3">
                             <p className="truncate text-sm font-semibold text-white">

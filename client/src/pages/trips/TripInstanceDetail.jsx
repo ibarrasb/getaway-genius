@@ -768,6 +768,11 @@ const TripInstanceDetail = () => {
               src={instance.image_url || trip.image_url || "/getaway-genius-logo.png"}
               alt={formData.destination || trip.location_address}
               className="absolute inset-0 h-full w-full object-cover opacity-80"
+              onError={(event) => {
+                event.currentTarget.src = "/getaway-genius-logo.png";
+                event.currentTarget.classList.remove("object-cover");
+                event.currentTarget.classList.add("object-contain", "p-8");
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-slate-950/15" />
 
