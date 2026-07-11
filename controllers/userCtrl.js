@@ -1,5 +1,5 @@
 import Users from '../models/userModels.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 
 // Helpers to create tokens
