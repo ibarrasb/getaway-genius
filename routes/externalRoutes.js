@@ -130,6 +130,119 @@ const writeToCache = async (bucket, location, value) => {
   );
 };
 
+const monthNameFromDate = (value) => {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+};
+
+const inferTripStyle = (location = '', options = []) => {
+  const text = [location, ...options.flatMap((option) => [option.destination, option.title])]
+    .join(' ')
+    .toLowerCase();
+
+  if (/\b(beach|island|coast|gulf|ocean|san juan|puerto rico|destin|miami|cancun|tulum|honolulu|maui|bahamas|aruba|key west|santa monica|malibu)\b/.test(text)) {
+    return 'beach';
+  }
+  if (/\b(mountain|ski|snow|aspen|vail|breckenridge|park city|tahoe|banff|rocky|smoky)\b/.test(text)) {
+    return 'mountain';
+  }
+  if (/\b(disney|universal|theme park|orlando|anaheim)\b/.test(text)) {
+    return 'theme_park';
+  }
+  if (/\b(national park|zion|yosemite|yellowstone|grand canyon|glacier)\b/.test(text)) {
+    return 'outdoors';
+  }
+  return 'city';
+};
+
+const betterValueAlternatives = (location = '', style = 'city') => {
+  const text = location.toLowerCase();
+  if (text.includes('los angeles')) return ['Long Beach', 'San Diego', 'Ventura'];
+  if (text.includes('san juan') || text.includes('puerto rico')) return ['Luquillo', 'Rincon', 'Aguadilla'];
+  if (text.includes('destin')) return ['Gulf Shores', 'Pensacola Beach', 'Panama City Beach'];
+  if (text.includes('miami')) return ['Fort Lauderdale', 'Hollywood Beach', 'St. Pete Beach'];
+  if (text.includes('orlando')) return ['Kissimmee', 'Lake Buena Vista', 'Tampa'];
+  if (text.includes('new york')) return ['Jersey City', 'Brooklyn outside Williamsburg', 'Queens'];
+  if (text.includes('chicago')) return ['Milwaukee', 'Evanston', 'Oak Park'];
+  if (text.includes('denver')) return ['Colorado Springs', 'Fort Collins', 'Boulder'];
+
+  const byStyle = {
+    beach: ['a nearby beach town', 'a quieter coastal area', 'a less-central waterfront stay'],
+    mountain: ['a smaller mountain town nearby', 'a non-resort base town', 'a weekday ski-area stay'],
+    theme_park: ['a nearby suburb stay', 'an off-property hotel area', 'a weekday park-adjacent option'],
+    outdoors: ['a gateway town outside the main entrance', 'a nearby state park base', 'a weekday cabin area'],
+    city: ['a nearby secondary city', 'a less-central neighborhood', 'a transit-connected suburb'],
+  };
+  return byStyle[style] || byStyle.city;
+};
+
+const buildTripIntelFallback = ({ location, boardContext, normalizedOptions, msg }) => {
+  const focusOption =
+    normalizedOptions.find((option) => option.status === 'top_choice' || option.status === 'booked') ||
+    normalizedOptions[0] ||
+    null;
+  const focusDestination = focusOption?.destination || location;
+  const month = monthNameFromDate(boardContext.start);
+  const dateRange =
+    boardContext.start && boardContext.end
+      ? `${boardContext.start} to ${boardContext.end}`
+      : 'your selected dates';
+  const style = inferTripStyle(focusDestination || location, normalizedOptions);
+  const alternatives = betterValueAlternatives(focusDestination || location, style);
+  const totals = normalizedOptions.map((option) => option.total).filter((total) => total > 0);
+  const hasUsablePrices = totals.length > 0;
+  const cheapest = hasUsablePrices
+    ? normalizedOptions
+        .filter((option) => option.total > 0)
+        .sort((a, b) => a.total - b.total)[0]
+    : null;
+
+  const timingByStyle = {
+    beach: `${month || 'Your travel month'} is about weather risk, water comfort, and holiday pricing for ${focusDestination}.`,
+    mountain: `${month || 'Your travel month'} can be strong for mountain trips, but lodging jumps around snow weekends and holidays.`,
+    theme_park: `${month || 'Your travel month'} is usually better when school breaks are avoided and weekdays are prioritized.`,
+    outdoors: `${month || 'Your travel month'} depends on trail access, daylight, and weather closures around ${focusDestination}.`,
+    city: `${month || 'Your travel month'} can work for ${focusDestination}, but event calendars and weekend hotel demand matter most.`,
+  };
+
+  return {
+    cards: [
+      {
+        type: 'timing',
+        title: `Best Time For ${focusDestination}`,
+        summary: `${dateRange} is the window to validate.`,
+        details: timingByStyle[style] || timingByStyle.city,
+        recommendation: `Check lodging and flight prices for ${dateRange}; compare against one week earlier/later before committing.`,
+      },
+      {
+        type: 'better_value',
+        title: `Comparable Value Picks`,
+        summary: `${alternatives.join(', ')} are the first places to compare against ${focusDestination}.`,
+        details:
+          style === 'beach'
+            ? `These keep the warm-weather/coastal intent instead of sending you to an unrelated trip type.`
+            : `These keep the same ${style.replace('_', ' ')} intent while giving you a shot at lower lodging or easier logistics.`,
+        recommendation: `Add one of ${alternatives.slice(0, 2).join(' or ')} as another board option if ${focusDestination} prices look high.`,
+      },
+      {
+        type: 'fit_check',
+        title: `Fit Check`,
+        summary: hasUsablePrices
+          ? `${cheapest.destination || cheapest.title || focusDestination} is currently the lowest entered total at $${Math.round(cheapest.total).toLocaleString('en-US')}.`
+          : `This board cannot make a real price call yet because the visible options are still $0.`,
+        details: hasUsablePrices
+          ? `For ${boardContext.travelers || 1} traveler${Number(boardContext.travelers) === 1 ? '' : 's'}, compare lodging plus flight/car costs before setting the plan.`
+          : `Add at least rough lodging and flight estimates for ${focusDestination}; otherwise the recommendation can only judge timing and destination fit.`,
+        recommendation: hasUsablePrices
+          ? `Commit only after the biggest cost item for ${focusDestination} is entered and still beats the alternatives.`
+          : `Enter rough flight and lodging totals, then refresh Trip Intel for a real price-based call.`,
+      },
+    ],
+    warning: `Using basic Trip Intel because AI was unavailable: ${msg}`,
+  };
+};
+
 const googlePhotoCandidate = async ({ placeid, photoreference, location }) => {
   const apiKey = process.env.GOOGLEAPIKEY;
   let photoRef = photoreference;
@@ -386,25 +499,44 @@ router.post('/chatgpt/fun-places', ...paidRoute, requireBody, requireStringBody(
 
 //ChatGPT: Trip suggestion windows
 router.post('/chatgpt/trip-suggestion', ...paidRoute, requireBody, requireStringBody('location'), async (req, res) => {
-  try {
-    const { location } = req.body || {};
-    if (!openai.apiKey) throw new Error('OPENAI_API_KEY not set');
-    if (!location) return res.status(400).json({ error: 'location is required' });
+  const { location, board = {}, options = [] } = req.body || {};
+  const normalizedOptions = (Array.isArray(options) ? options : [])
+    .slice(0, 6)
+    .map((option) => ({
+      destination: String(option?.destination || '').slice(0, 120),
+      title: String(option?.title || option?.option_title || '').slice(0, 120),
+      status: String(option?.status || '').slice(0, 40),
+      total: Number(option?.total || 0),
+    }));
+  const boardContext = {
+    start: board?.start || board?.board_start || '',
+    end: board?.end || board?.board_end || '',
+    travelers: Number(board?.travelers || 1),
+  };
 
-    const cached = await readFromCache('trip-suggestion', location);
+  try {
+    if (!location) return res.status(400).json({ error: 'location is required' });
+    const focusOption =
+      normalizedOptions.find((option) => option.status === 'top_choice' || option.status === 'booked') ||
+      normalizedOptions[0] ||
+      null;
+    const hasUsablePrices = normalizedOptions.some((option) => option.total > 0);
+    const cacheContext = JSON.stringify({ version: 2, location, boardContext, normalizedOptions });
+    const cached = await readFromCache('trip-intel-v2', cacheContext);
     if (cached) return res.json(cached);
+    if (!openai.apiKey) throw new Error('OPENAI_API_KEY not set');
 
     const response = await createChatCompletion({
       responseFormat: {
         type: 'json_schema',
         json_schema: {
-          name: 'trip_suggestion_windows',
+          name: 'trip_intel_cards',
           strict: true,
           schema: {
             type: 'object',
             additionalProperties: false,
             properties: {
-              suggestions: {
+              cards: {
                 type: 'array',
                 minItems: 3,
                 maxItems: 3,
@@ -412,16 +544,20 @@ router.post('/chatgpt/trip-suggestion', ...paidRoute, requireBody, requireString
                   type: 'object',
                   additionalProperties: false,
                   properties: {
-                    season: { type: 'string' },
-                    monthIntervals: { type: 'string' },
-                    reason: { type: 'string' },
-                    description: { type: 'string' },
+                    type: {
+                      type: 'string',
+                      enum: ['timing', 'better_value', 'fit_check'],
+                    },
+                    title: { type: 'string' },
+                    summary: { type: 'string' },
+                    details: { type: 'string' },
+                    recommendation: { type: 'string' },
                   },
-                  required: ['season', 'monthIntervals', 'reason', 'description'],
+                  required: ['type', 'title', 'summary', 'details', 'recommendation'],
                 },
               },
             },
-            required: ['suggestions'],
+            required: ['cards'],
           },
         },
       },
@@ -429,12 +565,32 @@ router.post('/chatgpt/trip-suggestion', ...paidRoute, requireBody, requireString
         {
           role: 'system',
           content:
-            'You are a travel planning assistant. Return practical seasonal advice. Keep each field concise and useful.',
+            [
+              'You are a practical travel decision assistant inside a planning board.',
+              'Return exactly 3 concise cards: timing, better_value, and fit_check.',
+              'Every card must mention at least one concrete place, date window, board option, or cost condition from the user context.',
+              'For better_value, name 2-3 specific alternatives with the same trip intent as the focus destination. If the user is considering a beach, only mention comparable beach/coastal options; if mountains, only comparable mountain/outdoor options; if city, only comparable city options.',
+              'Do not suggest unrelated destination categories.',
+              'If current options have no usable prices, say that a real price recommendation is blocked until flight/lodging estimates are added.',
+              'Never say generic phrases like "look for nearby places", "same trip style", "pressure-test the plan", or "shoulder season" unless you name the actual destination/months.',
+              'Be opinionated, specific, and budget-aware. Avoid travel-blog fluff and vague checklist advice.',
+            ].join(' '),
         },
         {
           role: 'user',
           content:
-            `List exactly 3 best times to travel to ${location} based on cost, overall experience, and crowd levels.`,
+            [
+              `Destination being planned: ${location}.`,
+              `Board dates: ${boardContext.start || 'not set'} to ${boardContext.end || 'not set'}.`,
+              `Travelers: ${boardContext.travelers}.`,
+              `Current board options: ${JSON.stringify(normalizedOptions)}.`,
+              `Focus option: ${JSON.stringify(focusOption)}.`,
+              `Usable prices entered: ${hasUsablePrices ? 'yes' : 'no'}.`,
+              'Create the cards:',
+              '1) Best Time To Go: judge the selected timing and mention better months/windows if useful.',
+              '2) Similar But Better Value: recommend 2-3 named comparable cheaper alternatives and why they match the same intent.',
+              '3) Trip Fit Check: tell whether this destination makes sense for the dates, group, current options, and likely budget tradeoffs. If prices are $0, explicitly say the board cannot make a real price call yet.',
+            ].join('\n'),
         },
       ],
       temperature: 0.2,
@@ -443,40 +599,25 @@ router.post('/chatgpt/trip-suggestion', ...paidRoute, requireBody, requireString
     const content = response.choices?.[0]?.message?.content?.trim() ?? '';
     const parsed = parseFirstJsonObject(content);
 
-    if (!parsed?.suggestions || !Array.isArray(parsed.suggestions)) {
+    if (!parsed?.cards || !Array.isArray(parsed.cards)) {
       throw new Error('AI returned invalid suggestion format');
     }
 
-    const payload = { suggestions: parsed.suggestions };
-    await writeToCache('trip-suggestion', location, payload);
+    const genericPattern = /shoulder-season dates|nearby places with the same trip style|pressure-test the plan|same category before comparing prices/i;
+    const genericCard = parsed.cards.some((card) =>
+      genericPattern.test([card.title, card.summary, card.details, card.recommendation].join(' '))
+    );
+    if (genericCard) {
+      throw new Error('AI returned generic trip intel');
+    }
+
+    const payload = { cards: parsed.cards };
+    await writeToCache('trip-intel-v2', cacheContext, payload);
     return res.json(payload);
   } catch (error) {
     const msg = getOpenAIErrorMessage(error);
     console.error('ChatGPT trip-suggestion error:', msg);
-    const fallback = {
-      suggestions: [
-        {
-          season: 'Spring',
-          monthIntervals: 'Mar - May',
-          reason: 'Balanced weather and moderate prices in many destinations.',
-          description: 'Good tradeoff between comfort, cost, and crowd levels.',
-        },
-        {
-          season: 'Shoulder Summer',
-          monthIntervals: 'Jun or Sep',
-          reason: 'Often better rates than peak summer with strong experiences.',
-          description: 'Target early/late summer to avoid peak surges.',
-        },
-        {
-          season: 'Late Fall',
-          monthIntervals: 'Oct - Nov',
-          reason: 'Lower demand can improve flight and hotel value.',
-          description: 'Useful for budget-first planning with fewer crowds.',
-        },
-      ],
-      warning: `AI temporarily unavailable: ${msg}`,
-    };
-    return res.json(fallback);
+    return res.json(buildTripIntelFallback({ location, boardContext, normalizedOptions, msg }));
   }
 });
 

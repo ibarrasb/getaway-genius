@@ -1,5 +1,6 @@
 // src/pages/trips/TripInstanceDetail.jsx
 import { useState, useEffect, useContext, useMemo, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -17,6 +18,8 @@ import {
   MapPin,
   ReceiptText,
   CheckCircle2,
+  Pencil,
+  X,
 } from "lucide-react";
 import BackButton from "@/components/BackButton";
 import { TripOptionSkeleton } from "@/components/skeletons/AppSkeletons.jsx";
@@ -674,6 +677,27 @@ const TripInstanceDetail = () => {
     []
   );
 
+  useEffect(() => {
+    if (!expandedItemKey) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setExpandedItemKey(null);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [expandedItemKey]);
+
+  useEffect(() => {
+    setExpandedItemKey(null);
+  }, [activeCategory]);
+
   // -------- submit --------
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -738,8 +762,8 @@ const TripInstanceDetail = () => {
           <BackButton label="Back" />
         </div>
 
-        <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/85 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur">
-          <div className="relative min-h-[22rem] overflow-hidden bg-slate-900">
+        <div className="overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/85 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur sm:rounded-[2rem]">
+          <div className="relative min-h-[18rem] overflow-hidden bg-slate-900 sm:min-h-[22rem]">
             <img
               src={instance.image_url || trip.image_url || "/getaway-genius-logo.png"}
               alt={formData.destination || trip.location_address}
@@ -747,7 +771,7 @@ const TripInstanceDetail = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-slate-950/15" />
 
-            <div className="relative z-10 flex min-h-[22rem] flex-col justify-between p-5 sm:p-7 lg:p-8">
+            <div className="relative z-10 flex min-h-[18rem] flex-col justify-between p-4 sm:min-h-[22rem] sm:p-7 lg:p-8">
               <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-teal-800 shadow-sm">
                   Trip option
@@ -779,20 +803,30 @@ const TripInstanceDetail = () => {
                       if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
                     }}
                     autoFocus
-                    className="w-full rounded-2xl border border-white/50 bg-white/95 px-4 py-3 text-3xl font-extrabold leading-tight text-slate-950 shadow-sm outline-none sm:text-5xl"
+                    className="w-full rounded-2xl border border-white/50 bg-white/95 px-4 py-3 text-2xl font-extrabold leading-tight text-slate-950 shadow-sm outline-none sm:text-5xl"
                     placeholder="Option name"
                   />
                 ) : (
-                  <button
-                    type="button"
-                    className="block max-w-full cursor-text text-left"
-                    onDoubleClick={() => setEditingHeaderField("option_title")}
-                    title="Double-click to edit"
-                  >
-                    <h1 className="gg-hero-title text-4xl font-extrabold sm:text-5xl lg:text-6xl">
+                  <div className="flex max-w-full items-start gap-2">
+                    <button
+                      type="button"
+                      className="block min-w-0 cursor-text text-left"
+                      onClick={() => setEditingHeaderField("option_title")}
+                      title="Edit option name"
+                    >
+                    <h1 className="gg-hero-title text-3xl font-extrabold sm:text-5xl lg:text-6xl">
                       {formData.option_title || destinationLabel || "Untitled option"}
                     </h1>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingHeaderField("option_title")}
+                      className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/15 text-white ring-1 ring-white/20 backdrop-blur hover:bg-white/25"
+                      aria-label="Edit option name"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  </div>
                 )}
 
                 <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -809,9 +843,9 @@ const TripInstanceDetail = () => {
                   ) : (
                     <button
                       type="button"
-                      onDoubleClick={() => setEditingHeaderField("status")}
+                      onClick={() => setEditingHeaderField("status")}
                       className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-slate-900 shadow-sm"
-                      title="Double-click to edit"
+                      title="Edit status"
                     >
                       <CheckCircle2 className="h-4 w-4 text-teal-700" />
                       {statusLabels[formData.status] || "Considering"}
@@ -831,15 +865,15 @@ const TripInstanceDetail = () => {
           <form
             id="trip-option-detail-form"
             onSubmit={handleSubmit}
-                className="p-5 sm:p-7 lg:p-8"
+            className="p-4 sm:p-7 lg:p-8"
           >
-            <section className="-mt-16 grid gap-4 lg:grid-cols-[1fr_1fr_1fr]">
+            <section className="-mt-10 grid gap-3 sm:-mt-16 sm:gap-4 lg:grid-cols-[1fr_1fr_1fr]">
               <div className="relative rounded-2xl border border-white/80 bg-white p-5 shadow-xl shadow-slate-900/10">
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-teal-100">
                   <ReceiptText className="h-5 w-5" />
                 </div>
                 <p className="text-sm font-semibold text-slate-500">Estimated total</p>
-                <p className="mt-1 text-3xl font-extrabold text-slate-950">{formatCurrency0(total)}</p>
+                <p className="mt-1 text-2xl font-extrabold text-slate-950 sm:text-3xl">{formatCurrency0(total)}</p>
                 <p className="mt-2 text-sm text-slate-500">
                   {selectedItemCount} of {totalItemCount} saved item{totalItemCount === 1 ? "" : "s"} count in the plan.
                 </p>
@@ -850,7 +884,7 @@ const TripInstanceDetail = () => {
                   <CalendarIcon className="h-5 w-5" />
                 </div>
                 <p className="text-sm font-semibold text-slate-500">Trip dates</p>
-                <p className="mt-1 text-xl font-bold text-slate-950">
+                <p className="mt-1 text-lg font-bold text-slate-950 sm:text-xl">
                   {formatMMDDYYYYLocal(formData.trip_start)} - {formatMMDDYYYYLocal(formData.trip_end)}
                 </p>
                 <p className="mt-2 inline-flex items-center gap-2 text-sm text-slate-500">
@@ -871,11 +905,11 @@ const TripInstanceDetail = () => {
               </div>
             </section>
 
-            <section className="mt-8">
+            <section className="mt-6 sm:mt-8">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-2xl font-bold text-slate-950">Saved links and costs</h2>
+                    <h2 className="text-xl font-bold text-slate-950 sm:text-2xl">Saved links and costs</h2>
                     <span
                       className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
                         saveStatus.toLowerCase().includes("failed")
@@ -895,7 +929,7 @@ const TripInstanceDetail = () => {
                 <button
                   type="button"
                   onClick={() => addCostItem(activeCategory)}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-900/15 transition hover:brightness-105"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-900/15 transition hover:brightness-105 sm:w-auto"
                 >
                   <Plus className="h-4 w-4" />
                   Add {activeCategoryConfig.singular}
@@ -903,7 +937,8 @@ const TripInstanceDetail = () => {
               </div>
 
               <div className="grid gap-5 lg:grid-cols-[17rem_1fr]">
-                <nav className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Cost categories">
+                <nav className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0" aria-label="Cost categories">
+                  <div className="flex w-max gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm lg:block lg:w-auto">
                   {itemCategories.map((category) => {
                     const config = configFor(category.value);
                     const Icon = config.icon;
@@ -917,21 +952,21 @@ const TripInstanceDetail = () => {
                         key={category.value}
                         type="button"
                         onClick={() => setActiveCategory(category.value)}
-                        className={`mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition last:mb-0 ${
+                        className={`flex min-w-[9.25rem] items-center gap-2 rounded-xl px-3 py-3 text-left transition lg:mb-1 lg:w-full lg:min-w-0 lg:gap-3 lg:last:mb-0 ${
                           isActive
                             ? "bg-slate-950 text-white shadow-md"
                             : "text-slate-700 hover:bg-slate-50"
                         }`}
                       >
                         <span
-                          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ring-1 ${
+                          className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 lg:h-10 lg:w-10 ${
                             isActive ? "bg-white/15 text-white ring-white/20" : config.accent
                           }`}
                         >
                           <Icon className="h-5 w-5" />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block font-semibold">{config.label}</span>
+                          <span className="block text-sm font-semibold lg:text-base">{config.label}</span>
                           <span className={`block text-xs ${isActive ? "text-white/70" : "text-slate-500"}`}>
                             {categoryItems.length} item{categoryItems.length === 1 ? "" : "s"} · {formatCurrency0(categoryTotal(category.value))}
                           </span>
@@ -939,26 +974,27 @@ const TripInstanceDetail = () => {
                       </button>
                     );
                   })}
+                  </div>
                 </nav>
 
                 <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/80 p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="flex items-start gap-3">
-                      <span className={`grid h-12 w-12 place-items-center rounded-2xl ring-1 ${activeCategoryConfig.accent}`}>
+                      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ring-1 sm:h-12 sm:w-12 ${activeCategoryConfig.accent}`}>
                         <ActiveCategoryIcon className="h-5 w-5" />
                       </span>
                       <div>
-                        <h3 className="text-xl font-bold text-slate-950">{activeCategoryConfig.label}</h3>
+                        <h3 className="text-lg font-bold text-slate-950 sm:text-xl">{activeCategoryConfig.label}</h3>
                         <p className="mt-1 text-sm text-slate-500">{activeCategoryConfig.description}</p>
                       </div>
                     </div>
                     <div className="rounded-2xl bg-white px-4 py-3 text-left shadow-sm ring-1 ring-slate-200 sm:text-right">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Category total</p>
-                      <p className="text-2xl font-extrabold text-slate-950">{formatCurrency0(categoryTotal(activeCategory))}</p>
+                      <p className="text-xl font-extrabold text-slate-950 sm:text-2xl">{formatCurrency0(categoryTotal(activeCategory))}</p>
                     </div>
                   </div>
 
-                  <div className="space-y-3 p-4">
+                  <div className="space-y-3 p-3 sm:p-4">
                     {activeCategoryItems.map(({ item, index }) => {
                       const itemKey = item._id || `${activeCategory}-${index}`;
                       const isExpanded = expandedItemKey === itemKey;
@@ -996,7 +1032,7 @@ const TripInstanceDetail = () => {
                                 {itemCountsInTotal(item) ? "Included" : "Not included"}
                               </span>
                             </span>
-                            <span className="text-left sm:text-right">
+                            <span className="flex items-end justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 sm:block sm:bg-transparent sm:px-0 sm:py-0 sm:text-right">
                               <span className="block text-[11px] font-bold uppercase tracking-wide text-slate-400">
                                 Total
                               </span>
@@ -1004,7 +1040,7 @@ const TripInstanceDetail = () => {
                                 {formatCurrency0(itemTotal(item))}
                               </span>
                             </span>
-                            <span className="flex items-center gap-2 sm:justify-end">
+                            <span className="flex items-center justify-between gap-2 sm:justify-end">
                               {item.url && (
                                 <a
                                   href={item.url}
@@ -1019,30 +1055,62 @@ const TripInstanceDetail = () => {
                                 </a>
                               )}
                               <span className="rounded-full px-3 py-1.5 text-xs font-bold text-slate-500 ring-1 ring-slate-200">
-                                {isExpanded ? "Close" : "Edit"}
+                                Edit
                               </span>
                             </span>
                           </button>
 
-                          {isExpanded && (
-                            <div className="border-t border-slate-100 bg-slate-50/70 p-3 sm:p-4">
-                              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                                <div>
-                                  <p className="text-sm font-bold text-slate-950">Edit item</p>
-                                  <p className="text-xs text-slate-500">{normalizeGroupName(item)}</p>
+                          {isExpanded && createPortal(
+                            <div
+                              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-2 backdrop-blur-sm transition-opacity sm:p-6"
+                              role="dialog"
+                              aria-modal="true"
+                              aria-labelledby={`item-editor-title-${index}`}
+                              onClick={() => setExpandedItemKey(null)}
+                            >
+                              <div
+                                className="flex h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-3xl bg-white shadow-2xl transition-transform sm:h-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-3xl"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-4 py-4 sm:px-5">
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-bold uppercase tracking-wide text-teal-700">
+                                      Edit {activeCategoryConfig.singular}
+                                    </p>
+                                    <h3 id={`item-editor-title-${index}`} className="mt-1 truncate text-lg font-bold text-slate-950">
+                                      {item.name || `New ${activeCategoryConfig.singular}`}
+                                    </h3>
+                                    <p className="mt-0.5 truncate text-xs text-slate-500">{normalizeGroupName(item)}</p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedItemKey(null)}
+                                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+                                    aria-label="Close item editor"
+                                  >
+                                    <X className="h-5 w-5" />
+                                  </button>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => removeCostItem(index)}
-                                  className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-rose-600 ring-1 ring-rose-100 transition hover:bg-rose-50"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  Remove
-                                </button>
-                              </div>
 
-                              <div className="rounded-2xl bg-white p-3 ring-1 ring-slate-200 sm:p-4">
-                                <div className="space-y-4">
+                                <div className="border-b border-slate-100 bg-white px-4 py-3 sm:px-5">
+                                  <div className="mx-auto grid max-w-md grid-cols-2 gap-2">
+                                    <div className="rounded-2xl bg-slate-50 px-3 py-3 text-center">
+                                      <p className="text-xs font-semibold text-slate-500">Item total</p>
+                                      <p className="mt-1 text-xl font-extrabold text-slate-950">
+                                        {formatCurrency0(itemTotal(item))}
+                                      </p>
+                                    </div>
+                                    <div className="rounded-2xl bg-slate-50 px-3 py-3 text-center">
+                                      <p className="text-xs font-semibold text-slate-500">Estimate</p>
+                                      <p className="mt-1 text-base font-bold text-slate-950">
+                                        {itemCountsInTotal(item) ? "Included" : "Not included"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+                                <div className="mx-auto w-full max-w-2xl space-y-4 pb-2">
                                   <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
@@ -1052,7 +1120,7 @@ const TripInstanceDetail = () => {
                                       type="text"
                                       value={item.name}
                                       onChange={(e) => updateCostItem(index, "name", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                       placeholder={activeCategoryConfig.namePlaceholder}
                                     />
                                   </label>
@@ -1063,7 +1131,7 @@ const TripInstanceDetail = () => {
                                       type="url"
                                       value={item.url}
                                       onChange={(e) => updateCostItem(index, "url", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                       placeholder="https://..."
                                     />
                                   </label>
@@ -1080,7 +1148,7 @@ const TripInstanceDetail = () => {
                                       step="0.01"
                                       value={item.price}
                                       onChange={(e) => updateCostItem(index, "price", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                       placeholder="0.00"
                                     />
                                   </label>
@@ -1105,7 +1173,7 @@ const TripInstanceDetail = () => {
                                         : item.quantity}
                                       onChange={(e) => updateCostItem(index, "quantity", e.target.value)}
                                       disabled={isAutoQuantityBasis(item.price_basis || defaultPriceBasis(activeCategory))}
-                                      className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm ${
+                                      className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm ${
                                         isAutoQuantityBasis(item.price_basis || defaultPriceBasis(activeCategory))
                                           ? "bg-slate-100 text-slate-400"
                                           : ""
@@ -1133,7 +1201,7 @@ const TripInstanceDetail = () => {
                                       max={item.end_date || boardEndYmd || undefined}
                                       value={item.start_date || ""}
                                       onChange={(e) => updateCostItem(index, "start_date", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                     />
                                   </label>
 
@@ -1147,7 +1215,7 @@ const TripInstanceDetail = () => {
                                       max={boardEndYmd || undefined}
                                       value={item.end_date || ""}
                                       onChange={(e) => updateCostItem(index, "end_date", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                     />
                                   </label>
                                   </div>
@@ -1161,7 +1229,7 @@ const TripInstanceDetail = () => {
                                         type="text"
                                         value={normalizeGroupName(item)}
                                         onChange={(e) => updateCostItem(index, "group_name", e.target.value)}
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                         placeholder={defaultGroupName(activeCategory)}
                                       />
                                       <span className="mt-1 block text-[11px] leading-4 text-slate-500">
@@ -1193,14 +1261,37 @@ const TripInstanceDetail = () => {
                                       type="text"
                                       value={item.notes}
                                       onChange={(e) => updateCostItem(index, "notes", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                       placeholder="Fees, cancellation, inclusions..."
                                     />
                                   </label>
                                 </div>
+
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 border-t border-slate-100 bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-12px_24px_-20px_rgba(15,23,42,0.45)] sm:px-5">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      removeCostItem(index);
+                                      setExpandedItemKey(null);
+                                    }}
+                                    className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-rose-50 px-3 py-3 text-sm font-bold text-rose-700 ring-1 ring-rose-100 transition hover:bg-rose-100"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    Remove
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedItemKey(null)}
+                                    className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+                                  >
+                                    Done
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          )}
+                          , document.body)}
                         </article>
                       );
                     })}

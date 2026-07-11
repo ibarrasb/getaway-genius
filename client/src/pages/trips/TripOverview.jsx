@@ -42,6 +42,7 @@ const TripOverview = () => {
   const [weatherData, setWeatherData] = useState(null);
   const [funPlaces, setFunPlaces] = useState(null);
   const [tripSuggestions, setTripSuggestions] = useState([]);
+  const [tripSuggestionsWarning, setTripSuggestionsWarning] = useState("");
   const [fetchError, setFetchError] = useState("");
   const [loading, setLoading] = useState(true);
   const [weatherLoading, setWeatherLoading] = useState(false);
@@ -438,30 +439,76 @@ const TripOverview = () => {
     }
   }, [authHeaders]);
 
-  const fetchTripSuggestions = useCallback(async (locationAddress) => {
+  const fetchTripSuggestions = useCallback(async (locationAddress, sourceTrip = {}, sourceInstances = []) => {
     setTripSuggestionsLoading(true);
+    setTripSuggestionsWarning("");
     try {
       const { city, state: locState, country } =
         parseLocationAddress(locationAddress);
       const location = [city, locState, country].filter(Boolean).join(", ");
+      const optionTotal = (instance = {}) => {
+        const lineItems = (instance.cost_items || []).reduce(
+          (sum, item) =>
+            sum +
+            (item?.is_selected === false
+              ? 0
+              : (Number(item?.price) || 0) * Math.max(1, Number(item?.quantity) || 1)),
+          0
+        );
+        return (
+          lineItems ||
+          (Number(instance.stay_expense) || 0) +
+            (Number(instance.travel_expense) || 0) +
+            (Number(instance.car_expense) || 0) +
+            (Number(instance.other_expense) || 0)
+        );
+      };
+      const optionSummaries = (sourceInstances || []).slice(0, 6).map((instance) => ({
+        title: instance.option_title || "",
+        destination: instance.destination || "",
+        status: instance.status || "",
+        total: optionTotal(instance),
+      }));
 
       const response = await fetch("/api/chatgpt/trip-suggestion", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(authHeaders || {}) },
-        body: JSON.stringify({ location }),
+        body: JSON.stringify({
+          location,
+          board: {
+            start: toYmdLocal(sourceTrip?.board_start || sourceTrip?.trip_start),
+            end: toYmdLocal(sourceTrip?.board_end || sourceTrip?.trip_end),
+            travelers: sourceTrip?.travelers || 1,
+          },
+          options: optionSummaries,
+        }),
       });
 
       if (!response.ok) {
         setTripSuggestions([]);
+        const errorPayload = await response.json().catch(() => ({}));
+        setTripSuggestionsWarning(errorPayload?.warning || "Trip Intel is unavailable right now.");
         return;
       }
 
       const data = await response.json();
-      const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : [];
+      setTripSuggestionsWarning(data?.warning || "");
+      const suggestions = Array.isArray(data?.cards)
+        ? data.cards
+        : Array.isArray(data?.suggestions)
+          ? data.suggestions.map((item) => ({
+              type: "timing",
+              title: item.season || "Best Time To Go",
+              summary: item.monthIntervals || "",
+              details: item.reason || "",
+              recommendation: item.description || "",
+            }))
+          : [];
       setTripSuggestions(suggestions);
     } catch (error) {
       console.error("Error fetching trip suggestions:", error);
       setTripSuggestions([]);
+      setTripSuggestionsWarning("Trip Intel is unavailable right now.");
     } finally {
       setTripSuggestionsLoading(false);
     }
@@ -484,11 +531,15 @@ const TripOverview = () => {
         applyTripData(tripRes.data);
 
       if (tripRes.data.location_address) {
-          const optionDestination = tripRes.data.instances?.find((inst) => inst.destination)?.destination;
+          const instances = tripRes.data.instances || [];
+          const optionDestination =
+            instances.find((inst) => inst.status === "top_choice" && inst.destination)?.destination ||
+            instances.find((inst) => inst.isCommitted && inst.destination)?.destination ||
+            instances.find((inst) => inst.destination)?.destination;
           if (optionDestination) {
             fetchWeatherData(optionDestination);
             fetchFunPlaces(optionDestination);
-            fetchTripSuggestions(optionDestination);
+            fetchTripSuggestions(optionDestination, tripRes.data, instances);
           }
         }
       } catch (error) {
@@ -604,15 +655,20 @@ const TripOverview = () => {
   }, [rankedInstances, statusFilter]);
 
   const boardStats = useMemo(() => {
-    const totals = rankedInstances.map((instance) => calculateTotalCost(instance)).filter((total) => total > 0);
+    const pricedOptions = rankedInstances
+      .map((instance) => ({ id: instance._id, total: calculateTotalCost(instance) }))
+      .filter((item) => item.total > 0);
+    const totals = pricedOptions.map((item) => item.total);
     const cheapest = totals.length ? Math.min(...totals) : 0;
     const highest = totals.length ? Math.max(...totals) : 0;
     const travelers = Math.max(1, Number(trip?.travelers) || 1);
+    const cheapestOptionId = pricedOptions.find((item) => item.total === cheapest)?.id || null;
 
     return {
       cheapest,
       highest,
       perPerson: cheapest ? cheapest / travelers : 0,
+      cheapestOptionId,
     };
   }, [rankedInstances, trip?.travelers]);
 
@@ -786,7 +842,7 @@ const TripOverview = () => {
           </div>
         </div>
 
-        <div className="gg-glass rounded-3xl border border-white/70 p-6">
+        <div className="gg-glass rounded-3xl border border-white/70 p-4 sm:p-6">
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">
@@ -797,12 +853,12 @@ const TripOverview = () => {
                 Compare places, links, dates, and totals before choosing what to book.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1 sm:inline-flex">
                 <button
                   type="button"
                   onClick={() => setViewMode("cards")}
-                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                  className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition sm:py-1.5 ${
                     viewMode === "cards"
                       ? "bg-slate-900 text-white"
                       : "text-slate-600 hover:bg-slate-50"
@@ -814,7 +870,7 @@ const TripOverview = () => {
                 <button
                   type="button"
                   onClick={() => setViewMode("compare")}
-                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                  className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition sm:py-1.5 ${
                     viewMode === "compare"
                       ? "bg-slate-900 text-white"
                       : "text-slate-600 hover:bg-slate-50"
@@ -835,7 +891,7 @@ const TripOverview = () => {
                   setPlacePredictions([]);
                   setShowCreateModal(true);
                 }}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-2 text-white transition hover:brightness-105"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-blue-600 px-4 py-2.5 font-semibold text-white transition hover:brightness-105 sm:w-auto sm:py-2"
                 type="button"
               >
                 <Plus className="h-4 w-4" />
@@ -844,30 +900,29 @@ const TripOverview = () => {
             </div>
           </div>
 
-          <div className="mb-5 grid gap-3 sm:grid-cols-3">
+          <div className="mb-5 grid grid-cols-3 gap-2 sm:gap-3">
             <div className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200">
-              <p className="text-xs text-slate-500">Lowest total</p>
-              <p className="mt-1 text-lg font-bold text-slate-900">
-                {boardStats.cheapest ? formatMoney(boardStats.cheapest) : "Add prices"}
+              <p className="text-[11px] font-semibold text-slate-500 sm:text-xs">Lowest total</p>
+              <p className="mt-1 text-base font-bold text-slate-900 sm:text-lg">
+                {formatMoney(boardStats.cheapest)}
               </p>
             </div>
             <div className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200">
-              <p className="text-xs text-slate-500">Lowest per person</p>
-              <p className="mt-1 text-lg font-bold text-slate-900">
-                {boardStats.perPerson ? formatMoney(boardStats.perPerson) : "Add travelers"}
+              <p className="text-[11px] font-semibold text-slate-500 sm:text-xs">Per person</p>
+              <p className="mt-1 text-base font-bold text-slate-900 sm:text-lg">
+                {formatMoney(boardStats.perPerson)}
               </p>
             </div>
             <div className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200">
-              <p className="text-xs text-slate-500">Price spread</p>
-              <p className="mt-1 text-lg font-bold text-slate-900">
-                {boardStats.highest && boardStats.cheapest
-                  ? formatMoney(boardStats.highest - boardStats.cheapest)
-                  : "Need 2 totals"}
+              <p className="text-[11px] font-semibold text-slate-500 sm:text-xs">Spread</p>
+              <p className="mt-1 text-base font-bold text-slate-900 sm:text-lg">
+                {formatMoney(boardStats.highest - boardStats.cheapest)}
               </p>
             </div>
           </div>
 
-          <div className="mb-5 flex flex-wrap gap-2">
+          <div className="-mx-4 mb-5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+            <div className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
             {[
               ["all", "All"],
               ["considering", "Considering"],
@@ -888,146 +943,254 @@ const TripOverview = () => {
                 {label}
               </button>
             ))}
+            </div>
           </div>
 
           {viewMode === "cards" ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {visibleInstances.map((instance, index) => (
               <div
                 key={instance._id || index}
-                className={`gg-card relative rounded-2xl p-4 transition hover:-translate-y-0.5 hover:shadow-lg ${
+                className={`gg-card relative overflow-hidden rounded-3xl transition hover:-translate-y-0.5 hover:shadow-lg ${
                   instance.status === "eliminated" ? "opacity-70" : ""
                 }`}
               >
-                {instance.image_url && (
-                  <div className="-mx-4 -mt-4 mb-4 h-36 overflow-hidden rounded-t-2xl bg-slate-100">
+                <div className="relative aspect-[16/9] bg-slate-100">
+                  {instance.image_url ? (
                     <img
                       src={instance.image_url}
                       alt={instance.destination || "Destination"}
                       className="h-full w-full object-cover"
                       loading="lazy"
                     />
+                  ) : (
+                    <div className="flex h-full items-center justify-center px-6 text-center text-sm font-semibold text-slate-400">
+                      {instance.destination || instance.option_title || `Option ${index + 1}`}
+                    </div>
+                  )}
+                  <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                    <span
+                      className={`inline-flex rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold ring-1 backdrop-blur ${
+                        statusStyles[instance.status || "considering"]
+                      }`}
+                    >
+                      {statusLabels[instance.status || "considering"]}
+                    </span>
+                    {boardStats.cheapestOptionId && instance._id === boardStats.cheapestOptionId && (
+                      <span className="inline-flex rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
+                        Best price
+                      </span>
+                    )}
                   </div>
-                )}
-                <button
-                  onClick={() => handleDeleteInstance(instance._id || index)}
-                  className="absolute right-3 top-3 rounded-full p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
-                  aria-label="Delete option"
-                  title="Delete option"
-                  type="button"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-
-                <div className="pr-8">
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
-                      statusStyles[instance.status || "considering"]
-                    }`}
+                  <button
+                    onClick={() => handleDeleteInstance(instance._id || index)}
+                    className="absolute right-3 top-3 rounded-full bg-white/95 p-2 text-slate-500 shadow-sm ring-1 ring-black/5 transition hover:bg-rose-50 hover:text-rose-600"
+                    aria-label="Delete option"
+                    title="Delete option"
+                    type="button"
                   >
-                    {statusLabels[instance.status || "considering"]}
-                  </span>
-                  <h3 className="mt-3 text-lg font-bold text-slate-900">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="p-4">
+                  <h3 className="text-xl font-bold leading-tight text-slate-900">
                     {instance.destination || instance.option_title || `Option ${index + 1}`}
                   </h3>
                   {instance.option_title && instance.destination && (
-                    <p className="mt-1 text-sm text-slate-500">{instance.option_title}</p>
+                    <p className="mt-1 text-sm font-medium text-slate-500">{instance.option_title}</p>
                   )}
-                </div>
 
-                <div className="mt-3 flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-slate-500" />
-                  <span className="text-sm text-slate-600">
-                    {fmtRangeShort(instance.trip_start, instance.trip_end)}
-                  </span>
-                </div>
-
-                <div className="mt-2 flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-emerald-600" />
-                  <span className="text-lg font-semibold text-slate-800">
-                    {formatMoney(calculateTotalCost(instance))}
-                  </span>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  {(instance.cost_items || []).slice(0, 3).map((item, itemIndex) => (
-                    <div
-                      key={item._id || `${item.name}-${itemIndex}`}
-                      className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-slate-800">
-                          {item.name || itemCategories.find((c) => c.value === item.category)?.label || "Item"}
-                        </p>
-                        {(item.start_date || item.end_date) && (
-                          <p className="mt-0.5 text-xs text-slate-500">
-                            {fmtRangeShort(item.start_date, item.end_date)}
-                          </p>
-                        )}
-                        {item.url && (
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-0.5 inline-flex max-w-full items-center gap-1 text-xs text-teal-700 hover:text-teal-800"
-                          >
-                            <LinkIcon className="h-3 w-3 shrink-0" />
-                            <span className="truncate">Open link</span>
-                          </a>
-                        )}
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                        <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+                        Total
                       </div>
-                      <span className="shrink-0 font-semibold text-slate-700">
-                        {formatMoney((Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1))}
-                      </span>
+                      <p className="mt-1 text-lg font-bold text-slate-950">
+                        {formatMoney(calculateTotalCost(instance))}
+                      </p>
                     </div>
-                  ))}
-                  {(instance.cost_items || []).length > 3 && (
-                    <p className="text-xs text-slate-500">
-                      +{instance.cost_items.length - 3} more saved item
-                      {instance.cost_items.length - 3 === 1 ? "" : "s"}
-                    </p>
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                        <CalendarIcon className="h-3.5 w-3.5" />
+                        Dates
+                      </div>
+                      <p className="mt-1 truncate text-sm font-bold text-slate-950">
+                        {fmtRangeShort(instance.trip_start, instance.trip_end) || "Not set"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
+                    {[
+                      ["Stay", categoryTotal(instance, "lodging")],
+                      ["Flight", categoryTotal(instance, "flight")],
+                      ["Car", categoryTotal(instance, "car")],
+                      ["Other", categoryTotal(instance, "tickets") + categoryTotal(instance, "food") + categoryTotal(instance, "other")],
+                    ].map(([label, value]) => (
+                      <div key={label} className="rounded-xl bg-white px-2 py-2 text-center ring-1 ring-slate-100">
+                        <p className="font-semibold text-slate-500">{label}</p>
+                        <p className="mt-0.5 font-bold text-slate-900">{formatMoney(value)}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    {(instance.cost_items || []).slice(0, 2).map((item, itemIndex) => (
+                      <div
+                        key={item._id || `${item.name}-${itemIndex}`}
+                        className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-slate-800">
+                            {item.name || itemCategories.find((c) => c.value === item.category)?.label || "Item"}
+                          </p>
+                          {item.url && (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-0.5 inline-flex max-w-full items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-800"
+                            >
+                              <LinkIcon className="h-3 w-3 shrink-0" />
+                              <span className="truncate">Open link</span>
+                            </a>
+                          )}
+                        </div>
+                        <span className="shrink-0 font-semibold text-slate-700">
+                          {formatMoney((Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1))}
+                        </span>
+                      </div>
+                    ))}
+                    {(instance.cost_items || []).length > 2 && (
+                      <p className="text-xs font-semibold text-slate-500">
+                        +{instance.cost_items.length - 2} more saved item
+                        {instance.cost_items.length - 2 === 1 ? "" : "s"}
+                      </p>
+                    )}
+                    {!(instance.cost_items || []).length && (
+                      <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-700 ring-1 ring-amber-100">
+                        Add links and prices to compare this option.
+                      </p>
+                    )}
+                  </div>
+
+                  {instance.notes && (
+                    <p className="mt-3 line-clamp-2 text-sm text-slate-600">{instance.notes}</p>
                   )}
-                  {!(instance.cost_items || []).length && (
-                    <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-700 ring-1 ring-amber-100">
-                      Add links and prices to compare this option.
-                    </p>
-                  )}
+
+                  <div className="mt-4 grid gap-2">
+                    <button
+                      onClick={() => handleToggleOptionSelection(instance)}
+                      disabled={selectionLoadingId === instance._id}
+                      className={`block min-h-11 w-full rounded-xl text-center font-semibold transition-colors ${
+                        instance.isCommitted
+                          ? "bg-green-100 text-green-700 ring-1 ring-green-300 hover:bg-green-200"
+                          : "bg-gradient-to-r from-teal-600 to-blue-600 text-white hover:brightness-105"
+                      } ${selectionLoadingId === instance._id ? "cursor-wait opacity-50" : ""}`}
+                      type="button"
+                    >
+                      {selectionLoadingId === instance._id
+                        ? "Saving..."
+                        : instance.isCommitted
+                        ? "Clear Plan"
+                        : "Set as Plan"}
+                    </button>
+                    <Link
+                      to={`/trips/${tripId}/options/${instance._id || index}`}
+                      state={{ trip, instance }}
+                      className="block min-h-11 w-full rounded-xl border border-slate-200 bg-white py-2.5 text-center font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      View / Edit
+                    </Link>
+                  </div>
                 </div>
-
-                {instance.notes && (
-                  <p className="mt-3 line-clamp-2 text-sm text-slate-600">{instance.notes}</p>
-                )}
-
-                <Link
-                  to={`/trips/${tripId}/options/${instance._id || index}`}
-                  state={{ trip, instance }}
-                  className="mt-4 block w-full rounded-xl border border-slate-200 bg-white py-2 text-center text-slate-700 transition hover:bg-slate-50"
-                >
-                  View / Edit
-                </Link>
-
-                <button
-                  onClick={() => handleToggleOptionSelection(instance)}
-                  disabled={selectionLoadingId === instance._id}
-                  className={`block w-full text-center py-2 rounded-lg transition-colors ${
-                    instance.isCommitted
-                      ? "bg-green-100 text-green-700 ring-1 ring-green-300 hover:bg-green-200"
-                      : "bg-gradient-to-r from-teal-600 to-blue-600 text-white hover:brightness-105"
-                  } ${selectionLoadingId === instance._id ? "opacity-50 cursor-wait" : ""}`}
-                  type="button"
-                >
-                  {selectionLoadingId === instance._id
-                    ? "Saving..."
-                    : instance.isCommitted
-                    ? "Clear Plan"
-                    : "Set as Plan"}
-                </button>
               </div>
             ))}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <div className="overflow-x-auto">
+            <div>
+              <div className="grid gap-3 md:hidden">
+                {visibleInstances.map((instance, index) => {
+                  const total = calculateTotalCost(instance);
+                  const travelers = Math.max(1, Number(trip?.travelers) || 1);
+                  const links = (instance.cost_items || []).filter((item) => item.url);
+
+                  return (
+                    <article
+                      key={instance._id || index}
+                      className={`rounded-2xl border border-slate-200 bg-white p-4 ${
+                        instance.status === "eliminated" ? "opacity-70" : ""
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-lg font-bold text-slate-900">
+                            {instance.destination || instance.option_title || `Option ${index + 1}`}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {fmtRangeShort(instance.trip_start, instance.trip_end) || "Dates not set"}
+                          </p>
+                        </div>
+                        <span
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+                            statusStyles[instance.status || "considering"]
+                          }`}
+                        >
+                          {statusLabels[instance.status || "considering"]}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="rounded-xl bg-slate-50 px-3 py-2">
+                          <p className="text-xs font-semibold text-slate-500">Total</p>
+                          <p className="mt-1 font-bold text-slate-950">{formatMoney(total)}</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 px-3 py-2">
+                          <p className="text-xs font-semibold text-slate-500">Per person</p>
+                          <p className="mt-1 font-bold text-slate-950">{formatMoney(total / travelers)}</p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 px-3 py-2">
+                          <p className="text-xs font-semibold text-slate-500">Stay + Flight</p>
+                          <p className="mt-1 font-bold text-slate-950">
+                            {formatMoney(categoryTotal(instance, "lodging") + categoryTotal(instance, "flight"))}
+                          </p>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 px-3 py-2">
+                          <p className="text-xs font-semibold text-slate-500">Links</p>
+                          <p className="mt-1 font-bold text-slate-950">{links.length}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <Link
+                          to={`/trips/${tripId}/options/${instance._id || index}`}
+                          state={{ trip, instance }}
+                          className="rounded-xl border border-slate-200 bg-white py-2.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleOptionSelection(instance)}
+                          disabled={selectionLoadingId === instance._id}
+                          className={`rounded-xl py-2.5 text-sm font-semibold transition ${
+                            instance.isCommitted
+                              ? "bg-green-100 text-green-700 ring-1 ring-green-300 hover:bg-green-200"
+                              : "bg-slate-900 text-white hover:bg-slate-800"
+                          } ${selectionLoadingId === instance._id ? "opacity-50" : ""}`}
+                        >
+                          {instance.isCommitted ? "Clear Plan" : "Set Plan"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white md:block">
+                <div className="overflow-x-auto">
                 <table className="min-w-[960px] w-full border-collapse text-left text-sm">
                   <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
@@ -1147,6 +1310,7 @@ const TripOverview = () => {
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           )}
@@ -1166,9 +1330,9 @@ const TripOverview = () => {
         </div>
 
         <div className="mt-6 gg-glass rounded-3xl border border-white/70 p-6">
-          <h2 className="text-2xl font-bold text-slate-800">Best Time Windows (AI)</h2>
+          <h2 className="text-2xl font-bold text-slate-800">Trip Intel</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Seasonal timing suggestions based on cost, experience, and crowd levels.
+            Timing, better-value alternatives, and a quick fit check for this board.
           </p>
 
           {tripSuggestionsLoading ? (
@@ -1184,21 +1348,35 @@ const TripOverview = () => {
               ))}
             </div>
           ) : tripSuggestions.length ? (
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              {tripSuggestions.map((item, idx) => (
-                <article key={`${item.season}-${idx}`} className="gg-card rounded-2xl p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
-                    {item.season}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">{item.monthIntervals}</p>
-                  <p className="mt-2 text-sm text-slate-700">{item.reason}</p>
-                  <p className="mt-2 text-xs text-slate-500">{item.description}</p>
-                </article>
-              ))}
-            </div>
+            <>
+              {tripSuggestionsWarning && (
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  {tripSuggestionsWarning}
+                </div>
+              )}
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                {tripSuggestions.map((item, idx) => (
+                  <article key={`${item.type || item.title}-${idx}`} className="gg-card rounded-2xl p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
+                      {item.type === "better_value"
+                        ? "Better Value"
+                        : item.type === "fit_check"
+                          ? "Fit Check"
+                          : "Timing"}
+                    </p>
+                    <h3 className="mt-1 text-base font-bold text-slate-900">{item.title}</h3>
+                    <p className="mt-2 text-sm font-semibold text-slate-700">{item.summary}</p>
+                    <p className="mt-2 text-sm text-slate-600">{item.details}</p>
+                    <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">
+                      {item.recommendation}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </>
           ) : (
             <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
-              AI suggestions are unavailable right now.
+              {tripSuggestionsWarning || "Trip Intel is unavailable right now."}
             </div>
           )}
         </div>
