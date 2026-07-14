@@ -134,6 +134,10 @@ export const sanitizeCostItems = (items) =>
         item_type: String(item.item_type || ''),
         group_name: String(item.group_name || ''),
         is_selected: item.is_selected === undefined ? true : Boolean(item.is_selected),
+        purchase_status: ['considering', 'booked', 'purchased'].includes(item.purchase_status)
+          ? item.purchase_status
+          : 'considering',
+        confirmation_code: String(item.confirmation_code || ''),
         start_date: parseDate(item.start_date),
         end_date: parseDate(item.end_date),
         check_in_time: timeString(item.check_in_time),

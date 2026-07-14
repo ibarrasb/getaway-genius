@@ -25,6 +25,8 @@ test('sanitizeCostItems normalizes category item payloads', () => {
       item_type: 'rental',
       group_name: 'Transportation choice',
       is_selected: false,
+      purchase_status: 'booked',
+      confirmation_code: 'ABC123',
       start_date: '2026-07-10',
       end_date: '2026-07-12',
       check_in_time: '15:30',
@@ -45,6 +47,8 @@ test('sanitizeCostItems normalizes category item payloads', () => {
   assert.equal(item.price, 155.5);
   assert.equal(item.quantity, 1);
   assert.equal(item.is_selected, false);
+  assert.equal(item.purchase_status, 'booked');
+  assert.equal(item.confirmation_code, 'ABC123');
   assert.ok(item.start_date instanceof Date);
   assert.ok(item.end_date instanceof Date);
   assert.equal(item.check_in_time, '15:30');

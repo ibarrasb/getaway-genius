@@ -236,6 +236,15 @@ const TripInstanceDetail = () => {
     });
 
   const statusOptions = Object.entries(statusLabels).map(([value, label]) => ({ value, label }));
+  const purchaseStatusLabels = {
+    considering: "Not booked",
+    booked: "Booked",
+    purchased: "Purchased",
+  };
+  const purchaseStatusOptions = Object.entries(purchaseStatusLabels).map(([value, label]) => ({
+    value,
+    label,
+  }));
 
   const updateOptionField = (key, value) => {
     setSaveStatus("");
@@ -433,6 +442,8 @@ const TripInstanceDetail = () => {
           item_type: defaultItemType(category),
           group_name: groupName,
           is_selected: allowsMultiple ? true : isSelected,
+          purchase_status: "considering",
+          confirmation_code: "",
           start_date: "",
           end_date: "",
           check_in_time: "",
@@ -533,6 +544,13 @@ const TripInstanceDetail = () => {
   const total = lineItemTotal || legacyTotal;
   const boardStartYmd = toYmdLocal(trip?.board_start || trip?.trip_start);
   const boardEndYmd = toYmdLocal(trip?.board_end || trip?.trip_end);
+  const formatTime = (value) => {
+    if (!value) return "";
+    const [hours, minutes] = String(value).split(":");
+    const date = new Date();
+    date.setHours(Number(hours) || 0, Number(minutes) || 0, 0, 0);
+    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  };
   const itemSummary = (item) => {
     const config = configFor(item.category);
     const basis =
@@ -551,6 +569,29 @@ const TripInstanceDetail = () => {
       .filter(Boolean)
       .join(" · ");
   };
+  const itemDetailFacts = (item) => {
+    const facts = [];
+    const range = fmtRangeShort(item.start_date, item.end_date);
+    if (range) facts.push(range);
+    if (item.category === "lodging") {
+      if (item.check_in_time) facts.push(`Check-in ${formatTime(item.check_in_time)}`);
+      if (item.check_out_time) facts.push(`Check-out ${formatTime(item.check_out_time)}`);
+    }
+    if (item.category === "flight") {
+      if (item.depart_time) facts.push(`Depart ${formatTime(item.depart_time)}`);
+      if (item.arrive_time) facts.push(`Land ${formatTime(item.arrive_time)}`);
+      if (item.return_depart_time) facts.push(`Return ${formatTime(item.return_depart_time)}`);
+      if (item.return_arrive_time) facts.push(`Return land ${formatTime(item.return_arrive_time)}`);
+    }
+    if (item.category === "tickets" && Array.isArray(item.selected_dates) && item.selected_dates.length) {
+      facts.push(
+        item.selected_dates.map((date) => formatMMDDYYYYLocal(date)).filter(Boolean).join(", ")
+      );
+    }
+    if (item.confirmation_code) facts.push(`Confirmation ${item.confirmation_code}`);
+    if (item.notes) facts.push(item.notes);
+    return facts.filter(Boolean);
+  };
   const categoryTotal = (category) =>
     (formData.cost_items || [])
       .filter((item) => item.category === category)
@@ -567,6 +608,8 @@ const TripInstanceDetail = () => {
           item_type: item.item_type || defaultItemType(item.category || "other"),
           group_name: normalizeGroupName(item),
           is_selected: item.is_selected !== false,
+          purchase_status: item.purchase_status || "considering",
+          confirmation_code: item.confirmation_code || "",
           selected_dates: Array.isArray(item.selected_dates) ? item.selected_dates.filter(Boolean) : [],
           ticket_days: Math.max(1, Number(item.ticket_days) || 1),
           quantity: isAutoQuantityBasis(basis)
@@ -677,6 +720,8 @@ const TripInstanceDetail = () => {
             item_type: item.item_type || defaultItemType(category),
             group_name: item.group_name || defaultGroupName(category),
             is_selected: item.is_selected === undefined ? true : Boolean(item.is_selected),
+            purchase_status: item.purchase_status || "considering",
+            confirmation_code: item.confirmation_code || "",
             start_date: toYmdLocal(item.start_date),
             end_date: toYmdLocal(item.end_date),
             check_in_time: item.check_in_time || "",
@@ -1068,6 +1113,8 @@ const TripInstanceDetail = () => {
                     {activeCategoryItems.map(({ item, index }) => {
                       const itemKey = item._id || `${activeCategory}-${index}`;
                       const isExpanded = expandedItemKey === itemKey;
+                      const detailFacts = itemDetailFacts(item);
+                      const purchaseStatus = item.purchase_status || "considering";
 
                       return (
                         <article
@@ -1090,16 +1137,35 @@ const TripInstanceDetail = () => {
                               <span className="mt-1 block truncate text-sm text-slate-500">
                                 {itemSummary(item) || normalizeGroupName(item)}
                               </span>
+                              {detailFacts.length > 0 && (
+                                <span className="mt-2 flex flex-wrap gap-1.5">
+                                  {detailFacts.map((fact) => (
+                                    <span
+                                      key={fact}
+                                      className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
+                                    >
+                                      {fact}
+                                    </span>
+                                  ))}
+                                </span>
+                              )}
                             </span>
                             <span className="flex items-center sm:justify-end">
-                              <span
-                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
-                                  itemCountsInTotal(item)
-                                    ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
-                                    : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
-                                }`}
-                              >
-                                {itemCountsInTotal(item) ? "Included" : "Not included"}
+                              <span className="flex flex-wrap justify-start gap-2 sm:justify-end">
+                                <span
+                                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
+                                    itemCountsInTotal(item)
+                                      ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                                      : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
+                                  }`}
+                                >
+                                  {itemCountsInTotal(item) ? "Included" : "Not included"}
+                                </span>
+                                {purchaseStatus !== "considering" && (
+                                  <span className="inline-flex rounded-full bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-700 ring-1 ring-teal-100">
+                                    {purchaseStatusLabels[purchaseStatus]}
+                                  </span>
+                                )}
                               </span>
                             </span>
                             <span className="flex items-end justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 sm:block sm:bg-transparent sm:px-0 sm:py-0 sm:text-right">
@@ -1171,9 +1237,9 @@ const TripInstanceDetail = () => {
                                       </p>
                                     </div>
                                     <div className="rounded-2xl bg-slate-50 px-3 py-3 text-center">
-                                      <p className="text-xs font-semibold text-slate-500">Estimate</p>
+                                      <p className="text-xs font-semibold text-slate-500">Booking</p>
                                       <p className="mt-1 text-base font-bold text-slate-950">
-                                        {itemCountsInTotal(item) ? "Included" : "Not included"}
+                                        {purchaseStatusLabels[item.purchase_status || "considering"]}
                                       </p>
                                     </div>
                                   </div>
@@ -1472,6 +1538,28 @@ const TripInstanceDetail = () => {
                                       onChange={(value) => updateCostItem(index, "item_type", value)}
                                       options={activeCategoryConfig.itemTypeOptions}
                                     />
+                                  </div>
+
+                                  <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2">
+                                    <AppSelect
+                                      label="Booking status"
+                                      value={item.purchase_status || "considering"}
+                                      onChange={(value) => updateCostItem(index, "purchase_status", value)}
+                                      options={purchaseStatusOptions}
+                                    />
+
+                                    <label className="block">
+                                      <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                        Confirmation code
+                                      </span>
+                                      <input
+                                        type="text"
+                                        value={item.confirmation_code || ""}
+                                        onChange={(e) => updateCostItem(index, "confirmation_code", e.target.value)}
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                        placeholder="Hotel, flight, ticket, or rental code"
+                                      />
+                                    </label>
                                   </div>
 
                                   <label className="block">

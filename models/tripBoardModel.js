@@ -30,6 +30,12 @@ export const TripOptionSchema = new mongoose.Schema(
           item_type: { type: String, default: '' },
           group_name: { type: String, default: '' },
           is_selected: { type: Boolean, default: true },
+          purchase_status: {
+            type: String,
+            enum: ['considering', 'booked', 'purchased'],
+            default: 'considering',
+          },
+          confirmation_code: { type: String, default: '' },
           start_date: { type: Date, default: null },
           end_date: { type: Date, default: null },
           check_in_time: { type: String, default: '' },

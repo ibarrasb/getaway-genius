@@ -921,8 +921,8 @@ const TripOverview = () => {
             </div>
           </div>
 
-          <div className="-mx-4 mb-5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <div className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
+          <div className="-mx-4 mb-5 overflow-x-auto px-4 py-2 sm:mx-0 sm:px-0">
+            <div className="flex w-max gap-3 rounded-2xl bg-white/70 p-2 ring-1 ring-slate-200 sm:w-auto sm:flex-wrap">
             {[
               ["all", "All"],
               ["considering", "Considering"],
@@ -934,7 +934,7 @@ const TripOverview = () => {
                 key={value}
                 type="button"
                 onClick={() => setStatusFilter(value)}
-                className={`rounded-full px-3 py-1.5 text-sm font-semibold ring-1 transition ${
+                className={`rounded-full px-4 py-2 text-sm font-semibold ring-1 transition ${
                   statusFilter === value
                     ? "bg-slate-900 text-white ring-slate-900"
                     : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
