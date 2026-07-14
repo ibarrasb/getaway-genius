@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { GlobalState } from "@/context/GlobalState.jsx";
@@ -17,21 +17,17 @@ const Header = () => {
   const [token] = state?.token ?? [null];
   const isAuthed = Boolean(token) && isLogged;
 
-  const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
-  const hideExact = ["/", "/login", "/register"];
+  const hideExact = ["/", "/login", "/register", "/not-logged-in"];
+  const hideLogoExact = [...hideExact, "/about"];
   const hideStartsWith = ["/search", "/trips", "/profile", "/about", "/wishlist-detail", "/view-all"];
-  const shouldHide =
+  const shouldHideDesktop =
     hideExact.includes(location.pathname) ||
     hideStartsWith.some((p) => location.pathname.startsWith(p));
 
-  useEffect(() => {
-    setOpen(false);
-  }, [location.pathname]);
-
-  if (!isAuthed || shouldHide) return null;
+  if (!isAuthed || hideLogoExact.includes(location.pathname)) return null;
 
   const logoutUser = async () => {
     try {
@@ -46,8 +42,20 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-5">
-      <div className="gg-glass mx-auto max-w-6xl rounded-3xl border border-white/70">
+    <>
+      <div className="px-3 pt-3 sm:hidden">
+        <Link to="/mission" className="inline-flex items-center">
+          <img
+            src="/getaway-genius-logo.png"
+            alt="Getaway Genius"
+            className="h-14 w-auto max-w-[220px] object-contain"
+          />
+        </Link>
+      </div>
+
+      {!shouldHideDesktop && (
+        <header className="sticky top-0 z-50 hidden px-3 pt-3 sm:block sm:px-5">
+          <div className="gg-glass mx-auto max-w-6xl rounded-3xl border border-white/70">
         <div className="flex h-[72px] items-center justify-between gap-3 px-3 py-2 sm:h-[76px] sm:px-5">
           <Link to="/mission" className="group inline-flex h-full items-center gap-3 rounded-2xl px-2">
             <img
@@ -91,58 +99,11 @@ const Header = () => {
               Logout
             </button>
           </div>
-
-          <button
-            className="sm:hidden rounded-xl border border-slate-200 bg-white p-2 text-slate-700"
-            onClick={() => setOpen((v) => !v)}
-            aria-label="Toggle menu"
-            aria-expanded={open}
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
-            </svg>
-          </button>
         </div>
-
-        {open && (
-          <div className="border-t border-slate-200/70 px-3 pb-3 pt-2 sm:hidden">
-            <div className="grid gap-2">
-              {NAV.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === "/mission"}
-                  className={({ isActive }) =>
-                    [
-                      "rounded-xl px-4 py-2 text-sm font-semibold transition",
-                      isActive
-                        ? "bg-slate-900 text-white"
-                        : "bg-white text-slate-700 hover:bg-slate-100",
-                    ].join(" ")
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Link
-                to={`/profile/${userID}`}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-center text-sm font-medium text-slate-700"
-              >
-                Profile
-              </Link>
-              <button
-                onClick={logoutUser}
-                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700"
-              >
-                Logout
-              </button>
-            </div>
           </div>
-        )}
-      </div>
-    </header>
+        </header>
+      )}
+    </>
   );
 };
 
