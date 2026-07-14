@@ -5,7 +5,7 @@ import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   Calendar as CalendarIcon,
-  Clock3,
+  CircleDollarSign,
   Plus,
   Trash2,
   ExternalLink,
@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Pencil,
   X,
+  FileText,
 } from "lucide-react";
 import BackButton from "@/components/BackButton";
 import { TripOptionSkeleton } from "@/components/skeletons/AppSkeletons.jsx";
@@ -569,28 +570,29 @@ const TripInstanceDetail = () => {
       .filter(Boolean)
       .join(" · ");
   };
-  const itemDetailFacts = (item) => {
-    const facts = [];
+  const itemDetailRows = (item) => {
+    const rows = [];
     const range = fmtRangeShort(item.start_date, item.end_date);
-    if (range) facts.push(range);
+    if (range) rows.push({ label: "Dates", value: range });
     if (item.category === "lodging") {
-      if (item.check_in_time) facts.push(`Check-in ${formatTime(item.check_in_time)}`);
-      if (item.check_out_time) facts.push(`Check-out ${formatTime(item.check_out_time)}`);
+      if (item.check_in_time) rows.push({ label: "Check-in", value: formatTime(item.check_in_time) });
+      if (item.check_out_time) rows.push({ label: "Check-out", value: formatTime(item.check_out_time) });
     }
     if (item.category === "flight") {
-      if (item.depart_time) facts.push(`Depart ${formatTime(item.depart_time)}`);
-      if (item.arrive_time) facts.push(`Land ${formatTime(item.arrive_time)}`);
-      if (item.return_depart_time) facts.push(`Return ${formatTime(item.return_depart_time)}`);
-      if (item.return_arrive_time) facts.push(`Return land ${formatTime(item.return_arrive_time)}`);
+      if (item.depart_time) rows.push({ label: "Depart", value: formatTime(item.depart_time) });
+      if (item.arrive_time) rows.push({ label: "Land", value: formatTime(item.arrive_time) });
+      if (item.return_depart_time) rows.push({ label: "Return", value: formatTime(item.return_depart_time) });
+      if (item.return_arrive_time) rows.push({ label: "Return land", value: formatTime(item.return_arrive_time) });
     }
     if (item.category === "tickets" && Array.isArray(item.selected_dates) && item.selected_dates.length) {
-      facts.push(
-        item.selected_dates.map((date) => formatMMDDYYYYLocal(date)).filter(Boolean).join(", ")
-      );
+      rows.push({
+        label: "Visit days",
+        value: item.selected_dates.map((date) => formatMMDDYYYYLocal(date)).filter(Boolean).join(", "),
+      });
     }
-    if (item.confirmation_code) facts.push(`Confirmation ${item.confirmation_code}`);
-    if (item.notes) facts.push(item.notes);
-    return facts.filter(Boolean);
+    if (item.confirmation_code) rows.push({ label: "Confirmation", value: item.confirmation_code });
+    if (item.notes) rows.push({ label: "Notes", value: item.notes });
+    return rows.filter((row) => row.value);
   };
   const categoryTotal = (category) =>
     (formData.cost_items || [])
@@ -873,41 +875,52 @@ const TripInstanceDetail = () => {
         </div>
 
         <div className="overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/85 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur sm:rounded-[2rem]">
-          <div className="relative min-h-[18rem] overflow-hidden bg-slate-900 sm:min-h-[22rem]">
-            <img
-              src={instance.image_url || trip.image_url || "/getaway-genius-logo.png"}
-              alt={formData.destination || trip.location_address}
-              className="absolute inset-0 h-full w-full object-cover opacity-80"
-              onError={(event) => {
-                event.currentTarget.src = "/getaway-genius-logo.png";
-                event.currentTarget.classList.remove("object-cover");
-                event.currentTarget.classList.add("object-contain", "p-8");
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-slate-950/15" />
-
-            <div className="relative z-10 flex min-h-[18rem] flex-col justify-between p-4 sm:min-h-[22rem] sm:p-7 lg:p-8">
-              <div className="flex items-center justify-between gap-3">
-                <span className="inline-flex items-center rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-teal-800 shadow-sm">
-                  Trip option
-                </span>
-                <button
-                  onClick={handleDeleteInstance}
-                  disabled={deleteLoading}
-                  className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white backdrop-blur transition hover:bg-rose-500/85 disabled:opacity-50"
-                  title="Delete option"
-                  type="button"
-                  aria-label="Delete option"
-                >
-                  {deleteLoading ? (
-                    <span className="block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </button>
+          <section className="relative grid gap-4 border-b border-slate-200 bg-white/90 p-4 pr-16 sm:p-5 sm:pr-16 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center">
+            <div className="flex min-w-0 gap-4">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200 sm:h-24 sm:w-24">
+                <img
+                  src={instance.image_url || trip.image_url || "/getaway-genius-logo.png"}
+                  alt={formData.destination || trip.location_address}
+                  className="h-full w-full object-cover"
+                  onError={(event) => {
+                    event.currentTarget.src = "/getaway-genius-logo.png";
+                    event.currentTarget.classList.remove("object-cover");
+                    event.currentTarget.classList.add("object-contain", "p-3");
+                  }}
+                />
               </div>
 
-              <div className="max-w-3xl text-white">
+              <div className="min-w-0 flex-1">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  {editingHeaderField === "status" ? (
+                    <AppSelect
+                      value={formData.status}
+                      onChange={(value) => {
+                        updateOptionField("status", value);
+                        setEditingHeaderField(null);
+                      }}
+                      options={statusOptions}
+                      className="w-44"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setEditingHeaderField("status")}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800 ring-1 ring-teal-100"
+                      title="Edit status"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {statusLabels[formData.status] || "Considering"}
+                    </button>
+                  )}
+                  {destinationLabel && (
+                    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                      <MapPin className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{destinationLabel}</span>
+                    </span>
+                  )}
+                </div>
+
                 {editingHeaderField === "option_title" ? (
                   <input
                     type="text"
@@ -918,109 +931,85 @@ const TripInstanceDetail = () => {
                       if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
                     }}
                     autoFocus
-                    className="w-full rounded-2xl border border-white/50 bg-white/95 px-4 py-3 text-2xl font-extrabold leading-tight text-slate-950 shadow-sm outline-none sm:text-5xl"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xl font-extrabold leading-tight text-slate-950 shadow-sm outline-none sm:text-2xl"
                     placeholder="Option name"
                   />
                 ) : (
-                  <div className="flex max-w-full items-start gap-2">
+                  <div className="flex min-w-0 items-start gap-2">
                     <button
                       type="button"
                       className="block min-w-0 cursor-text text-left"
                       onClick={() => setEditingHeaderField("option_title")}
                       title="Edit option name"
                     >
-                    <h1 className="gg-hero-title text-3xl font-extrabold sm:text-5xl lg:text-6xl">
-                      {formData.option_title || destinationLabel || "Untitled option"}
-                    </h1>
+                      <h1 className="line-clamp-2 text-2xl font-extrabold leading-tight text-slate-950 sm:text-3xl">
+                        {formData.option_title || destinationLabel || "Untitled option"}
+                      </h1>
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingHeaderField("option_title")}
-                      className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/15 text-white ring-1 ring-white/20 backdrop-blur hover:bg-white/25"
+                      className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-200"
                       aria-label="Edit option name"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
                   </div>
                 )}
-
-                <div className="mt-5 flex flex-wrap items-center gap-3">
-                  {editingHeaderField === "status" ? (
-                    <AppSelect
-                      value={formData.status}
-                      onChange={(value) => {
-                        updateOptionField("status", value);
-                        setEditingHeaderField(null);
-                      }}
-                      options={statusOptions}
-                      className="w-48"
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setEditingHeaderField("status")}
-                      className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-sm font-bold text-slate-900 shadow-sm"
-                      title="Edit status"
-                    >
-                      <CheckCircle2 className="h-4 w-4 text-teal-700" />
-                      {statusLabels[formData.status] || "Considering"}
-                    </button>
-                  )}
-                  {destinationLabel && (
-                    <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-black/35 px-3 py-1.5 text-sm font-semibold text-white ring-1 ring-white/15 backdrop-blur">
-                      <MapPin className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{destinationLabel}</span>
-                    </span>
-                  )}
-                </div>
+                <p className="mt-2 truncate text-sm text-slate-500">
+                  {trip.board_title || trip.location_address || "Planning board"}
+                </p>
               </div>
             </div>
-          </div>
+
+            <div className="grid grid-cols-3 gap-2 rounded-2xl bg-slate-50 p-2 ring-1 ring-slate-200">
+              <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-slate-100">
+                <CircleDollarSign className="mb-1 h-4 w-4 text-teal-700" />
+                <p className="text-[10px] font-bold uppercase text-slate-400">Total</p>
+                <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">{formatCurrency0(total)}</p>
+              </div>
+              <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-slate-100">
+                <CalendarIcon className="mb-1 h-4 w-4 text-blue-700" />
+                <p className="text-[10px] font-bold uppercase text-slate-400">Dates</p>
+                <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">
+                  {fmtRangeShort(formData.trip_start, formData.trip_end) || "Not set"}
+                </p>
+                <p className="truncate text-[11px] font-semibold text-slate-500">
+                  {nights !== null ? `${nights} ${nights === 1 ? "night" : "nights"}` : "Duration unknown"}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-slate-100">
+                <FileText className="mb-1 h-4 w-4 text-rose-700" />
+                <p className="text-[10px] font-bold uppercase text-slate-400">Estimate</p>
+                <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">
+                  {selectedItemCount}/{totalItemCount || 0}
+                </p>
+                <p className="truncate text-[11px] font-semibold text-slate-500">items included</p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleDeleteInstance}
+              disabled={deleteLoading}
+              className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full bg-white text-slate-500 ring-1 ring-slate-200 transition hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+              title="Delete option"
+              type="button"
+              aria-label="Delete option"
+            >
+              {deleteLoading ? (
+                <span className="block h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+            </button>
+          </section>
 
           <form
             id="trip-option-detail-form"
             onSubmit={handleSubmit}
-            className="p-4 sm:p-7 lg:p-8"
+            className="p-4 sm:p-6 lg:p-7"
           >
-            <section className="-mt-10 grid gap-3 sm:-mt-16 sm:gap-4 lg:grid-cols-[1fr_1fr_1fr]">
-              <div className="relative rounded-2xl border border-white/80 bg-white p-5 shadow-xl shadow-slate-900/10">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-700 ring-1 ring-teal-100">
-                  <ReceiptText className="h-5 w-5" />
-                </div>
-                <p className="text-sm font-semibold text-slate-500">Estimated total</p>
-                <p className="mt-1 text-2xl font-extrabold text-slate-950 sm:text-3xl">{formatCurrency0(total)}</p>
-                <p className="mt-2 text-sm text-slate-500">
-                  {selectedItemCount} of {totalItemCount} saved item{totalItemCount === 1 ? "" : "s"} count in the plan.
-                </p>
-              </div>
-
-              <div className="relative rounded-2xl border border-white/80 bg-white p-5 shadow-xl shadow-slate-900/10">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
-                  <CalendarIcon className="h-5 w-5" />
-                </div>
-                <p className="text-sm font-semibold text-slate-500">Trip dates</p>
-                <p className="mt-1 text-lg font-bold text-slate-950 sm:text-xl">
-                  {formatMMDDYYYYLocal(formData.trip_start)} - {formatMMDDYYYYLocal(formData.trip_end)}
-                </p>
-                <p className="mt-2 inline-flex items-center gap-2 text-sm text-slate-500">
-                  <Clock3 className="h-4 w-4" />
-                  {nights !== null ? `${nights} ${nights === 1 ? "night" : "nights"}` : "Duration unknown"}
-                </p>
-              </div>
-
-              <div className="relative rounded-2xl border border-white/80 bg-white p-5 shadow-xl shadow-slate-900/10">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-700 ring-1 ring-rose-100">
-                  <MapPin className="h-5 w-5" />
-                </div>
-                <p className="text-sm font-semibold text-slate-500">Board</p>
-                <p className="mt-1 line-clamp-2 text-xl font-bold text-slate-950">
-                  {trip.board_title || trip.location_address || "Planning board"}
-                </p>
-                <p className="mt-2 text-sm text-slate-500">{formData.destination || "Destination details not set"}</p>
-              </div>
-            </section>
-
-            <section className="mt-6 sm:mt-8">
+            <section>
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
@@ -1113,7 +1102,7 @@ const TripInstanceDetail = () => {
                     {activeCategoryItems.map(({ item, index }) => {
                       const itemKey = item._id || `${activeCategory}-${index}`;
                       const isExpanded = expandedItemKey === itemKey;
-                      const detailFacts = itemDetailFacts(item);
+                      const detailRows = itemDetailRows(item);
                       const purchaseStatus = item.purchase_status || "considering";
 
                       return (
@@ -1128,44 +1117,61 @@ const TripInstanceDetail = () => {
                           <button
                             type="button"
                             onClick={() => setExpandedItemKey(isExpanded ? null : itemKey)}
-                            className="grid w-full gap-3 p-4 text-left sm:grid-cols-[minmax(0,1fr)_120px_120px_auto]"
+                            className="grid w-full gap-4 p-4 text-left sm:grid-cols-[minmax(0,1fr)_170px_110px_auto]"
                           >
                             <span className="min-w-0">
-                              <span className="block truncate text-base font-bold text-slate-950">
-                                {item.name || `New ${activeCategoryConfig.singular}`}
+                              <span className="flex flex-wrap items-center gap-2">
+                                <span className="min-w-0 truncate text-base font-bold text-slate-950">
+                                  {item.name || `New ${activeCategoryConfig.singular}`}
+                                </span>
+                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">
+                                  {normalizeGroupName(item)}
+                                </span>
                               </span>
                               <span className="mt-1 block truncate text-sm text-slate-500">
-                                {itemSummary(item) || normalizeGroupName(item)}
+                                {itemSummary(item)}
                               </span>
-                              {detailFacts.length > 0 && (
-                                <span className="mt-2 flex flex-wrap gap-1.5">
-                                  {detailFacts.map((fact) => (
-                                    <span
-                                      key={fact}
-                                      className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
-                                    >
-                                      {fact}
+                              {detailRows.length > 0 && (
+                                <span className="mt-3 grid gap-2 sm:grid-cols-2">
+                                  {detailRows.map((row) => (
+                                    <span key={`${row.label}-${row.value}`} className="min-w-0 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                      <span className="block text-[10px] font-bold uppercase text-slate-400">
+                                        {row.label}
+                                      </span>
+                                      <span className="mt-0.5 block truncate text-xs font-semibold text-slate-700">
+                                        {row.value}
+                                      </span>
                                     </span>
                                   ))}
                                 </span>
                               )}
                             </span>
-                            <span className="flex items-center sm:justify-end">
-                              <span className="flex flex-wrap justify-start gap-2 sm:justify-end">
-                                <span
-                                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
-                                    itemCountsInTotal(item)
-                                      ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
-                                      : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
-                                  }`}
-                                >
+                            <span className="grid gap-2 sm:self-start">
+                              <span
+                                className={`rounded-xl px-3 py-2 ring-1 ${
+                                  itemCountsInTotal(item)
+                                    ? "bg-emerald-50 text-emerald-800 ring-emerald-100"
+                                    : "bg-slate-50 text-slate-600 ring-slate-200"
+                                }`}
+                              >
+                                <span className="block text-[10px] font-bold uppercase">
+                                  Estimate
+                                </span>
+                                <span className="mt-0.5 block text-xs font-bold">
                                   {itemCountsInTotal(item) ? "Included" : "Not included"}
                                 </span>
-                                {purchaseStatus !== "considering" && (
-                                  <span className="inline-flex rounded-full bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-700 ring-1 ring-teal-100">
-                                    {purchaseStatusLabels[purchaseStatus]}
-                                  </span>
-                                )}
+                              </span>
+                              <span
+                                className={`rounded-xl px-3 py-2 ring-1 ${
+                                  purchaseStatus === "considering"
+                                    ? "bg-white text-slate-600 ring-slate-200"
+                                    : "bg-teal-50 text-teal-800 ring-teal-100"
+                                }`}
+                              >
+                                <span className="block text-[10px] font-bold uppercase">Booking</span>
+                                <span className="mt-0.5 block text-xs font-bold">
+                                  {purchaseStatusLabels[purchaseStatus]}
+                                </span>
                               </span>
                             </span>
                             <span className="flex items-end justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 sm:block sm:bg-transparent sm:px-0 sm:py-0 sm:text-right">

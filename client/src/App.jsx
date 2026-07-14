@@ -4,6 +4,7 @@ import { ToastProvider } from './context/ToastContext.jsx'
 import { ConfirmProvider } from './context/ConfirmContext.jsx'
 import { ToastContainer } from './components/ui/Toast.jsx'
 import Header from './layout/Header'
+import MobileTabBar from './layout/MobileTabBar'
 import Footer from './layout/Footer'
 import MainPages from './pages/MainPages'
 import ScrollToTop from './components/routing/ScrollToTop'
@@ -21,6 +22,7 @@ const App = () => {
                 <MainPages />
               </main>
               <Footer />
+              <MobileTabBar />
               <ToastContainer />
             </div>
           </Router>
