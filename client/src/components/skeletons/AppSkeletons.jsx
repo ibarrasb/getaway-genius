@@ -81,7 +81,7 @@ export const ProfileSkeleton = () => (
 )
 
 export const TripBoardSkeleton = () => (
-  <div className="min-h-screen px-3 pb-12 pt-4 sm:px-5">
+  <div className="min-h-screen px-3 pb-4 pt-4 sm:px-5 sm:pb-12">
     <div className="mx-auto max-w-6xl space-y-6">
       <SkeletonBlock className="h-10 w-40" />
       <section className="gg-glass rounded-3xl border border-white/70 p-6">

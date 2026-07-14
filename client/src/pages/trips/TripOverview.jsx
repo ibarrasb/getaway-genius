@@ -731,7 +731,7 @@ const TripOverview = () => {
   }
 
   return (
-    <div className="min-h-screen px-3 pb-12 pt-4 sm:px-5">
+    <div className="min-h-screen px-3 pb-4 pt-4 sm:px-5 sm:pb-12">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6">
           <Link

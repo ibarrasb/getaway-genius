@@ -15,8 +15,6 @@ import {
   Ticket,
   Utensils,
   Package,
-  MapPin,
-  ReceiptText,
   CheckCircle2,
   Pencil,
   X,
@@ -875,23 +873,22 @@ const TripInstanceDetail = () => {
         </div>
 
         <div className="overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/85 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur sm:rounded-[2rem]">
-          <section className="relative grid gap-4 border-b border-slate-200 bg-white/90 p-4 pr-16 sm:p-5 sm:pr-16 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center">
-            <div className="flex min-w-0 gap-4">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200 sm:h-24 sm:w-24">
-                <img
-                  src={instance.image_url || trip.image_url || "/getaway-genius-logo.png"}
-                  alt={formData.destination || trip.location_address}
-                  className="h-full w-full object-cover"
-                  onError={(event) => {
-                    event.currentTarget.src = "/getaway-genius-logo.png";
-                    event.currentTarget.classList.remove("object-cover");
-                    event.currentTarget.classList.add("object-contain", "p-3");
-                  }}
-                />
-              </div>
+          <section className="relative overflow-hidden border-b border-slate-800 bg-slate-950">
+            <img
+              src={instance.image_url || trip.image_url || "/getaway-genius-logo.png"}
+              alt=""
+              className="absolute inset-y-0 right-0 hidden h-full w-1/2 object-cover opacity-35 lg:block"
+              onError={(event) => {
+                event.currentTarget.src = "/getaway-genius-logo.png";
+                event.currentTarget.classList.remove("object-cover");
+                event.currentTarget.classList.add("object-contain", "p-8");
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/95 to-slate-950/70" />
 
-              <div className="min-w-0 flex-1">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
+            <div className="relative grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_28rem] lg:items-end lg:p-7">
+              <div className="min-w-0 pr-12">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
                   {editingHeaderField === "status" ? (
                     <AppSelect
                       value={formData.status}
@@ -906,19 +903,16 @@ const TripInstanceDetail = () => {
                     <button
                       type="button"
                       onClick={() => setEditingHeaderField("status")}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800 ring-1 ring-teal-100"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm"
                       title="Edit status"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-teal-700" />
                       {statusLabels[formData.status] || "Considering"}
                     </button>
                   )}
-                  {destinationLabel && (
-                    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                      <MapPin className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">{destinationLabel}</span>
-                    </span>
-                  )}
+                  <span className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-bold uppercase text-white/70">
+                    Trip option
+                  </span>
                 </div>
 
                 {editingHeaderField === "option_title" ? (
@@ -931,7 +925,7 @@ const TripInstanceDetail = () => {
                       if (e.key === "Enter" || e.key === "Escape") e.currentTarget.blur();
                     }}
                     autoFocus
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xl font-extrabold leading-tight text-slate-950 shadow-sm outline-none sm:text-2xl"
+                    className="w-full rounded-xl border border-white/30 bg-white px-3 py-2 text-2xl font-extrabold leading-tight text-slate-950 shadow-sm outline-none sm:text-3xl"
                     placeholder="Option name"
                   />
                 ) : (
@@ -942,56 +936,53 @@ const TripInstanceDetail = () => {
                       onClick={() => setEditingHeaderField("option_title")}
                       title="Edit option name"
                     >
-                      <h1 className="line-clamp-2 text-2xl font-extrabold leading-tight text-slate-950 sm:text-3xl">
+                      <h1 className="line-clamp-2 text-3xl font-extrabold leading-[1.05] text-white sm:text-4xl lg:text-5xl">
                         {formData.option_title || destinationLabel || "Untitled option"}
                       </h1>
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingHeaderField("option_title")}
-                      className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-200"
+                      className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/20 hover:bg-white/20"
                       aria-label="Edit option name"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
                   </div>
                 )}
-                <p className="mt-2 truncate text-sm text-slate-500">
-                  {trip.board_title || trip.location_address || "Planning board"}
-                </p>
               </div>
-            </div>
 
-            <div className="grid grid-cols-3 gap-2 rounded-2xl bg-slate-50 p-2 ring-1 ring-slate-200">
-              <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-slate-100">
-                <CircleDollarSign className="mb-1 h-4 w-4 text-teal-700" />
-                <p className="text-[10px] font-bold uppercase text-slate-400">Total</p>
-                <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">{formatCurrency0(total)}</p>
-              </div>
-              <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-slate-100">
-                <CalendarIcon className="mb-1 h-4 w-4 text-blue-700" />
-                <p className="text-[10px] font-bold uppercase text-slate-400">Dates</p>
-                <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">
-                  {fmtRangeShort(formData.trip_start, formData.trip_end) || "Not set"}
-                </p>
-                <p className="truncate text-[11px] font-semibold text-slate-500">
-                  {nights !== null ? `${nights} ${nights === 1 ? "night" : "nights"}` : "Duration unknown"}
-                </p>
-              </div>
-              <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-slate-100">
-                <FileText className="mb-1 h-4 w-4 text-rose-700" />
-                <p className="text-[10px] font-bold uppercase text-slate-400">Estimate</p>
-                <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">
-                  {selectedItemCount}/{totalItemCount || 0}
-                </p>
-                <p className="truncate text-[11px] font-semibold text-slate-500">items included</p>
+              <div className="grid grid-cols-3 gap-2 rounded-2xl bg-white/10 p-2 ring-1 ring-white/15 backdrop-blur">
+                <div className="rounded-xl bg-white px-3 py-2 shadow-sm">
+                  <CircleDollarSign className="mb-1 h-4 w-4 text-teal-700" />
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Total</p>
+                  <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">{formatCurrency0(total)}</p>
+                </div>
+                <div className="rounded-xl bg-white px-3 py-2 shadow-sm">
+                  <CalendarIcon className="mb-1 h-4 w-4 text-blue-700" />
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Dates</p>
+                  <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">
+                    {fmtRangeShort(formData.trip_start, formData.trip_end) || "Not set"}
+                  </p>
+                  <p className="truncate text-[11px] font-semibold text-slate-500">
+                    {nights !== null ? `${nights} ${nights === 1 ? "night" : "nights"}` : "Duration unknown"}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-white px-3 py-2 shadow-sm">
+                  <FileText className="mb-1 h-4 w-4 text-rose-700" />
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Estimate</p>
+                  <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">
+                    {selectedItemCount}/{totalItemCount || 0}
+                  </p>
+                  <p className="truncate text-[11px] font-semibold text-slate-500">items included</p>
+                </div>
               </div>
             </div>
 
             <button
               onClick={handleDeleteInstance}
               disabled={deleteLoading}
-              className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full bg-white text-slate-500 ring-1 ring-slate-200 transition hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+              className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/20 transition hover:bg-rose-500 hover:text-white disabled:opacity-50 sm:right-5 sm:top-5"
               title="Delete option"
               type="button"
               aria-label="Delete option"
