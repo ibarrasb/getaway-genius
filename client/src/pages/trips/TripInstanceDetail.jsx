@@ -616,15 +616,37 @@ const TripInstanceDetail = () => {
     (formData.cost_items || [])
       .filter((item) => item.category === category && itemCountsInTotal(item))
       .reduce((sum, item) => sum + itemSavings(item), 0);
-  const categoryValueSummary = (category) => {
+  const categoryValueParts = (category) => {
     const cash = categoryTotal(category);
     const points = categoryPointsTotal(category);
     const saved = categorySavingsTotal(category);
     const parts = [];
-    if (cash > 0 || (!points && !saved)) parts.push(formatCurrency0(cash));
-    if (points > 0) parts.push(`${formatPoints(points)} pts`);
-    if (saved > 0) parts.push(`${formatCurrency0(saved)} saved`);
-    return parts.join(" · ");
+    if (cash > 0 || (!points && !saved)) parts.push({ type: "cash", label: formatCurrency0(cash) });
+    if (points > 0) parts.push({ type: "points", label: `${formatPoints(points)} pts` });
+    if (saved > 0) parts.push({ type: "saved", label: `${formatCurrency0(saved)} saved` });
+    return parts;
+  };
+  const valuePillClass = (type, compact) => {
+    const size = compact ? "px-2 py-1 text-[10px]" : "px-2.5 py-1.5 text-xs";
+    const tone =
+      type === "points"
+        ? "bg-blue-50 text-blue-700 ring-blue-100"
+        : type === "saved"
+        ? "bg-amber-50 text-amber-700 ring-amber-100"
+        : "bg-emerald-50 text-emerald-700 ring-emerald-100";
+    return `inline-flex items-center rounded-full font-extrabold ring-1 ${size} ${tone}`;
+  };
+  const renderCategoryValuePills = (category, { compact = false, align = "start" } = {}) => {
+    const justify = align === "end" ? "justify-start sm:justify-end" : "justify-start";
+    return (
+      <span className={`mt-1 flex flex-wrap gap-1.5 ${justify}`}>
+        {categoryValueParts(category).map((part) => (
+          <span key={`${category}-${part.type}`} className={valuePillClass(part.type, compact)}>
+            {part.label}
+          </span>
+        ))}
+      </span>
+    );
   };
 
   const buildSavePayload = useCallback(
@@ -986,13 +1008,13 @@ const TripInstanceDetail = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-2 rounded-2xl bg-white/10 p-2 ring-1 ring-white/15 backdrop-blur">
+              <div className="grid grid-cols-1 gap-2 rounded-2xl bg-white/10 p-2 ring-1 ring-white/15 backdrop-blur sm:grid-cols-3">
                 <div className="rounded-xl bg-white px-3 py-2 shadow-sm">
                   <CircleDollarSign className="mb-1 h-4 w-4 text-teal-700" />
                   <p className="text-[10px] font-bold uppercase text-slate-400">Total</p>
-                  <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">{formatCurrency0(total)}</p>
+                  <p className="text-sm font-extrabold text-slate-950 sm:text-base">{formatCurrency0(total)}</p>
                   {(pointsTotal > 0 || savingsTotal > 0) && (
-                    <p className="truncate text-[11px] font-semibold text-blue-700">
+                    <p className="text-[11px] font-semibold leading-4 text-blue-700">
                       {pointsTotal > 0 ? `${formatPoints(pointsTotal)} pts` : ""}
                       {pointsTotal > 0 && savingsTotal > 0 ? " · " : ""}
                       {savingsTotal > 0 ? `${formatCurrency0(savingsTotal)} saved` : ""}
@@ -1002,20 +1024,20 @@ const TripInstanceDetail = () => {
                 <div className="rounded-xl bg-white px-3 py-2 shadow-sm">
                   <CalendarIcon className="mb-1 h-4 w-4 text-blue-700" />
                   <p className="text-[10px] font-bold uppercase text-slate-400">Dates</p>
-                  <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">
+                  <p className="text-sm font-extrabold text-slate-950 sm:text-base">
                     {fmtRangeShort(formData.trip_start, formData.trip_end) || "Not set"}
                   </p>
-                  <p className="truncate text-[11px] font-semibold text-slate-500">
+                  <p className="text-[11px] font-semibold text-slate-500">
                     {nights !== null ? `${nights} ${nights === 1 ? "night" : "nights"}` : "Duration unknown"}
                   </p>
                 </div>
                 <div className="rounded-xl bg-white px-3 py-2 shadow-sm">
                   <FileText className="mb-1 h-4 w-4 text-rose-700" />
                   <p className="text-[10px] font-bold uppercase text-slate-400">Estimate</p>
-                  <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">
+                  <p className="text-sm font-extrabold text-slate-950 sm:text-base">
                     {selectedItemCount}/{totalItemCount || 0}
                   </p>
-                  <p className="truncate text-[11px] font-semibold text-slate-500">items included</p>
+                  <p className="text-[11px] font-semibold text-slate-500">items included</p>
                 </div>
               </div>
             </div>
@@ -1073,8 +1095,8 @@ const TripInstanceDetail = () => {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-[17rem_1fr]">
-                <nav className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0" aria-label="Cost categories">
-                  <div className="flex w-max gap-1 border-b border-slate-200 lg:block lg:w-auto lg:border-b-0 lg:border-r lg:pr-3">
+                <nav className="-mx-4 overflow-x-auto px-4 pb-1 lg:mx-0 lg:overflow-visible lg:px-0 lg:pb-0" aria-label="Cost categories">
+                  <div className="flex w-max snap-x snap-mandatory gap-1 border-b border-slate-200 lg:block lg:w-auto lg:border-b-0 lg:border-r lg:pr-3">
                   {itemCategories.map((category) => {
                     const config = configFor(category.value);
                     const Icon = config.icon;
@@ -1088,7 +1110,7 @@ const TripInstanceDetail = () => {
                         key={category.value}
                         type="button"
                         onClick={() => setActiveCategory(category.value)}
-                        className={`flex min-w-[10.5rem] items-center gap-2 border-b-2 px-3 py-3 text-left transition lg:mb-1 lg:w-full lg:min-w-0 lg:gap-3 lg:border-b-0 lg:border-l-2 lg:last:mb-0 ${
+                        className={`flex min-w-[12rem] snap-start items-start gap-2 border-b-2 px-3 py-3 text-left transition lg:mb-1 lg:w-full lg:min-w-0 lg:gap-3 lg:border-b-0 lg:border-l-2 lg:last:mb-0 ${
                           isActive
                             ? "border-teal-600 bg-teal-50 text-slate-950 lg:bg-slate-50"
                             : "border-transparent text-slate-700 hover:bg-slate-50"
@@ -1104,8 +1126,9 @@ const TripInstanceDetail = () => {
                         <span className="min-w-0 flex-1">
                           <span className="block text-sm font-semibold lg:text-base">{config.label}</span>
                           <span className="block text-xs text-slate-500">
-                            {categoryItems.length} item{categoryItems.length === 1 ? "" : "s"} · {categoryValueSummary(category.value)}
+                            {categoryItems.length} item{categoryItems.length === 1 ? "" : "s"}
                           </span>
+                          {renderCategoryValuePills(category.value, { compact: true })}
                         </span>
                       </button>
                     );
@@ -1124,9 +1147,9 @@ const TripInstanceDetail = () => {
                         <p className="mt-1 text-sm text-slate-500">{activeCategoryConfig.description}</p>
                       </div>
                     </div>
-                    <div className="text-left sm:text-right">
+                    <div className="min-w-0 text-left sm:text-right">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Category total</p>
-                      <p className="text-xl font-extrabold text-slate-950 sm:text-2xl">{categoryValueSummary(activeCategory)}</p>
+                      {renderCategoryValuePills(activeCategory, { align: "end" })}
                     </div>
                   </div>
 
@@ -1153,14 +1176,14 @@ const TripInstanceDetail = () => {
                           >
                             <span className="min-w-0">
                               <span className="flex flex-wrap items-center gap-2">
-                                <span className="min-w-0 truncate text-base font-bold text-slate-950">
+                                <span className="min-w-0 break-words text-base font-bold text-slate-950">
                                   {item.name || `New ${activeCategoryConfig.singular}`}
                                 </span>
                                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">
                                   {normalizeGroupName(item)}
                                 </span>
                               </span>
-                              <span className="mt-1 block truncate text-sm text-slate-500">
+                              <span className="mt-1 block break-words text-sm text-slate-500">
                                 {itemSummary(item)}
                               </span>
                               {detailRows.length > 0 && (
@@ -1170,7 +1193,7 @@ const TripInstanceDetail = () => {
                                       <span className="block text-[10px] font-bold uppercase text-slate-400">
                                         {row.label}
                                       </span>
-                                      <span className="mt-0.5 block truncate text-xs font-semibold text-slate-700">
+                                      <span className="mt-0.5 block break-words text-xs font-semibold text-slate-700">
                                         {row.value}
                                       </span>
                                     </span>
@@ -1206,7 +1229,7 @@ const TripInstanceDetail = () => {
                                 </span>
                               </span>
                             </span>
-                            <span className="flex items-end justify-between gap-3 border-l border-slate-200 pl-3 sm:block sm:text-right">
+                            <span className="flex items-end justify-between gap-3 border-t border-slate-200 pt-3 sm:block sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0 sm:text-right">
                               <span className="block text-[11px] font-bold uppercase tracking-wide text-slate-400">
                                 Total
                               </span>
@@ -1216,6 +1239,11 @@ const TripInstanceDetail = () => {
                               {Number(item.points) > 0 && (
                                 <span className="mt-0.5 block text-xs font-bold text-blue-700">
                                   + {formatPoints(item.points)} pts
+                                </span>
+                              )}
+                              {Number(item.points_cash_value) > 0 && (
+                                <span className="mt-0.5 block text-xs font-bold text-amber-700">
+                                  {formatCurrency0(item.points_cash_value)} saved
                                 </span>
                               )}
                             </span>
