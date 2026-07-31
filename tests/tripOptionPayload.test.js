@@ -20,6 +20,8 @@ test('sanitizeCostItems normalizes category item payloads', () => {
       name: 'Rental',
       url: 'https://example.com',
       price: '155.50',
+      points: '40000',
+      points_cash_value: '720.25',
       quantity: '0',
       price_basis: 'per_day',
       item_type: 'rental',
@@ -45,6 +47,8 @@ test('sanitizeCostItems normalizes category item payloads', () => {
   assert.equal(item._id, itemId.toString());
   assert.equal(item.category, 'car');
   assert.equal(item.price, 155.5);
+  assert.equal(item.points, 40000);
+  assert.equal(item.points_cash_value, 720.25);
   assert.equal(item.quantity, 1);
   assert.equal(item.is_selected, false);
   assert.equal(item.purchase_status, 'booked');

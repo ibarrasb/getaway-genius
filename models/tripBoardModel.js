@@ -25,6 +25,8 @@ export const TripOptionSchema = new mongoose.Schema(
           name: { type: String, default: '' },
           url: { type: String, default: '' },
           price: { type: Number, default: 0 },
+          points: { type: Number, default: 0 },
+          points_cash_value: { type: Number, default: 0 },
           quantity: { type: Number, default: 1 },
           price_basis: { type: String, default: '' },
           item_type: { type: String, default: '' },

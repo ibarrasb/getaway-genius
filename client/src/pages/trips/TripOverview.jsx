@@ -73,7 +73,16 @@ const TripOverview = () => {
     car_expense: 0,
     other_expense: 0,
     cost_items: [
-      { category: "lodging", name: "", url: "", price: "", quantity: 1, notes: "" },
+      {
+        category: "lodging",
+        name: "",
+        url: "",
+        price: "",
+        points: "",
+        points_cash_value: "",
+        quantity: 1,
+        notes: "",
+      },
     ],
     notes: "",
   });
@@ -115,7 +124,18 @@ const TripOverview = () => {
     car_expense: 0,
     other_expense: 0,
     cost_items: [
-      { category: "lodging", name: "", url: "", price: "", quantity: 1, start_date: "", end_date: "", notes: "" },
+      {
+        category: "lodging",
+        name: "",
+        url: "",
+        price: "",
+        points: "",
+        points_cash_value: "",
+        quantity: 1,
+        start_date: "",
+        end_date: "",
+        notes: "",
+      },
     ],
     notes: "",
   });
@@ -606,7 +626,12 @@ const TripOverview = () => {
         car_expense: Number(newInstance.car_expense || 0),
         other_expense: Number(newInstance.other_expense || 0),
         cost_items: (newInstance.cost_items || []).filter(
-          (item) => item.name || item.url || Number(item.price) > 0
+          (item) =>
+            item.name ||
+            item.url ||
+            Number(item.price) > 0 ||
+            Number(item.points) > 0 ||
+            Number(item.points_cash_value) > 0
         ),
         notes: "",
       };
@@ -1065,6 +1090,11 @@ const TripOverview = () => {
                         </div>
                         <span className="shrink-0 font-semibold text-slate-700">
                           {formatMoney((Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1))}
+                          {Number(item.points) > 0 && (
+                            <span className="block text-right text-xs font-bold text-blue-700">
+                              + {Number(item.points).toLocaleString("en-US", { maximumFractionDigits: 0 })} pts
+                            </span>
+                          )}
                         </span>
                       </div>
                     ))}

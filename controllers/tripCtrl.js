@@ -129,6 +129,8 @@ export const sanitizeCostItems = (items) =>
         name: String(item.name || ''),
         url: String(item.url || ''),
         price: num(item.price),
+        points: Math.max(0, num(item.points)),
+        points_cash_value: Math.max(0, num(item.points_cash_value)),
         quantity: Math.max(1, num(item.quantity, 1)),
         price_basis: String(item.price_basis || ''),
         item_type: String(item.item_type || ''),

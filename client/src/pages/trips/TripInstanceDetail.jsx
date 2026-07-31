@@ -328,8 +328,7 @@ const TripInstanceDetail = () => {
     (item) => String(item.group_name || defaultGroupName(item.category || "other")).trim(),
     [defaultGroupName]
   );
-  const categoryAllowsMultipleIncluded = (category) =>
-    ["tickets", "food", "other"].includes(category);
+  const categoryAllowsMultipleIncluded = () => true;
 
   const groupHasSelectedItem = (items, category, groupName, ignoredIndex = -1) =>
     !categoryAllowsMultipleIncluded(category) &&
@@ -436,6 +435,8 @@ const TripInstanceDetail = () => {
           name: "",
           url: "",
           price: "",
+          points: "",
+          points_cash_value: "",
           quantity: 1,
           price_basis: defaultPriceBasis(category),
           item_type: defaultItemType(category),
@@ -536,6 +537,8 @@ const TripInstanceDetail = () => {
     return price * multiplierForBasis(item.category || "other", basis, item);
   };
   const itemCountsInTotal = (item) => item.is_selected !== false;
+  const formatPoints = (value) =>
+    Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
   const lineItemTotal = (formData.cost_items || []).reduce(
     (sum, item) => sum + (itemCountsInTotal(item) ? itemTotal(item) : 0),
     0
@@ -589,6 +592,10 @@ const TripInstanceDetail = () => {
       });
     }
     if (item.confirmation_code) rows.push({ label: "Confirmation", value: item.confirmation_code });
+    if (Number(item.points) > 0) rows.push({ label: "Points", value: formatPoints(item.points) });
+    if (Number(item.points_cash_value) > 0) {
+      rows.push({ label: "Cash value", value: `${formatCurrency0(item.points_cash_value)} reference` });
+    }
     if (item.notes) rows.push({ label: "Notes", value: item.notes });
     return rows.filter((row) => row.value);
   };
@@ -605,6 +612,8 @@ const TripInstanceDetail = () => {
         return {
           ...item,
           price_basis: basis,
+          points: Math.max(0, Number(item.points) || 0),
+          points_cash_value: Math.max(0, Number(item.points_cash_value) || 0),
           item_type: item.item_type || defaultItemType(item.category || "other"),
           group_name: normalizeGroupName(item),
           is_selected: item.is_selected !== false,
@@ -717,6 +726,8 @@ const TripInstanceDetail = () => {
           const normalizedItem = {
             ...item,
             price_basis: priceBasis,
+            points: item.points ?? "",
+            points_cash_value: item.points_cash_value ?? "",
             item_type: item.item_type || defaultItemType(category),
             group_name: item.group_name || defaultGroupName(category),
             is_selected: item.is_selected === undefined ? true : Boolean(item.is_selected),
@@ -1172,6 +1183,11 @@ const TripInstanceDetail = () => {
                               <span className="text-base font-extrabold text-slate-950">
                                 {formatCurrency0(itemTotal(item))}
                               </span>
+                              {Number(item.points) > 0 && (
+                                <span className="mt-0.5 block text-xs font-bold text-blue-700">
+                                  + {formatPoints(item.points)} pts
+                                </span>
+                              )}
                             </span>
                             <span className="flex items-center justify-between gap-2 sm:justify-end">
                               {item.url && (
@@ -1273,7 +1289,7 @@ const TripInstanceDetail = () => {
                                   <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-3">
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                      {activeCategoryConfig.priceLabel}
+                                      Cash paid
                                     </span>
                                     <input
                                       type="number"
@@ -1286,6 +1302,38 @@ const TripInstanceDetail = () => {
                                     />
                                   </label>
 
+                                  <label className="block">
+                                    <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                      Points used
+                                    </span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      value={item.points ?? ""}
+                                      onChange={(e) => updateCostItem(index, "points", e.target.value)}
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                      placeholder="40000"
+                                    />
+                                  </label>
+
+                                  <label className="block">
+                                    <span className="mb-1 block text-xs font-semibold text-slate-500">
+                                      Cash value
+                                    </span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={item.points_cash_value ?? ""}
+                                      onChange={(e) => updateCostItem(index, "points_cash_value", e.target.value)}
+                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                      placeholder="Reference only"
+                                    />
+                                  </label>
+                                  </div>
+
+                                  <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2">
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
                                       {quantityLabelFor(
