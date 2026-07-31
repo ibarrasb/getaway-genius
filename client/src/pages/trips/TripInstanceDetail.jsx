@@ -1340,37 +1340,29 @@ const TripInstanceDetail = () => {
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="mx-auto mt-4 w-full max-w-2xl min-w-0 space-y-3">
-                                    <label className="block min-w-0">
-                                      <span className="mb-1 block text-xs font-semibold text-slate-500">Link</span>
-                                      <input
-                                        type="url"
-                                        value={item.url}
-                                        onChange={(e) => updateCostItem(index, "url", e.target.value)}
-                                        className="w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-base shadow-inner outline-none transition focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/10 sm:py-2 sm:text-sm"
-                                        placeholder="https://..."
-                                      />
-                                    </label>
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                      <AppSelect
-                                        label="Type"
-                                        value={item.item_type || defaultItemType(activeCategory)}
-                                        onChange={(value) => updateCostItem(index, "item_type", value)}
-                                        options={activeCategoryConfig.itemTypeOptions}
-                                      />
-                                      <AppSelect
-                                        label="Price basis"
-                                        value={item.price_basis || defaultPriceBasis(activeCategory)}
-                                        onChange={(value) => updateCostItem(index, "price_basis", value)}
-                                        options={activeCategoryConfig.priceBasisOptions}
-                                      />
-                                    </div>
-                                  </div>
                                 </div>
 
                                 <div className="gg-item-editor min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5">
                                 <div className="mx-auto w-full max-w-2xl min-w-0 divide-y divide-slate-100 pb-2 [&_*]:min-w-0 [&_input]:box-border [&_input]:min-h-11 [&_input]:w-full [&_input]:max-w-full [&_input]:rounded-xl [&_input]:border-slate-200 [&_input]:bg-slate-50/80 [&_input]:shadow-inner [&_input]:outline-none [&_input]:transition [&_input]:focus:border-teal-500 [&_input]:focus:bg-white [&_input]:focus:ring-4 [&_input]:focus:ring-teal-500/10 [&_input]:disabled:bg-slate-100 [&_label]:min-w-0">
-                                  <div className="grid gap-3 pb-4 sm:grid-cols-3">
+                                  <div className="grid gap-3 pb-4 sm:grid-cols-2">
+                                    <div className="sm:col-span-2">
+                                      <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Setup</p>
+                                    </div>
+                                    <AppSelect
+                                      label="Type"
+                                      value={item.item_type || defaultItemType(activeCategory)}
+                                      onChange={(value) => updateCostItem(index, "item_type", value)}
+                                      options={activeCategoryConfig.itemTypeOptions}
+                                    />
+                                    <AppSelect
+                                      label="Price basis"
+                                      value={item.price_basis || defaultPriceBasis(activeCategory)}
+                                      onChange={(value) => updateCostItem(index, "price_basis", value)}
+                                      options={activeCategoryConfig.priceBasisOptions}
+                                    />
+                                  </div>
+
+                                  <div className="grid gap-3 py-4 sm:grid-cols-3">
                                   <div className="sm:col-span-3">
                                     <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Cost</p>
                                   </div>
@@ -1700,6 +1692,17 @@ const TripInstanceDetail = () => {
                                       />
                                     </label>
                                   </div>
+
+                                  <label className="block py-4">
+                                    <span className="mb-2 block text-xs font-extrabold uppercase tracking-wide text-slate-400">Link</span>
+                                    <input
+                                      type="url"
+                                      value={item.url}
+                                      onChange={(e) => updateCostItem(index, "url", e.target.value)}
+                                      className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                      placeholder="https://..."
+                                    />
+                                  </label>
 
                                   <label className="block pt-4">
                                     <span className="mb-2 block text-xs font-extrabold uppercase tracking-wide text-slate-400">Notes</span>
