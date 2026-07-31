@@ -209,6 +209,42 @@
   .gg-place-autocomplete-host gmp-place-autocomplete::part(prediction-item-secondary-text) {
     color: #475569;
   }
+
+  .gg-item-editor {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .gg-item-editor input,
+  .gg-item-editor select,
+  .gg-item-editor button {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .gg-item-editor input[type="date"],
+  .gg-item-editor input[type="time"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .gg-item-editor input[type="date"]::-webkit-date-and-time-value,
+  .gg-item-editor input[type="time"]::-webkit-date-and-time-value {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .gg-item-editor input[type="date"]::-webkit-calendar-picker-indicator,
+  .gg-item-editor input[type="time"]::-webkit-calendar-picker-indicator {
+    margin-left: 0.25rem;
+    flex-shrink: 0;
+  }
 }
 
 @layer utilities {

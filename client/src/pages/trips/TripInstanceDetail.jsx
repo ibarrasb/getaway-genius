@@ -244,6 +244,8 @@ const TripInstanceDetail = () => {
     value,
     label,
   }));
+  const isBookedCostItem = (item = {}) =>
+    ["booked", "purchased"].includes(item.purchase_status);
 
   const updateOptionField = (key, value) => {
     setSaveStatus("");
@@ -375,6 +377,13 @@ const TripInstanceDetail = () => {
                     : {}),
                 };
 
+                if (
+                  (key === "purchase_status" && ["booked", "purchased"].includes(value)) ||
+                  isBookedCostItem(nextItem)
+                ) {
+                  nextItem.is_selected = true;
+                }
+
                 if (key === "category" || key === "price_basis") {
                   nextItem.quantity = multiplierForBasis(nextCategory, nextBasis, nextItem);
                 }
@@ -479,6 +488,7 @@ const TripInstanceDetail = () => {
       const items = prev.cost_items || [];
       const target = items[index];
       if (!target) return prev;
+      if (isBookedCostItem(target) && !selected) return prev;
 
       const targetGroup = normalizeGroupName(target);
       const nextData = {
@@ -532,7 +542,7 @@ const TripInstanceDetail = () => {
     if (basis === "total") return price;
     return price * multiplierForBasis(item.category || "other", basis, item);
   };
-  const itemCountsInTotal = (item) => item.is_selected !== false;
+  const itemCountsInTotal = (item) => isBookedCostItem(item) || item.is_selected !== false;
   const formatPoints = (value) =>
     Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
   const itemPoints = (item) => Number(item.points) || 0;
@@ -665,7 +675,7 @@ const TripInstanceDetail = () => {
           points_cash_value: Math.max(0, Number(item.points_cash_value) || 0),
           item_type: item.item_type || defaultItemType(item.category || "other"),
           group_name: normalizeGroupName(item),
-          is_selected: item.is_selected !== false,
+          is_selected: isBookedCostItem(item) || item.is_selected !== false,
           purchase_status: item.purchase_status || "considering",
           confirmation_code: item.confirmation_code || "",
           selected_dates: Array.isArray(item.selected_dates) ? item.selected_dates.filter(Boolean) : [],
@@ -1288,9 +1298,14 @@ const TripInstanceDetail = () => {
                                     <p className="text-xs font-bold uppercase tracking-wide text-teal-700">
                                       Edit {activeCategoryConfig.singular}
                                     </p>
-                                    <h3 id={`item-editor-title-${index}`} className="mt-1 truncate text-lg font-bold text-slate-950">
-                                      {item.name || `New ${activeCategoryConfig.singular}`}
-                                    </h3>
+                                    <input
+                                      id={`item-editor-title-${index}`}
+                                      type="text"
+                                      value={item.name}
+                                      onChange={(e) => updateCostItem(index, "name", e.target.value)}
+                                      className="mt-1 w-full min-w-0 border-0 bg-transparent p-0 text-lg font-bold text-slate-950 outline-none placeholder:text-slate-400 focus:ring-0"
+                                      placeholder={`New ${activeCategoryConfig.singular}`}
+                                    />
                                     <p className="mt-0.5 truncate text-xs text-slate-500">{normalizeGroupName(item)}</p>
                                   </div>
                                   <button
@@ -1325,40 +1340,37 @@ const TripInstanceDetail = () => {
                                       </p>
                                     </div>
                                   </div>
+                                  <div className="mx-auto mt-4 w-full max-w-2xl min-w-0 space-y-3">
+                                    <label className="block min-w-0">
+                                      <span className="mb-1 block text-xs font-semibold text-slate-500">Link</span>
+                                      <input
+                                        type="url"
+                                        value={item.url}
+                                        onChange={(e) => updateCostItem(index, "url", e.target.value)}
+                                        className="w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-base shadow-inner outline-none transition focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/10 sm:py-2 sm:text-sm"
+                                        placeholder="https://..."
+                                      />
+                                    </label>
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                      <AppSelect
+                                        label="Type"
+                                        value={item.item_type || defaultItemType(activeCategory)}
+                                        onChange={(value) => updateCostItem(index, "item_type", value)}
+                                        options={activeCategoryConfig.itemTypeOptions}
+                                      />
+                                      <AppSelect
+                                        label="Price basis"
+                                        value={item.price_basis || defaultPriceBasis(activeCategory)}
+                                        onChange={(value) => updateCostItem(index, "price_basis", value)}
+                                        options={activeCategoryConfig.priceBasisOptions}
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
 
-                                <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5">
+                                <div className="gg-item-editor min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5">
                                 <div className="mx-auto w-full max-w-2xl min-w-0 divide-y divide-slate-100 pb-2 [&_*]:min-w-0 [&_input]:box-border [&_input]:min-h-11 [&_input]:w-full [&_input]:max-w-full [&_input]:rounded-xl [&_input]:border-slate-200 [&_input]:bg-slate-50/80 [&_input]:shadow-inner [&_input]:outline-none [&_input]:transition [&_input]:focus:border-teal-500 [&_input]:focus:bg-white [&_input]:focus:ring-4 [&_input]:focus:ring-teal-500/10 [&_input]:disabled:bg-slate-100 [&_label]:min-w-0">
-                                  <div className="grid min-w-0 gap-3 pb-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                                  <div className="lg:col-span-2">
-                                    <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Basics</p>
-                                  </div>
-                                  <label className="block min-w-0">
-                                    <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                      {activeCategoryConfig.label === "Flights" ? "Airline or route" : "Name"}
-                                    </span>
-                                    <input
-                                      type="text"
-                                      value={item.name}
-                                      onChange={(e) => updateCostItem(index, "name", e.target.value)}
-                                      className="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
-                                      placeholder={activeCategoryConfig.namePlaceholder}
-                                    />
-                                  </label>
-
-                                  <label className="block min-w-0">
-                                    <span className="mb-1 block text-xs font-semibold text-slate-500">Link</span>
-                                    <input
-                                      type="url"
-                                      value={item.url}
-                                      onChange={(e) => updateCostItem(index, "url", e.target.value)}
-                                      className="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
-                                      placeholder="https://..."
-                                    />
-                                  </label>
-                                  </div>
-
-                                  <div className="grid gap-3 py-4 sm:grid-cols-3">
+                                  <div className="grid gap-3 pb-4 sm:grid-cols-3">
                                   <div className="sm:col-span-3">
                                     <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Cost</p>
                                   </div>
@@ -1425,7 +1437,7 @@ const TripInstanceDetail = () => {
 
                                   <div className="grid gap-3 py-4 sm:grid-cols-2">
                                   <div className="sm:col-span-2">
-                                    <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Pricing basis</p>
+                                    <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Quantity</p>
                                   </div>
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
@@ -1456,12 +1468,6 @@ const TripInstanceDetail = () => {
                                     />
                                   </label>
 
-                                  <AppSelect
-                                    label="Price basis"
-                                    value={item.price_basis || defaultPriceBasis(activeCategory)}
-                                    onChange={(value) => updateCostItem(index, "price_basis", value)}
-                                    options={activeCategoryConfig.priceBasisOptions}
-                                  />
                                   </div>
 
                                   {(activeCategory !== "tickets" || (item.ticket_day_mode || "one_day") !== "exact_days") && (
@@ -1485,7 +1491,7 @@ const TripInstanceDetail = () => {
                                         max={item.end_date || boardEndYmd || undefined}
                                         value={item.start_date || ""}
                                         onChange={(e) => updateCostItem(index, "start_date", e.target.value)}
-                                        className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                        className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                       />
                                     </label>
 
@@ -1501,7 +1507,7 @@ const TripInstanceDetail = () => {
                                           max={boardEndYmd || undefined}
                                           value={item.end_date || ""}
                                           onChange={(e) => updateCostItem(index, "end_date", e.target.value)}
-                                          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                          className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                         />
                                       </label>
                                     ) : null}
@@ -1521,7 +1527,7 @@ const TripInstanceDetail = () => {
                                           type="time"
                                           value={item.check_in_time || ""}
                                           onChange={(e) => updateCostItem(index, "check_in_time", e.target.value)}
-                                          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                          className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                         />
                                       </label>
 
@@ -1533,7 +1539,7 @@ const TripInstanceDetail = () => {
                                           type="time"
                                           value={item.check_out_time || ""}
                                           onChange={(e) => updateCostItem(index, "check_out_time", e.target.value)}
-                                          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                          className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                         />
                                       </label>
                                     </div>
@@ -1551,7 +1557,7 @@ const TripInstanceDetail = () => {
                                             type="time"
                                             value={item.depart_time || ""}
                                             onChange={(e) => updateCostItem(index, "depart_time", e.target.value)}
-                                            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                            className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                           />
                                         </label>
 
@@ -1563,7 +1569,7 @@ const TripInstanceDetail = () => {
                                             type="time"
                                             value={item.arrive_time || ""}
                                             onChange={(e) => updateCostItem(index, "arrive_time", e.target.value)}
-                                            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                            className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                           />
                                         </label>
                                       </div>
@@ -1578,7 +1584,7 @@ const TripInstanceDetail = () => {
                                               type="time"
                                               value={item.return_depart_time || ""}
                                               onChange={(e) => updateCostItem(index, "return_depart_time", e.target.value)}
-                                              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                              className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                             />
                                           </label>
 
@@ -1590,7 +1596,7 @@ const TripInstanceDetail = () => {
                                               type="time"
                                               value={item.return_arrive_time || ""}
                                               onChange={(e) => updateCostItem(index, "return_arrive_time", e.target.value)}
-                                              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                              className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                             />
                                           </label>
                                         </div>
@@ -1624,7 +1630,7 @@ const TripInstanceDetail = () => {
                                               step="1"
                                               value={Math.max(1, Number(item.ticket_days) || 1)}
                                               onChange={(e) => updateCostItem(index, "ticket_days", e.target.value)}
-                                              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                              className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                             />
                                           </label>
                                         )}
@@ -1645,7 +1651,7 @@ const TripInstanceDetail = () => {
                                                 onChange={(e) =>
                                                   updateCostItemSelectedDate(index, dateIndex, e.target.value)
                                                 }
-                                                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                                className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                               />
                                             </label>
                                           ))}
@@ -1662,17 +1668,11 @@ const TripInstanceDetail = () => {
                                       label="Estimate"
                                       value={itemCountsInTotal(item) ? "selected" : "candidate"}
                                       onChange={(value) => setCostItemSelected(index, value === "selected")}
+                                      disabled={isBookedCostItem(item)}
                                       options={[
-                                        { value: "selected", label: "Included" },
+                                        { value: "selected", label: isBookedCostItem(item) ? "Included because booked" : "Included" },
                                         { value: "candidate", label: "Not included" },
                                       ]}
-                                    />
-
-                                    <AppSelect
-                                      label="Type"
-                                      value={item.item_type || defaultItemType(activeCategory)}
-                                      onChange={(value) => updateCostItem(index, "item_type", value)}
-                                      options={activeCategoryConfig.itemTypeOptions}
                                     />
                                   </div>
 
@@ -1707,7 +1707,7 @@ const TripInstanceDetail = () => {
                                       type="text"
                                       value={item.notes}
                                       onChange={(e) => updateCostItem(index, "notes", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                      className="w-full min-w-0 max-w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                       placeholder="Fees, cancellation, inclusions..."
                                     />
                                   </label>
