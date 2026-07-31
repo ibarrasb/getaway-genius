@@ -299,34 +299,38 @@ const TripInstanceDetail = () => {
   };
   const defaultGroupName = useCallback((category) => {
     if (category === "lodging") return "Stay 1";
-    if (category === "flight") return "Flight choice";
-    if (category === "tickets") return "Ticket choice";
-    if (category === "car") return "Transportation choice";
-    if (category === "food") return "Food budget";
-    return "Other choice";
+    if (category === "flight") return "Flight 1";
+    if (category === "tickets") return "Ticket 1";
+    if (category === "car") return "Rental 1";
+    if (category === "food") return "Food 1";
+    return "Item 1";
   }, []);
 
-  const compareSetLabel = (category) => {
-    if (category === "lodging") return "Stay option group";
-    if (category === "flight") return "Flight option group";
-    if (category === "car") return "Transportation option group";
-    if (category === "tickets") return "Ticket option group";
-    if (category === "food") return "Food option group";
-    return "Option group";
-  };
-
-  const compareSetHelp = (category) => {
-    if (category === "lodging") return "Name the set of places you are choosing between, like Hotel options or Beach stay.";
-    if (category === "flight") return "Name the set of flights you are choosing between, like Morning flight or Main route.";
-    if (category === "car") return "Name the set of transportation choices, like Rental car or Airport transfer.";
-    if (category === "tickets") return "Name the set of tickets you are choosing between, like Park tickets or Museum passes.";
-    if (category === "food") return "Name the food budget this belongs to, like Restaurants or Groceries.";
-    return "Name the set this item belongs to.";
-  };
+  const groupBaseName = useCallback((category) => {
+    if (category === "lodging") return "Stay";
+    if (category === "flight") return "Flight";
+    if (category === "tickets") return "Ticket";
+    if (category === "car") return "Rental";
+    if (category === "food") return "Food";
+    return "Item";
+  }, []);
 
   const normalizeGroupName = useCallback(
     (item) => String(item.group_name || defaultGroupName(item.category || "other")).trim(),
     [defaultGroupName]
+  );
+  const nextGroupName = useCallback(
+    (items, category, ignoredIndex = -1) => {
+      const base = groupBaseName(category);
+      const matcher = new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+(\\d+)$`, "i");
+      const maxExisting = (items || []).reduce((max, item, index) => {
+        if (index === ignoredIndex || item.category !== category) return max;
+        const match = normalizeGroupName(item).match(matcher);
+        return match ? Math.max(max, Number(match[1]) || 0) : max;
+      }, 0);
+      return `${base} ${maxExisting + 1}`;
+    },
+    [groupBaseName, normalizeGroupName]
   );
   const categoryAllowsMultipleIncluded = () => true;
 
@@ -350,8 +354,8 @@ const TripInstanceDetail = () => {
             ? (() => {
                 const nextCategory = key === "category" ? value : item.category;
                 const nextGroup =
-                  key === "group_name"
-                    ? String(value || defaultGroupName(nextCategory)).trim()
+                  key === "category"
+                    ? nextGroupName(prev.cost_items || [], nextCategory, index)
                     : normalizeGroupName({ ...item, category: nextCategory });
                 const nextBasis =
                   key === "category"
@@ -367,16 +371,6 @@ const TripInstanceDetail = () => {
                     ? {
                         price_basis: nextBasis,
                         item_type: defaultItemType(value),
-                      }
-                    : {}),
-                  ...(key === "group_name" && item.is_selected === false
-                    ? {
-                        is_selected: !groupHasSelectedItem(
-                          prev.cost_items || [],
-                          nextCategory,
-                          nextGroup,
-                          index
-                        ),
                       }
                     : {}),
                 };
@@ -426,10 +420,7 @@ const TripInstanceDetail = () => {
         ...prev,
         cost_items: (() => {
         const existingItems = prev.cost_items || [];
-        const existingCategoryItems = existingItems.filter((item) => item.category === category);
-        const groupName = normalizeGroupName(
-          existingCategoryItems[0] || { category, group_name: defaultGroupName(category) }
-        );
+        const groupName = nextGroupName(existingItems, category);
         const isSelected = !groupHasSelectedItem(existingItems, category, groupName);
         const allowsMultiple = categoryAllowsMultipleIncluded(category);
 
@@ -1337,8 +1328,11 @@ const TripInstanceDetail = () => {
                                 </div>
 
                                 <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5">
-                                <div className="mx-auto w-full max-w-2xl min-w-0 divide-y divide-slate-100 pb-2 [&_input]:max-w-full [&_input]:min-w-0 [&_label]:min-w-0">
+                                <div className="mx-auto w-full max-w-2xl min-w-0 divide-y divide-slate-100 pb-2 [&_*]:min-w-0 [&_input]:box-border [&_input]:min-h-11 [&_input]:w-full [&_input]:max-w-full [&_input]:rounded-xl [&_input]:border-slate-200 [&_input]:bg-slate-50/80 [&_input]:shadow-inner [&_input]:outline-none [&_input]:transition [&_input]:focus:border-teal-500 [&_input]:focus:bg-white [&_input]:focus:ring-4 [&_input]:focus:ring-teal-500/10 [&_input]:disabled:bg-slate-100 [&_label]:min-w-0">
                                   <div className="grid min-w-0 gap-3 pb-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                                  <div className="lg:col-span-2">
+                                    <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Basics</p>
+                                  </div>
                                   <label className="block min-w-0">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
                                       {activeCategoryConfig.label === "Flights" ? "Airline or route" : "Name"}
@@ -1365,53 +1359,74 @@ const TripInstanceDetail = () => {
                                   </div>
 
                                   <div className="grid gap-3 py-4 sm:grid-cols-3">
+                                  <div className="sm:col-span-3">
+                                    <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Cost</p>
+                                  </div>
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
                                       Cash paid
                                     </span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={item.price}
-                                      onChange={(e) => updateCostItem(index, "price", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
-                                      placeholder="0.00"
-                                    />
+                                    <div className="relative">
+                                      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-bold text-slate-400">
+                                        $
+                                      </span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={item.price}
+                                        onChange={(e) => updateCostItem(index, "price", e.target.value)}
+                                        className="w-full rounded-lg border border-slate-300 py-2.5 pl-7 pr-3 text-base sm:py-2 sm:text-sm"
+                                        placeholder="0.00"
+                                      />
+                                    </div>
                                   </label>
 
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
                                       Points used
                                     </span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="1"
-                                      value={item.points ?? ""}
-                                      onChange={(e) => updateCostItem(index, "points", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
-                                      placeholder="40000"
-                                    />
+                                    <div className="relative">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={item.points ?? ""}
+                                        onChange={(e) => updateCostItem(index, "points", e.target.value)}
+                                        className="w-full rounded-lg border border-slate-300 py-2.5 pl-3 pr-12 text-base sm:py-2 sm:text-sm"
+                                        placeholder="40000"
+                                      />
+                                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-extrabold uppercase text-blue-500">
+                                        pts
+                                      </span>
+                                    </div>
                                   </label>
 
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
                                       Cash value
                                     </span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={item.points_cash_value ?? ""}
-                                      onChange={(e) => updateCostItem(index, "points_cash_value", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
-                                      placeholder="Reference only"
-                                    />
+                                    <div className="relative">
+                                      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-bold text-slate-400">
+                                        $
+                                      </span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={item.points_cash_value ?? ""}
+                                        onChange={(e) => updateCostItem(index, "points_cash_value", e.target.value)}
+                                        className="w-full rounded-lg border border-slate-300 py-2.5 pl-7 pr-3 text-base sm:py-2 sm:text-sm"
+                                        placeholder="Reference only"
+                                      />
+                                    </div>
                                   </label>
                                   </div>
 
                                   <div className="grid gap-3 py-4 sm:grid-cols-2">
+                                  <div className="sm:col-span-2">
+                                    <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Pricing basis</p>
+                                  </div>
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
                                       {quantityLabelFor(
@@ -1451,6 +1466,9 @@ const TripInstanceDetail = () => {
 
                                   {(activeCategory !== "tickets" || (item.ticket_day_mode || "one_day") !== "exact_days") && (
                                   <div className="grid gap-3 py-4 sm:grid-cols-2">
+                                    <div className="sm:col-span-2">
+                                      <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Dates</p>
+                                    </div>
                                     <label className="block">
                                       <span className="mb-1 block text-xs font-semibold text-slate-500">
                                         {activeCategory === "flight" && (item.item_type || defaultItemType(activeCategory)) === "one_way"
@@ -1492,6 +1510,9 @@ const TripInstanceDetail = () => {
 
                                   {activeCategory === "lodging" && (
                                     <div className="grid gap-3 py-4 sm:grid-cols-2">
+                                      <div className="sm:col-span-2">
+                                        <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Stay timing</p>
+                                      </div>
                                       <label className="block">
                                         <span className="mb-1 block text-xs font-semibold text-slate-500">
                                           Check-in time
@@ -1520,6 +1541,7 @@ const TripInstanceDetail = () => {
 
                                   {activeCategory === "flight" && (
                                     <div className="space-y-3 py-4">
+                                      <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Flight timing</p>
                                       <div className="grid gap-3 sm:grid-cols-2">
                                         <label className="block">
                                           <span className="mb-1 block text-xs font-semibold text-slate-500">
@@ -1578,6 +1600,7 @@ const TripInstanceDetail = () => {
 
                                   {activeCategory === "tickets" && (
                                     <div className="space-y-3 py-4">
+                                      <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Ticket timing</p>
                                       <div className="grid gap-3 sm:grid-cols-2">
                                         <AppSelect
                                           label="Ticket dates"
@@ -1631,23 +1654,10 @@ const TripInstanceDetail = () => {
                                     </div>
                                   )}
 
-                                  <div className="grid gap-3 py-4 lg:grid-cols-[1fr_170px_170px]">
-                                    <label className="block">
-                                      <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                        {compareSetLabel(activeCategory)}
-                                      </span>
-                                      <input
-                                        type="text"
-                                        value={normalizeGroupName(item)}
-                                        onChange={(e) => updateCostItem(index, "group_name", e.target.value)}
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base sm:py-2 sm:text-sm"
-                                        placeholder={defaultGroupName(activeCategory)}
-                                      />
-                                      <span className="mt-1 block text-[11px] leading-4 text-slate-500">
-                                        {compareSetHelp(activeCategory)}
-                                      </span>
-                                    </label>
-
+                                  <div className="grid gap-3 py-4 sm:grid-cols-2">
+                                    <div className="sm:col-span-2">
+                                      <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Planning</p>
+                                    </div>
                                     <AppSelect
                                       label="Estimate"
                                       value={itemCountsInTotal(item) ? "selected" : "candidate"}
@@ -1667,6 +1677,9 @@ const TripInstanceDetail = () => {
                                   </div>
 
                                   <div className="grid gap-3 py-4 sm:grid-cols-2">
+                                    <div className="sm:col-span-2">
+                                      <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">Booking</p>
+                                    </div>
                                     <AppSelect
                                       label="Booking status"
                                       value={item.purchase_status || "considering"}
@@ -1689,7 +1702,7 @@ const TripInstanceDetail = () => {
                                   </div>
 
                                   <label className="block pt-4">
-                                    <span className="mb-1 block text-xs font-semibold text-slate-500">Notes</span>
+                                    <span className="mb-2 block text-xs font-extrabold uppercase tracking-wide text-slate-400">Notes</span>
                                     <input
                                       type="text"
                                       value={item.notes}

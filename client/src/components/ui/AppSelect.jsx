@@ -21,7 +21,7 @@ const AppSelect = ({
           <button
             type="button"
             disabled={disabled}
-            className="flex min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-left text-base text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 sm:min-h-10 sm:py-2 sm:text-sm"
+            className="flex min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-left text-base text-slate-900 shadow-inner outline-none transition hover:bg-white focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 sm:min-h-10 sm:py-2 sm:text-sm"
           >
             <span className="truncate">{activeOption?.label || "Select"}</span>
             <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`} />
