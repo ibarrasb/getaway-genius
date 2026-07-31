@@ -403,6 +403,11 @@ const TripInstanceDetail = () => {
                     nextItem.selected_dates?.[dateIndex] || ""
                   );
                 }
+                if (key === "item_type" && nextCategory === "flight" && value === "one_way") {
+                  nextItem.end_date = "";
+                  nextItem.return_depart_time = "";
+                  nextItem.return_arrive_time = "";
+                }
 
                 return nextItem;
               })()
@@ -572,14 +577,22 @@ const TripInstanceDetail = () => {
         : item.category === "tickets" && item.ticket_day_mode === "multi_range"
         ? `${Math.max(1, Number(item.ticket_days) || 1)} day ticket`
         : "";
-    return [type, basis, ticketMode, fmtRangeShort(item.start_date, item.end_date)]
+    return [type, basis, ticketMode]
       .filter(Boolean)
       .join(" · ");
   };
   const itemDetailRows = (item) => {
     const rows = [];
     const range = fmtRangeShort(item.start_date, item.end_date);
-    if (range) rows.push({ label: "Dates", value: range });
+    if (range) {
+      const dateLabel =
+        item.category === "flight"
+          ? item.item_type === "one_way"
+            ? "Flight date"
+            : "Flight dates"
+          : "Dates";
+      rows.push({ label: dateLabel, value: range });
+    }
     if (item.category === "lodging") {
       if (item.check_in_time) rows.push({ label: "Check-in", value: formatTime(item.check_in_time) });
       if (item.check_out_time) rows.push({ label: "Check-out", value: formatTime(item.check_out_time) });
@@ -1440,7 +1453,9 @@ const TripInstanceDetail = () => {
                                   <div className="grid gap-3 py-4 sm:grid-cols-2">
                                     <label className="block">
                                       <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                        {activeCategory === "tickets"
+                                        {activeCategory === "flight" && (item.item_type || defaultItemType(activeCategory)) === "one_way"
+                                          ? "Flight date"
+                                          : activeCategory === "tickets"
                                           ? item.ticket_day_mode === "multi_range"
                                             ? "Valid from"
                                             : "Start day"
@@ -1456,10 +1471,11 @@ const TripInstanceDetail = () => {
                                       />
                                     </label>
 
-                                    {activeCategory !== "tickets" || item.ticket_day_mode === "multi_range" ? (
+                                    {(activeCategory !== "tickets" || item.ticket_day_mode === "multi_range") &&
+                                    !(activeCategory === "flight" && (item.item_type || defaultItemType(activeCategory)) === "one_way") ? (
                                       <label className="block">
                                         <span className="mb-1 block text-xs font-semibold text-slate-500">
-                                          {activeCategory === "tickets" ? "Valid through" : "End date"}
+                                          {activeCategory === "tickets" ? "Valid through" : activeCategory === "flight" ? "Return date" : "End date"}
                                         </span>
                                         <input
                                           type="date"
