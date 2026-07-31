@@ -13,10 +13,17 @@ const formatMoney = (value) =>
     currency: "USD",
     maximumFractionDigits: 0,
   });
+const selectedCostItems = (option = {}) =>
+  (option.cost_items || []).filter((item) => item && item.is_selected !== false);
+const pointsTotal = (option = {}) =>
+  selectedCostItems(option).reduce((sum, item) => sum + (Number(item.points) || 0), 0);
+const savingsTotal = (option = {}) =>
+  selectedCostItems(option).reduce((sum, item) => sum + (Number(item.points_cash_value) || 0), 0);
+const formatPoints = (value) =>
+  Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 const optionTotal = (option = {}) => {
-  const itemTotal = (option.cost_items || []).reduce((sum, item) => {
-    if (!item || item.is_selected === false) return sum;
+  const itemTotal = selectedCostItems(option).reduce((sum, item) => {
     return sum + (Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1);
   }, 0);
 
@@ -138,6 +145,8 @@ const PreviousTrips = () => {
               const title = trip.board_title || option.destination || trip.location_address || "Archived Trip";
               const subtitle = option.option_title || option.destination || trip.location_address || "Planned option";
               const total = optionTotal(option);
+              const totalPoints = pointsTotal(option);
+              const totalSavings = savingsTotal(option);
 
               return (
                 <article
@@ -167,9 +176,18 @@ const PreviousTrips = () => {
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                    <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
                       <span className="text-sm font-semibold text-slate-500">Estimated total</span>
-                      <span className="font-bold text-slate-950">{total ? formatMoney(total) : "$0"}</span>
+                      <span className="text-right font-bold text-slate-950">
+                        {total ? formatMoney(total) : "$0"}
+                        {(totalPoints > 0 || totalSavings > 0) && (
+                          <span className="block text-xs font-bold text-blue-700">
+                            {totalPoints > 0 ? `${formatPoints(totalPoints)} pts` : ""}
+                            {totalPoints > 0 && totalSavings > 0 ? " · " : ""}
+                            {totalSavings > 0 ? `${formatMoney(totalSavings)} saved` : ""}
+                          </span>
+                        )}
+                      </span>
                     </div>
 
                     <Link

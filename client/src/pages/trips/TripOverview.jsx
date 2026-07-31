@@ -169,6 +169,14 @@ const TripOverview = () => {
           : (Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1)),
       0
     );
+  const selectedCostItems = (instance = {}) =>
+    (instance.cost_items || []).filter((item) => item && item.is_selected !== false);
+  const itemPoints = (item) => Number(item?.points) || 0;
+  const itemSavings = (item) => Number(item?.points_cash_value) || 0;
+  const pointsTotal = (instance) =>
+    selectedCostItems(instance).reduce((sum, item) => sum + itemPoints(item), 0);
+  const savingsTotal = (instance) =>
+    selectedCostItems(instance).reduce((sum, item) => sum + itemSavings(item), 0);
 
   const legacyBucketTotal = (instance) =>
     (Number(instance.stay_expense) || 0) +
@@ -205,6 +213,8 @@ const TripOverview = () => {
       currency: "USD",
       maximumFractionDigits: 0,
     });
+  const formatPoints = (value) =>
+    Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
 
   const authHeaders = useMemo(
     () => (token ? { Authorization: token } : undefined),
@@ -973,7 +983,11 @@ const TripOverview = () => {
 
           {viewMode === "cards" ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {visibleInstances.map((instance, index) => (
+            {visibleInstances.map((instance, index) => {
+              const totalPoints = pointsTotal(instance);
+              const totalSavings = savingsTotal(instance);
+
+              return (
               <div
                 key={instance._id || index}
                 className={`gg-card relative overflow-hidden rounded-3xl transition hover:-translate-y-0.5 hover:shadow-lg ${
@@ -1040,6 +1054,13 @@ const TripOverview = () => {
                       <p className="mt-1 text-lg font-bold text-slate-950">
                         {formatMoney(calculateTotalCost(instance))}
                       </p>
+                      {(totalPoints > 0 || totalSavings > 0) && (
+                        <p className="mt-0.5 text-xs font-bold text-blue-700">
+                          {totalPoints > 0 ? `${formatPoints(totalPoints)} pts` : ""}
+                          {totalPoints > 0 && totalSavings > 0 ? " · " : ""}
+                          {totalSavings > 0 ? `${formatMoney(totalSavings)} saved` : ""}
+                        </p>
+                      )}
                     </div>
                     <div className="rounded-2xl bg-slate-50 px-3 py-2">
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
@@ -1092,7 +1113,12 @@ const TripOverview = () => {
                           {formatMoney((Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1))}
                           {Number(item.points) > 0 && (
                             <span className="block text-right text-xs font-bold text-blue-700">
-                              + {Number(item.points).toLocaleString("en-US", { maximumFractionDigits: 0 })} pts
+                              + {formatPoints(item.points)} pts
+                            </span>
+                          )}
+                          {Number(item.points_cash_value) > 0 && (
+                            <span className="block text-right text-xs font-bold text-emerald-700">
+                              {formatMoney(item.points_cash_value)} saved
                             </span>
                           )}
                         </span>
@@ -1142,13 +1168,16 @@ const TripOverview = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
             </div>
           ) : (
             <div>
               <div className="grid gap-3 md:hidden">
                 {visibleInstances.map((instance, index) => {
                   const total = calculateTotalCost(instance);
+                  const totalPoints = pointsTotal(instance);
+                  const totalSavings = savingsTotal(instance);
                   const travelers = Math.max(1, Number(trip?.travelers) || 1);
                   const links = (instance.cost_items || []).filter((item) => item.url);
 
@@ -1181,6 +1210,13 @@ const TripOverview = () => {
                         <div className="rounded-xl bg-slate-50 px-3 py-2">
                           <p className="text-xs font-semibold text-slate-500">Total</p>
                           <p className="mt-1 font-bold text-slate-950">{formatMoney(total)}</p>
+                          {(totalPoints > 0 || totalSavings > 0) && (
+                            <p className="mt-0.5 text-xs font-bold text-blue-700">
+                              {totalPoints > 0 ? `${formatPoints(totalPoints)} pts` : ""}
+                              {totalPoints > 0 && totalSavings > 0 ? " · " : ""}
+                              {totalSavings > 0 ? `${formatMoney(totalSavings)} saved` : ""}
+                            </p>
+                          )}
                         </div>
                         <div className="rounded-xl bg-slate-50 px-3 py-2">
                           <p className="text-xs font-semibold text-slate-500">Per person</p>
@@ -1246,6 +1282,8 @@ const TripOverview = () => {
                   <tbody className="divide-y divide-slate-100">
                     {visibleInstances.map((instance, index) => {
                       const total = calculateTotalCost(instance);
+                      const totalPoints = pointsTotal(instance);
+                      const totalSavings = savingsTotal(instance);
                       const travelers = Math.max(1, Number(trip?.travelers) || 1);
                       const links = (instance.cost_items || []).filter((item) => item.url);
 
@@ -1281,7 +1319,16 @@ const TripOverview = () => {
                           <td className="px-4 py-3 text-right font-medium">
                             {formatMoney(categoryTotal(instance, "food") + categoryTotal(instance, "other"))}
                           </td>
-                          <td className="px-4 py-3 text-right font-bold text-slate-900">{formatMoney(total)}</td>
+                          <td className="px-4 py-3 text-right font-bold text-slate-900">
+                            {formatMoney(total)}
+                            {(totalPoints > 0 || totalSavings > 0) && (
+                              <span className="mt-0.5 block text-xs font-bold text-blue-700">
+                                {totalPoints > 0 ? `${formatPoints(totalPoints)} pts` : ""}
+                                {totalPoints > 0 && totalSavings > 0 ? " · " : ""}
+                                {totalSavings > 0 ? `${formatMoney(totalSavings)} saved` : ""}
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-right font-medium">{formatMoney(total / travelers)}</td>
                           <td className="px-4 py-3">
                             {links.length ? (

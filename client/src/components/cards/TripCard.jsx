@@ -64,13 +64,42 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
   const hasRange = Boolean(rangeLabel);
 
   const totalCost = useMemo(() => {
-    return (
+    const lineItems = (displayData?.cost_items || []).reduce((sum, item) => {
+      if (!item || item.is_selected === false) return sum;
+      return sum + (Number(item.price) || 0) * Math.max(1, Number(item.quantity) || 1);
+    }, 0);
+    const legacyTotal =
       (Number(displayData?.stay_expense) || 0) +
       (Number(displayData?.car_expense) || 0) +
       (Number(displayData?.travel_expense) || 0) +
-      (Number(displayData?.other_expense) || 0)
-    );
+      (Number(displayData?.other_expense) || 0);
+    return lineItems || legacyTotal;
   }, [displayData]);
+  const pointsTotal = useMemo(
+    () =>
+      (displayData?.cost_items || []).reduce(
+        (sum, item) => (item && item.is_selected !== false ? sum + (Number(item.points) || 0) : sum),
+        0
+      ),
+    [displayData]
+  );
+  const savingsTotal = useMemo(
+    () =>
+      (displayData?.cost_items || []).reduce(
+        (sum, item) =>
+          item && item.is_selected !== false ? sum + (Number(item.points_cash_value) || 0) : sum,
+        0
+      ),
+    [displayData]
+  );
+  const formatMoney = (value) =>
+    Number(value || 0).toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    });
+  const formatPoints = (value) =>
+    Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
 
   const handleRemove = useCallback(async () => {
     if (!trip?._id || isDeleting) return;
@@ -308,6 +337,13 @@ const TripCard = ({ trip, instance, onRemove, onFavoriteAdded }) => {
               ? `${trip.instances.length} option${trip.instances.length === 1 ? "" : "s"}`
               : "Add options"}
           </span>
+          {(totalCost > 0 || pointsTotal > 0 || savingsTotal > 0) && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+              {totalCost > 0 ? formatMoney(totalCost) : "$0"}
+              {pointsTotal > 0 ? ` · ${formatPoints(pointsTotal)} pts` : ""}
+              {savingsTotal > 0 ? ` · ${formatMoney(savingsTotal)} saved` : ""}
+            </span>
+          )}
           {instance && (
             <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-200">
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

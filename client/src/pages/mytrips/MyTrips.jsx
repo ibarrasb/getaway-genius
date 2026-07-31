@@ -42,6 +42,14 @@ const selectedCostItems = (instance = {}) =>
 
 const costItemTotal = (item) =>
   (Number(item?.price) || 0) * Math.max(1, Number(item?.quantity) || 1);
+const itemPoints = (item) => Number(item?.points) || 0;
+const itemSavings = (item) => Number(item?.points_cash_value) || 0;
+const pointsTotal = (instance = {}) =>
+  selectedCostItems(instance).reduce((sum, item) => sum + itemPoints(item), 0);
+const savingsTotal = (instance = {}) =>
+  selectedCostItems(instance).reduce((sum, item) => sum + itemSavings(item), 0);
+const formatPoints = (value) =>
+  Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 const categoryTotal = (instance, categories) =>
   selectedCostItems(instance).reduce((sum, item) => {
@@ -322,6 +330,8 @@ const MyTrips = () => {
           const nights = tripNightCount(option.trip_start, option.trip_end);
           const travelers = Math.max(1, Number(featured.travelers) || 1);
           const total = optionTotal(option);
+          const totalPoints = pointsTotal(option);
+          const totalSavings = savingsTotal(option);
           const links = selectedCostItems(option).filter((item) => item.url).slice(0, 4);
           const breakdown = [
             {
@@ -453,6 +463,13 @@ const MyTrips = () => {
                           {total ? formatMoney(total) : "Add prices"}
                         </p>
                       </div>
+                      {(totalPoints > 0 || totalSavings > 0) && (
+                        <p className="mt-2 text-sm font-bold text-blue-700">
+                          {totalPoints > 0 ? `${formatPoints(totalPoints)} pts spent` : ""}
+                          {totalPoints > 0 && totalSavings > 0 ? " · " : ""}
+                          {totalSavings > 0 ? `${formatMoney(totalSavings)} saved` : ""}
+                        </p>
+                      )}
                       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
                         {breakdown.map(({ label, value, Icon }) => {
                           const BreakdownIcon = Icon;
@@ -534,6 +551,8 @@ const MyTrips = () => {
                 {groups[year].map((trip) => {
                   const option = trip.committedInstance;
                   const total = optionTotal(option);
+                  const totalPoints = pointsTotal(option);
+                  const totalSavings = savingsTotal(option);
                   const travelers = Math.max(1, Number(trip.travelers) || 1);
                   const links = selectedCostItems(option).filter((item) => item.url).length;
 
@@ -579,6 +598,13 @@ const MyTrips = () => {
                           <div className="rounded-xl bg-slate-50 p-2">
                             <p className="text-[11px] font-semibold text-slate-500">Total</p>
                             <p className="mt-0.5 font-bold text-slate-950">{total ? formatMoney(total) : "$0"}</p>
+                            {(totalPoints > 0 || totalSavings > 0) && (
+                              <p className="mt-0.5 text-[11px] font-bold text-blue-700">
+                                {totalPoints > 0 ? `${formatPoints(totalPoints)} pts` : ""}
+                                {totalPoints > 0 && totalSavings > 0 ? " · " : ""}
+                                {totalSavings > 0 ? `${formatMoney(totalSavings)} saved` : ""}
+                              </p>
+                            )}
                           </div>
                           <div className="rounded-xl bg-slate-50 p-2">
                             <p className="text-[11px] font-semibold text-slate-500">Per Person</p>

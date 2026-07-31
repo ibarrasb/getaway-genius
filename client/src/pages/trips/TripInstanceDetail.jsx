@@ -539,10 +539,15 @@ const TripInstanceDetail = () => {
   const itemCountsInTotal = (item) => item.is_selected !== false;
   const formatPoints = (value) =>
     Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
+  const itemPoints = (item) => Number(item.points) || 0;
+  const itemSavings = (item) => Number(item.points_cash_value) || 0;
   const lineItemTotal = (formData.cost_items || []).reduce(
     (sum, item) => sum + (itemCountsInTotal(item) ? itemTotal(item) : 0),
     0
   );
+  const includedItems = (formData.cost_items || []).filter(itemCountsInTotal);
+  const pointsTotal = includedItems.reduce((sum, item) => sum + itemPoints(item), 0);
+  const savingsTotal = includedItems.reduce((sum, item) => sum + itemSavings(item), 0);
   const total = lineItemTotal || legacyTotal;
   const boardStartYmd = toYmdLocal(trip?.board_start || trip?.trip_start);
   const boardEndYmd = toYmdLocal(trip?.board_end || trip?.trip_end);
@@ -594,7 +599,7 @@ const TripInstanceDetail = () => {
     if (item.confirmation_code) rows.push({ label: "Confirmation", value: item.confirmation_code });
     if (Number(item.points) > 0) rows.push({ label: "Points", value: formatPoints(item.points) });
     if (Number(item.points_cash_value) > 0) {
-      rows.push({ label: "Cash value", value: `${formatCurrency0(item.points_cash_value)} reference` });
+      rows.push({ label: "Saved", value: formatCurrency0(item.points_cash_value) });
     }
     if (item.notes) rows.push({ label: "Notes", value: item.notes });
     return rows.filter((row) => row.value);
@@ -603,6 +608,24 @@ const TripInstanceDetail = () => {
     (formData.cost_items || [])
       .filter((item) => item.category === category)
       .reduce((sum, item) => sum + (itemCountsInTotal(item) ? itemTotal(item) : 0), 0);
+  const categoryPointsTotal = (category) =>
+    (formData.cost_items || [])
+      .filter((item) => item.category === category && itemCountsInTotal(item))
+      .reduce((sum, item) => sum + itemPoints(item), 0);
+  const categorySavingsTotal = (category) =>
+    (formData.cost_items || [])
+      .filter((item) => item.category === category && itemCountsInTotal(item))
+      .reduce((sum, item) => sum + itemSavings(item), 0);
+  const categoryValueSummary = (category) => {
+    const cash = categoryTotal(category);
+    const points = categoryPointsTotal(category);
+    const saved = categorySavingsTotal(category);
+    const parts = [];
+    if (cash > 0 || (!points && !saved)) parts.push(formatCurrency0(cash));
+    if (points > 0) parts.push(`${formatPoints(points)} pts`);
+    if (saved > 0) parts.push(`${formatCurrency0(saved)} saved`);
+    return parts.join(" · ");
+  };
 
   const buildSavePayload = useCallback(
     (source) => ({
@@ -883,8 +906,8 @@ const TripInstanceDetail = () => {
           <BackButton label="Back" />
         </div>
 
-        <div className="overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/85 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur sm:rounded-[2rem]">
-          <section className="relative overflow-hidden border-b border-slate-800 bg-slate-950">
+        <div className="overflow-hidden rounded-[1.5rem] bg-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.45)] ring-1 ring-slate-200 sm:rounded-[2rem]">
+          <section className="relative overflow-hidden bg-slate-950">
             <img
               src={instance.image_url || trip.image_url || "/getaway-genius-logo.png"}
               alt=""
@@ -968,6 +991,13 @@ const TripInstanceDetail = () => {
                   <CircleDollarSign className="mb-1 h-4 w-4 text-teal-700" />
                   <p className="text-[10px] font-bold uppercase text-slate-400">Total</p>
                   <p className="truncate text-sm font-extrabold text-slate-950 sm:text-base">{formatCurrency0(total)}</p>
+                  {(pointsTotal > 0 || savingsTotal > 0) && (
+                    <p className="truncate text-[11px] font-semibold text-blue-700">
+                      {pointsTotal > 0 ? `${formatPoints(pointsTotal)} pts` : ""}
+                      {pointsTotal > 0 && savingsTotal > 0 ? " · " : ""}
+                      {savingsTotal > 0 ? `${formatCurrency0(savingsTotal)} saved` : ""}
+                    </p>
+                  )}
                 </div>
                 <div className="rounded-xl bg-white px-3 py-2 shadow-sm">
                   <CalendarIcon className="mb-1 h-4 w-4 text-blue-700" />
@@ -1009,7 +1039,7 @@ const TripInstanceDetail = () => {
           <form
             id="trip-option-detail-form"
             onSubmit={handleSubmit}
-            className="p-4 sm:p-6 lg:p-7"
+            className="bg-white p-4 sm:p-6 lg:p-7"
           >
             <section>
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -1042,9 +1072,9 @@ const TripInstanceDetail = () => {
                 </button>
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-[17rem_1fr]">
+              <div className="grid gap-6 lg:grid-cols-[17rem_1fr]">
                 <nav className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0" aria-label="Cost categories">
-                  <div className="flex w-max gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm lg:block lg:w-auto">
+                  <div className="flex w-max gap-1 border-b border-slate-200 lg:block lg:w-auto lg:border-b-0 lg:border-r lg:pr-3">
                   {itemCategories.map((category) => {
                     const config = configFor(category.value);
                     const Icon = config.icon;
@@ -1058,23 +1088,23 @@ const TripInstanceDetail = () => {
                         key={category.value}
                         type="button"
                         onClick={() => setActiveCategory(category.value)}
-                        className={`flex min-w-[9.25rem] items-center gap-2 rounded-xl px-3 py-3 text-left transition lg:mb-1 lg:w-full lg:min-w-0 lg:gap-3 lg:last:mb-0 ${
+                        className={`flex min-w-[10.5rem] items-center gap-2 border-b-2 px-3 py-3 text-left transition lg:mb-1 lg:w-full lg:min-w-0 lg:gap-3 lg:border-b-0 lg:border-l-2 lg:last:mb-0 ${
                           isActive
-                            ? "bg-slate-950 text-white shadow-md"
-                            : "text-slate-700 hover:bg-slate-50"
+                            ? "border-teal-600 bg-teal-50 text-slate-950 lg:bg-slate-50"
+                            : "border-transparent text-slate-700 hover:bg-slate-50"
                         }`}
                       >
                         <span
-                          className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 lg:h-10 lg:w-10 ${
-                            isActive ? "bg-white/15 text-white ring-white/20" : config.accent
+                          className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 lg:h-10 lg:w-10 ${
+                            isActive ? "bg-white text-teal-700 ring-teal-100" : config.accent
                           }`}
                         >
                           <Icon className="h-5 w-5" />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-sm font-semibold lg:text-base">{config.label}</span>
-                          <span className={`block text-xs ${isActive ? "text-white/70" : "text-slate-500"}`}>
-                            {categoryItems.length} item{categoryItems.length === 1 ? "" : "s"} · {formatCurrency0(categoryTotal(category.value))}
+                          <span className="block text-xs text-slate-500">
+                            {categoryItems.length} item{categoryItems.length === 1 ? "" : "s"} · {categoryValueSummary(category.value)}
                           </span>
                         </span>
                       </button>
@@ -1083,10 +1113,10 @@ const TripInstanceDetail = () => {
                   </div>
                 </nav>
 
-                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                <section className="min-w-0">
+                  <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-start gap-3">
-                      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ring-1 sm:h-12 sm:w-12 ${activeCategoryConfig.accent}`}>
+                      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ring-1 sm:h-12 sm:w-12 ${activeCategoryConfig.accent}`}>
                         <ActiveCategoryIcon className="h-5 w-5" />
                       </span>
                       <div>
@@ -1094,13 +1124,13 @@ const TripInstanceDetail = () => {
                         <p className="mt-1 text-sm text-slate-500">{activeCategoryConfig.description}</p>
                       </div>
                     </div>
-                    <div className="rounded-2xl bg-white px-4 py-3 text-left shadow-sm ring-1 ring-slate-200 sm:text-right">
+                    <div className="text-left sm:text-right">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Category total</p>
-                      <p className="text-xl font-extrabold text-slate-950 sm:text-2xl">{formatCurrency0(categoryTotal(activeCategory))}</p>
+                      <p className="text-xl font-extrabold text-slate-950 sm:text-2xl">{categoryValueSummary(activeCategory)}</p>
                     </div>
                   </div>
 
-                  <div className="space-y-3 p-3 sm:p-4">
+                  <div className="divide-y divide-slate-100">
                     {activeCategoryItems.map(({ item, index }) => {
                       const itemKey = item._id || `${activeCategory}-${index}`;
                       const isExpanded = expandedItemKey === itemKey;
@@ -1110,16 +1140,16 @@ const TripInstanceDetail = () => {
                       return (
                         <article
                           key={itemKey}
-                          className={`overflow-hidden rounded-2xl border bg-white transition ${
+                          className={`bg-white transition ${
                             isExpanded
-                              ? "border-slate-300 shadow-md"
-                              : "border-slate-200 shadow-sm hover:border-slate-300"
+                              ? "bg-slate-50/70"
+                              : "hover:bg-slate-50/70"
                           }`}
                         >
                           <button
                             type="button"
                             onClick={() => setExpandedItemKey(isExpanded ? null : itemKey)}
-                            className="grid w-full gap-4 p-4 text-left sm:grid-cols-[minmax(0,1fr)_170px_110px_auto]"
+                            className="grid w-full gap-4 py-4 text-left sm:grid-cols-[minmax(0,1fr)_170px_110px_auto]"
                           >
                             <span className="min-w-0">
                               <span className="flex flex-wrap items-center gap-2">
@@ -1136,7 +1166,7 @@ const TripInstanceDetail = () => {
                               {detailRows.length > 0 && (
                                 <span className="mt-3 grid gap-2 sm:grid-cols-2">
                                   {detailRows.map((row) => (
-                                    <span key={`${row.label}-${row.value}`} className="min-w-0 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+                                    <span key={`${row.label}-${row.value}`} className="min-w-0 border-l border-slate-200 pl-3">
                                       <span className="block text-[10px] font-bold uppercase text-slate-400">
                                         {row.label}
                                       </span>
@@ -1150,10 +1180,10 @@ const TripInstanceDetail = () => {
                             </span>
                             <span className="grid gap-2 sm:self-start">
                               <span
-                                className={`rounded-xl px-3 py-2 ring-1 ${
+                                className={`border-l-2 px-3 py-1 ${
                                   itemCountsInTotal(item)
-                                    ? "bg-emerald-50 text-emerald-800 ring-emerald-100"
-                                    : "bg-slate-50 text-slate-600 ring-slate-200"
+                                    ? "border-emerald-500 text-emerald-800"
+                                    : "border-slate-300 text-slate-600"
                                 }`}
                               >
                                 <span className="block text-[10px] font-bold uppercase">
@@ -1164,10 +1194,10 @@ const TripInstanceDetail = () => {
                                 </span>
                               </span>
                               <span
-                                className={`rounded-xl px-3 py-2 ring-1 ${
+                                className={`border-l-2 px-3 py-1 ${
                                   purchaseStatus === "considering"
-                                    ? "bg-white text-slate-600 ring-slate-200"
-                                    : "bg-teal-50 text-teal-800 ring-teal-100"
+                                    ? "border-slate-300 text-slate-600"
+                                    : "border-teal-500 text-teal-800"
                                 }`}
                               >
                                 <span className="block text-[10px] font-bold uppercase">Booking</span>
@@ -1176,7 +1206,7 @@ const TripInstanceDetail = () => {
                                 </span>
                               </span>
                             </span>
-                            <span className="flex items-end justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 sm:block sm:bg-transparent sm:px-0 sm:py-0 sm:text-right">
+                            <span className="flex items-end justify-between gap-3 border-l border-slate-200 pl-3 sm:block sm:text-right">
                               <span className="block text-[11px] font-bold uppercase tracking-wide text-slate-400">
                                 Total
                               </span>
@@ -1242,14 +1272,21 @@ const TripInstanceDetail = () => {
                                 </div>
 
                                 <div className="border-b border-slate-100 bg-white px-4 py-3 sm:px-5">
-                                  <div className="mx-auto grid max-w-md grid-cols-2 gap-2">
-                                    <div className="rounded-2xl bg-slate-50 px-3 py-3 text-center">
+                                  <div className="mx-auto grid max-w-md grid-cols-2 divide-x divide-slate-200 overflow-hidden border-y border-slate-200">
+                                    <div className="px-3 py-3 text-center">
                                       <p className="text-xs font-semibold text-slate-500">Item total</p>
                                       <p className="mt-1 text-xl font-extrabold text-slate-950">
                                         {formatCurrency0(itemTotal(item))}
                                       </p>
+                                      {(itemPoints(item) > 0 || itemSavings(item) > 0) && (
+                                        <p className="mt-1 text-xs font-bold text-blue-700">
+                                          {itemPoints(item) > 0 ? `${formatPoints(itemPoints(item))} pts` : ""}
+                                          {itemPoints(item) > 0 && itemSavings(item) > 0 ? " · " : ""}
+                                          {itemSavings(item) > 0 ? `${formatCurrency0(itemSavings(item))} saved` : ""}
+                                        </p>
+                                      )}
                                     </div>
-                                    <div className="rounded-2xl bg-slate-50 px-3 py-3 text-center">
+                                    <div className="px-3 py-3 text-center">
                                       <p className="text-xs font-semibold text-slate-500">Booking</p>
                                       <p className="mt-1 text-base font-bold text-slate-950">
                                         {purchaseStatusLabels[item.purchase_status || "considering"]}
@@ -1259,8 +1296,8 @@ const TripInstanceDetail = () => {
                                 </div>
 
                                 <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-                                <div className="mx-auto w-full max-w-2xl space-y-4 pb-2">
-                                  <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
+                                <div className="mx-auto w-full max-w-2xl divide-y divide-slate-100 pb-2">
+                                  <div className="grid gap-3 pb-4 lg:grid-cols-[1fr_1fr]">
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
                                       {activeCategoryConfig.label === "Flights" ? "Airline or route" : "Name"}
@@ -1286,7 +1323,7 @@ const TripInstanceDetail = () => {
                                   </label>
                                   </div>
 
-                                  <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-3">
+                                  <div className="grid gap-3 py-4 sm:grid-cols-3">
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
                                       Cash paid
@@ -1333,7 +1370,7 @@ const TripInstanceDetail = () => {
                                   </label>
                                   </div>
 
-                                  <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2">
+                                  <div className="grid gap-3 py-4 sm:grid-cols-2">
                                   <label className="block">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
                                       {quantityLabelFor(
@@ -1372,7 +1409,7 @@ const TripInstanceDetail = () => {
                                   </div>
 
                                   {(activeCategory !== "tickets" || (item.ticket_day_mode || "one_day") !== "exact_days") && (
-                                  <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2">
+                                  <div className="grid gap-3 py-4 sm:grid-cols-2">
                                     <label className="block">
                                       <span className="mb-1 block text-xs font-semibold text-slate-500">
                                         {activeCategory === "tickets"
@@ -1410,7 +1447,7 @@ const TripInstanceDetail = () => {
                                   )}
 
                                   {activeCategory === "lodging" && (
-                                    <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2">
+                                    <div className="grid gap-3 py-4 sm:grid-cols-2">
                                       <label className="block">
                                         <span className="mb-1 block text-xs font-semibold text-slate-500">
                                           Check-in time
@@ -1438,7 +1475,7 @@ const TripInstanceDetail = () => {
                                   )}
 
                                   {activeCategory === "flight" && (
-                                    <div className="space-y-3 rounded-xl bg-slate-50 p-3">
+                                    <div className="space-y-3 py-4">
                                       <div className="grid gap-3 sm:grid-cols-2">
                                         <label className="block">
                                           <span className="mb-1 block text-xs font-semibold text-slate-500">
@@ -1496,7 +1533,7 @@ const TripInstanceDetail = () => {
                                   )}
 
                                   {activeCategory === "tickets" && (
-                                    <div className="space-y-3 rounded-xl bg-slate-50 p-3">
+                                    <div className="space-y-3 py-4">
                                       <div className="grid gap-3 sm:grid-cols-2">
                                         <AppSelect
                                           label="Ticket dates"
@@ -1550,7 +1587,7 @@ const TripInstanceDetail = () => {
                                     </div>
                                   )}
 
-                                  <div className="grid gap-3 lg:grid-cols-[1fr_170px_170px]">
+                                  <div className="grid gap-3 py-4 lg:grid-cols-[1fr_170px_170px]">
                                     <label className="block">
                                       <span className="mb-1 block text-xs font-semibold text-slate-500">
                                         {compareSetLabel(activeCategory)}
@@ -1585,7 +1622,7 @@ const TripInstanceDetail = () => {
                                     />
                                   </div>
 
-                                  <div className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2">
+                                  <div className="grid gap-3 py-4 sm:grid-cols-2">
                                     <AppSelect
                                       label="Booking status"
                                       value={item.purchase_status || "considering"}
@@ -1607,7 +1644,7 @@ const TripInstanceDetail = () => {
                                     </label>
                                   </div>
 
-                                  <label className="block">
+                                  <label className="block pt-4">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">Notes</span>
                                     <input
                                       type="text"
