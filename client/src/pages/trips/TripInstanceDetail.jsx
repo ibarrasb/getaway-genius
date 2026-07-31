@@ -1282,14 +1282,14 @@ const TripInstanceDetail = () => {
 
                           {isExpanded && createPortal(
                             <div
-                              className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-2 backdrop-blur-sm transition-opacity sm:p-6"
+                              className="fixed inset-0 z-50 flex touch-pan-y items-stretch justify-center overflow-hidden bg-slate-950/75 p-2 backdrop-blur-sm transition-opacity sm:items-center sm:p-6"
                               role="dialog"
                               aria-modal="true"
                               aria-labelledby={`item-editor-title-${index}`}
                               onClick={() => setExpandedItemKey(null)}
                             >
                               <div
-                                className="flex h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-3xl bg-white shadow-2xl transition-transform sm:h-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-3xl"
+                                className="flex h-[calc(100dvh-1rem)] w-full max-w-full flex-col overflow-hidden rounded-3xl bg-white shadow-2xl transition-transform sm:h-auto sm:max-h-[calc(100dvh-3rem)] sm:max-w-3xl"
                                 onClick={(event) => event.stopPropagation()}
                               >
                                 <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-4 py-4 sm:px-5">
@@ -1336,10 +1336,10 @@ const TripInstanceDetail = () => {
                                   </div>
                                 </div>
 
-                                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-                                <div className="mx-auto w-full max-w-2xl divide-y divide-slate-100 pb-2">
-                                  <div className="grid gap-3 pb-4 lg:grid-cols-[1fr_1fr]">
-                                  <label className="block">
+                                <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 sm:px-5">
+                                <div className="mx-auto w-full max-w-2xl min-w-0 divide-y divide-slate-100 pb-2 [&_input]:max-w-full [&_input]:min-w-0 [&_label]:min-w-0">
+                                  <div className="grid min-w-0 gap-3 pb-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                                  <label className="block min-w-0">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">
                                       {activeCategoryConfig.label === "Flights" ? "Airline or route" : "Name"}
                                     </span>
@@ -1347,18 +1347,18 @@ const TripInstanceDetail = () => {
                                       type="text"
                                       value={item.name}
                                       onChange={(e) => updateCostItem(index, "name", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                      className="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                       placeholder={activeCategoryConfig.namePlaceholder}
                                     />
                                   </label>
 
-                                  <label className="block">
+                                  <label className="block min-w-0">
                                     <span className="mb-1 block text-xs font-semibold text-slate-500">Link</span>
                                     <input
                                       type="url"
                                       value={item.url}
                                       onChange={(e) => updateCostItem(index, "url", e.target.value)}
-                                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+                                      className="w-full min-w-0 rounded-lg border border-slate-300 px-3 py-2.5 text-base sm:py-2 sm:text-sm"
                                       placeholder="https://..."
                                     />
                                   </label>
